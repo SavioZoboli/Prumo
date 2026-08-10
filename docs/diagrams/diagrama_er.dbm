@@ -1,0 +1,278 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+CAUTION: Do not modify this file unless you know what you are doing.
+ Unexpected results may occur if the code is changed deliberately.
+-->
+<dbmodel pgmodeler-ver="1.2.2" use-changelog="false" max-obj-count="8"
+	 gen-disabled-objs-code="false" show-sys-schemas-rects="true"
+	 last-position="0,0" last-zoom="1"
+	 default-schema="public" default-owner="postgres"
+	 layers="Default layer"
+	 active-layers="0"
+	 layer-name-colors="#000000"
+	 layer-rect-colors="#b4b4b4"
+	 show-layer-names="false" show-layer-rects="false">
+<database name="new_database" is-template="false" allow-conns="true">
+</database>
+
+<schema name="public" layers="0" fill-color="#e1e1e1" name-color="#000000" sql-disabled="true">
+</schema>
+
+<table name="Usuarios" layers="0" collapse-mode="2" max-obj-count="9" z-value="0">
+	<schema name="public"/>
+	<role name="postgres"/>
+	<position x="280" y="500"/>
+	<column name="id" not-null="true"
+	 identity-type="ALWAYS">
+		<type name="smallint" length="0"/>
+	</column>
+	<column name="nome" not-null="true">
+		<type name="varchar" length="30"/>
+	</column>
+	<column name="sobrenome" not-null="true">
+		<type name="varchar" length="30"/>
+	</column>
+	<column name="email" not-null="true">
+		<type name="varchar" length="60"/>
+	</column>
+	<column name="usuario" not-null="true">
+		<type name="varchar" length="50"/>
+	</column>
+	<column name="senha" not-null="true">
+		<type name="varchar" length="100"/>
+	</column>
+	<column name="perfil" not-null="true" default-value="&quot;USER&quot;">
+		<type name="varchar" length="5"/>
+	</column>
+	<column name="ativo" default-value="true">
+		<type name="boolean" length="0"/>
+	</column>
+	<constraint name="uq_usuario" type="uq-constr" table="public.&quot;Usuarios&quot;">
+		<columns names="usuario" ref-type="src-columns"/>
+	</constraint>
+	<constraint name="pk_usuario" type="pk-constr" table="public.&quot;Usuarios&quot;">
+		<columns names="id" ref-type="src-columns"/>
+	</constraint>
+	<constraint name="uq_email" type="uq-constr" table="public.&quot;Usuarios&quot;">
+		<columns names="email" ref-type="src-columns"/>
+	</constraint>
+</table>
+
+<table name="Materiais" layers="0" collapse-mode="2" max-obj-count="7" z-value="0">
+	<schema name="public"/>
+	<role name="postgres"/>
+	<position x="780" y="300"/>
+	<column name="id" not-null="true"
+	 identity-type="ALWAYS">
+		<type name="smallint" length="0"/>
+	</column>
+	<column name="nome" not-null="true">
+		<type name="varchar" length="30"/>
+	</column>
+	<column name="codigo" not-null="true">
+		<type name="varchar" length="20"/>
+	</column>
+	<column name="equipamento" not-null="true">
+		<type name="varchar" length="20"/>
+	</column>
+	<column name="estoque_minimo" not-null="true">
+		<type name="smallint" length="0"/>
+	</column>
+	<column name="ativo" not-null="true" default-value="true">
+		<type name="boolean" length="0"/>
+	</column>
+	<constraint name="pk_material" type="pk-constr" table="public.&quot;Materiais&quot;">
+		<columns names="id" ref-type="src-columns"/>
+	</constraint>
+</table>
+
+<table name="Movimentacoes" layers="0" collapse-mode="2" max-obj-count="7" z-value="0">
+	<schema name="public"/>
+	<role name="postgres"/>
+	<position x="760" y="580"/>
+	<column name="id" not-null="true"
+	 identity-type="ALWAYS">
+		<type name="smallint" length="0"/>
+	</column>
+	<column name="data" not-null="true" default-value="current_timestamp">
+		<type name="timestamptz" length="0"/>
+	</column>
+	<column name="operacao" not-null="true">
+		<type name="varchar" length="1"/>
+	</column>
+	<column name="motivo">
+		<type name="text" length="0"/>
+	</column>
+	<column name="usuario_id" not-null="true">
+		<type name="smallint" length="0"/>
+	</column>
+	<column name="is_estornado" default-value="false">
+		<type name="boolean" length="10"/>
+	</column>
+	<constraint name="Movimentacoes_pk" type="pk-constr" table="public.&quot;Movimentacoes&quot;">
+		<columns names="id" ref-type="src-columns"/>
+	</constraint>
+</table>
+
+<table name="Itens_Movimento" layers="0" collapse-mode="2" max-obj-count="3" z-value="0">
+	<schema name="public"/>
+	<role name="postgres"/>
+	<position x="1200" y="340"/>
+	<column name="movimento_id" not-null="true">
+		<type name="smallint" length="0"/>
+	</column>
+	<column name="material_id" not-null="true">
+		<type name="smallint" length="0"/>
+	</column>
+	<column name="quantidade" not-null="true">
+		<type name="integer" length="0"/>
+	</column>
+	<constraint name="Itens_Movimento_pk" type="pk-constr" table="public.&quot;Itens_Movimento&quot;">
+		<columns names="movimento_id,material_id" ref-type="src-columns"/>
+	</constraint>
+</table>
+
+<table name="Logs_Perfil" layers="0" collapse-mode="2" max-obj-count="7" z-value="0">
+	<schema name="public"/>
+	<role name="postgres"/>
+	<position x="280" y="140"/>
+	<column name="id" not-null="true"
+	 identity-type="ALWAYS">
+		<type name="smallint" length="0"/>
+	</column>
+	<column name="operador_id" not-null="true">
+		<type name="smallint" length="0"/>
+	</column>
+	<column name="alvo_id" not-null="true">
+		<type name="smallint" length="0"/>
+	</column>
+	<column name="perfil_anterior" not-null="true">
+		<type name="varchar" length="5"/>
+	</column>
+	<column name="perfil_atual" not-null="true">
+		<type name="varchar" length="5"/>
+	</column>
+	<column name="data" not-null="true" default-value="current_timestamp">
+		<type name="timestamptz" length="0"/>
+	</column>
+	<constraint name="Logs_Perfil_pk" type="pk-constr" table="public.&quot;Logs_Perfil&quot;">
+		<columns names="id" ref-type="src-columns"/>
+	</constraint>
+</table>
+
+<table name="Fabricantes" layers="0" collapse-mode="2" max-obj-count="3" z-value="0">
+	<schema name="public"/>
+	<role name="postgres"/>
+	<position x="1220" y="140"/>
+	<column name="id" not-null="true"
+	 identity-type="ALWAYS">
+		<type name="smallint" length="0"/>
+	</column>
+	<column name="nome" not-null="true">
+		<type name="varchar" length="40"/>
+	</column>
+	<column name="is_ativo" not-null="true" default-value="true">
+		<type name="boolean" length="0"/>
+	</column>
+	<constraint name="Fabricantes_pk" type="pk-constr" table="public.&quot;Fabricantes&quot;">
+		<columns names="id" ref-type="src-columns"/>
+	</constraint>
+</table>
+
+<table name="Fornecedores" layers="0" collapse-mode="2" max-obj-count="4" z-value="0">
+	<schema name="public"/>
+	<role name="postgres"/>
+	<position x="660" y="80"/>
+	<column name="id" not-null="true"
+	 identity-type="ALWAYS">
+		<type name="smallint" length="0"/>
+	</column>
+	<column name="nome" not-null="true">
+		<type name="varchar" length="40"/>
+	</column>
+	<column name="cnpj" not-null="true">
+		<type name="varchar" length="18"/>
+	</column>
+	<column name="is_ativo" default-value="true">
+		<type name="boolean" length="0"/>
+	</column>
+	<constraint name="uq_cnpj" type="uq-constr" table="public.&quot;Fornecedores&quot;">
+		<columns names="cnpj" ref-type="src-columns"/>
+	</constraint>
+	<constraint name="Fornecedores_pk" type="pk-constr" table="public.&quot;Fornecedores&quot;">
+		<columns names="id" ref-type="src-columns"/>
+	</constraint>
+</table>
+
+<constraint name="fk_usuario_id" type="fk-constr" comparison-type="MATCH SIMPLE"
+	 upd-action="CASCADE" del-action="RESTRICT" ref-table="public.&quot;Usuarios&quot;" table="public.&quot;Movimentacoes&quot;">
+	<columns names="usuario_id" ref-type="src-columns"/>
+	<columns names="id" ref-type="dst-columns"/>
+</constraint>
+
+<constraint name="fk_movimento_id" type="fk-constr" comparison-type="MATCH SIMPLE"
+	 upd-action="CASCADE" del-action="RESTRICT" ref-table="public.&quot;Movimentacoes&quot;" table="public.&quot;Itens_Movimento&quot;">
+	<columns names="movimento_id" ref-type="src-columns"/>
+	<columns names="id" ref-type="dst-columns"/>
+</constraint>
+
+<constraint name="fk_material_id" type="fk-constr" comparison-type="MATCH SIMPLE"
+	 upd-action="CASCADE" del-action="RESTRICT" ref-table="public.&quot;Materiais&quot;" table="public.&quot;Itens_Movimento&quot;">
+	<columns names="material_id" ref-type="src-columns"/>
+	<columns names="id" ref-type="dst-columns"/>
+</constraint>
+
+<constraint name="fk_operador_id" type="fk-constr" comparison-type="MATCH SIMPLE"
+	 upd-action="CASCADE" del-action="RESTRICT" ref-table="public.&quot;Usuarios&quot;" table="public.&quot;Logs_Perfil&quot;">
+	<columns names="operador_id" ref-type="src-columns"/>
+	<columns names="id" ref-type="dst-columns"/>
+</constraint>
+
+<constraint name="fk_alvo_id" type="fk-constr" comparison-type="MATCH SIMPLE"
+	 upd-action="CASCADE" del-action="RESTRICT" ref-table="public.&quot;Usuarios&quot;" table="public.&quot;Logs_Perfil&quot;">
+	<columns names="alvo_id" ref-type="src-columns"/>
+	<columns names="id" ref-type="dst-columns"/>
+</constraint>
+
+<relationship name="&quot;rel_Movimentacoes_Usuarios&quot;" type="relfk" layers="0"
+	 src-table="public.&quot;Movimentacoes&quot;"
+	 dst-table="public.&quot;Usuarios&quot;" reference-fk="fk_usuario_id"
+	 src-required="false" dst-required="true"/>
+
+<relationship name="rel_Itens_Movimento_Movimentacoes" type="relfk" layers="0"
+	 src-table="public.&quot;Itens_Movimento&quot;"
+	 dst-table="public.&quot;Movimentacoes&quot;" reference-fk="fk_movimento_id"
+	 src-required="false" dst-required="true">
+	<label ref-type="name-label">
+		<position x="101.461" y="17.3027"/>
+	</label>
+</relationship>
+
+<relationship name="rel_Itens_Movimento_Materiais" type="relfk" layers="0"
+	 src-table="public.&quot;Itens_Movimento&quot;"
+	 dst-table="public.&quot;Materiais&quot;" reference-fk="fk_material_id"
+	 src-required="false" dst-required="true">
+	<label ref-type="name-label">
+		<position x="18.3881" y="-105.407"/>
+	</label>
+</relationship>
+
+<relationship name="rel_Logs_Perfil_Usuarios" type="relfk" layers="0"
+	 src-table="public.&quot;Logs_Perfil&quot;"
+	 dst-table="public.&quot;Usuarios&quot;" reference-fk="fk_operador_id"
+	 src-required="false" dst-required="true">
+	<label ref-type="name-label">
+		<position x="-90.7134" y="-30.053"/>
+	</label>
+</relationship>
+
+<relationship name="rel_Logs_Perfil_Usuarios1" type="relfk" layers="0"
+	 src-table="public.&quot;Logs_Perfil&quot;"
+	 dst-table="public.&quot;Usuarios&quot;" reference-fk="fk_alvo_id"
+	 src-required="false" dst-required="true">
+	<label ref-type="name-label">
+		<position x="110.088" y="-30.053"/>
+	</label>
+</relationship>
+
+</dbmodel>
