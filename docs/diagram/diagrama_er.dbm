@@ -3,16 +3,16 @@
 CAUTION: Do not modify this file unless you know what you are doing.
  Unexpected results may occur if the code is changed deliberately.
 -->
-<dbmodel pgmodeler-ver="1.2.2" use-changelog="false" max-obj-count="8"
+<dbmodel pgmodeler-ver="1.2.2" use-changelog="false" max-obj-count="12"
 	 gen-disabled-objs-code="false" show-sys-schemas-rects="true"
-	 last-position="0,0" last-zoom="1"
+	 last-position="0,-19" last-zoom="0.95" scene-rect="0,-20,1644.46,1096.8"
 	 default-schema="public" default-owner="postgres"
 	 layers="Default layer"
 	 active-layers="0"
 	 layer-name-colors="#000000"
 	 layer-rect-colors="#b4b4b4"
 	 show-layer-names="false" show-layer-rects="false">
-<database name="new_database" is-template="false" allow-conns="true">
+<database name="prumo_db" is-template="false" allow-conns="true">
 </database>
 
 <schema name="public" layers="0" fill-color="#e1e1e1" name-color="#000000" sql-disabled="true">
@@ -21,7 +21,7 @@ CAUTION: Do not modify this file unless you know what you are doing.
 <table name="Usuarios" layers="0" collapse-mode="2" max-obj-count="9" z-value="0">
 	<schema name="public"/>
 	<role name="postgres"/>
-	<position x="280" y="500"/>
+	<position x="120" y="500"/>
 	<column name="id" not-null="true"
 	 identity-type="ALWAYS">
 		<type name="smallint" length="0"/>
@@ -58,10 +58,10 @@ CAUTION: Do not modify this file unless you know what you are doing.
 	</constraint>
 </table>
 
-<table name="Materiais" layers="0" collapse-mode="2" max-obj-count="7" z-value="0">
+<table name="Materiais" layers="0" collapse-mode="2" max-obj-count="13" z-value="0">
 	<schema name="public"/>
 	<role name="postgres"/>
-	<position x="780" y="300"/>
+	<position x="1320" y="200"/>
 	<column name="id" not-null="true"
 	 identity-type="ALWAYS">
 		<type name="smallint" length="0"/>
@@ -81,15 +81,30 @@ CAUTION: Do not modify this file unless you know what you are doing.
 	<column name="ativo" not-null="true" default-value="true">
 		<type name="boolean" length="0"/>
 	</column>
+	<column name="ultimo_valor">
+		<type name="numeric" length="15" precision="2"/>
+	</column>
+	<column name="fabricante_id" not-null="true">
+		<type name="smallint" length="0"/>
+	</column>
+	<column name="estoque_atual" not-null="true" default-value="0">
+		<type name="integer" length="0"/>
+	</column>
+	<column name="unidade_medida">
+		<type name="varchar" length="3"/>
+	</column>
+	<column name="localizacao">
+		<type name="varchar" length="5"/>
+	</column>
 	<constraint name="pk_material" type="pk-constr" table="public.&quot;Materiais&quot;">
 		<columns names="id" ref-type="src-columns"/>
 	</constraint>
 </table>
 
-<table name="Movimentacoes" layers="0" collapse-mode="2" max-obj-count="7" z-value="0">
+<table name="Movimentacoes" layers="0" collapse-mode="2" max-obj-count="8" z-value="0">
 	<schema name="public"/>
 	<role name="postgres"/>
-	<position x="760" y="580"/>
+	<position x="620" y="660"/>
 	<column name="id" not-null="true"
 	 identity-type="ALWAYS">
 		<type name="smallint" length="0"/>
@@ -109,6 +124,9 @@ CAUTION: Do not modify this file unless you know what you are doing.
 	<column name="is_estornado" default-value="false">
 		<type name="boolean" length="10"/>
 	</column>
+	<column name="ordem_compra_id">
+		<type name="smallint" length="0"/>
+	</column>
 	<constraint name="Movimentacoes_pk" type="pk-constr" table="public.&quot;Movimentacoes&quot;">
 		<columns names="id" ref-type="src-columns"/>
 	</constraint>
@@ -117,7 +135,7 @@ CAUTION: Do not modify this file unless you know what you are doing.
 <table name="Itens_Movimento" layers="0" collapse-mode="2" max-obj-count="3" z-value="0">
 	<schema name="public"/>
 	<role name="postgres"/>
-	<position x="1200" y="340"/>
+	<position x="1240" y="640"/>
 	<column name="movimento_id" not-null="true">
 		<type name="smallint" length="0"/>
 	</column>
@@ -135,7 +153,7 @@ CAUTION: Do not modify this file unless you know what you are doing.
 <table name="Logs_Perfil" layers="0" collapse-mode="2" max-obj-count="7" z-value="0">
 	<schema name="public"/>
 	<role name="postgres"/>
-	<position x="280" y="140"/>
+	<position x="100" y="120"/>
 	<column name="id" not-null="true"
 	 identity-type="ALWAYS">
 		<type name="smallint" length="0"/>
@@ -163,7 +181,7 @@ CAUTION: Do not modify this file unless you know what you are doing.
 <table name="Fabricantes" layers="0" collapse-mode="2" max-obj-count="3" z-value="0">
 	<schema name="public"/>
 	<role name="postgres"/>
-	<position x="1220" y="140"/>
+	<position x="960" y="40"/>
 	<column name="id" not-null="true"
 	 identity-type="ALWAYS">
 		<type name="smallint" length="0"/>
@@ -182,7 +200,7 @@ CAUTION: Do not modify this file unless you know what you are doing.
 <table name="Fornecedores" layers="0" collapse-mode="2" max-obj-count="4" z-value="0">
 	<schema name="public"/>
 	<role name="postgres"/>
-	<position x="660" y="80"/>
+	<position x="520" y="0"/>
 	<column name="id" not-null="true"
 	 identity-type="ALWAYS">
 		<type name="smallint" length="0"/>
@@ -204,9 +222,70 @@ CAUTION: Do not modify this file unless you know what you are doing.
 	</constraint>
 </table>
 
+<table name="Ordens_Compra" layers="0" collapse-mode="2" max-obj-count="7" z-value="0">
+	<schema name="public"/>
+	<role name="postgres"/>
+	<position x="460" y="320"/>
+	<column name="id" not-null="true"
+	 identity-type="ALWAYS">
+		<type name="smallint" length="0"/>
+	</column>
+	<column name="dt_emissao" not-null="true" default-value="current_timestamp">
+		<type name="timestamptz" length="0"/>
+	</column>
+	<column name="dt_entrega_prevista">
+		<type name="timestamptz" length="0"/>
+	</column>
+	<column name="dt_entrega">
+		<type name="timestamptz" length="0"/>
+	</column>
+	<column name="fornecedor_id" not-null="true">
+		<type name="smallint" length="0"/>
+	</column>
+	<column name="valor_total">
+		<type name="numeric" length="15" precision="2"/>
+	</column>
+	<constraint name="Ordens_Compra_pk" type="pk-constr" table="public.&quot;Ordens_Compra&quot;">
+		<columns names="id" ref-type="src-columns"/>
+	</constraint>
+</table>
+
+<table name="Itens_Ordem_Compra" layers="0" collapse-mode="2" max-obj-count="4" z-value="0">
+	<schema name="public"/>
+	<role name="postgres"/>
+	<position x="840" y="320"/>
+	<column name="ordem_compra_id" not-null="true">
+		<type name="smallint" length="0"/>
+	</column>
+	<column name="material_id" not-null="true">
+		<type name="smallint" length="0"/>
+	</column>
+	<column name="quantidade" not-null="true">
+		<type name="integer" length="0"/>
+	</column>
+	<column name="valor" not-null="true">
+		<type name="numeric" length="15" precision="2"/>
+	</column>
+	<constraint name="Itens_Ordem_Compra_pk" type="pk-constr" table="public.&quot;Itens_Ordem_Compra&quot;">
+		<columns names="ordem_compra_id,material_id" ref-type="src-columns"/>
+	</constraint>
+</table>
+
+<constraint name="fk_fabricante_material" type="fk-constr" comparison-type="MATCH SIMPLE"
+	 upd-action="CASCADE" del-action="RESTRICT" ref-table="public.&quot;Fabricantes&quot;" table="public.&quot;Materiais&quot;">
+	<columns names="fabricante_id" ref-type="src-columns"/>
+	<columns names="id" ref-type="dst-columns"/>
+</constraint>
+
 <constraint name="fk_usuario_id" type="fk-constr" comparison-type="MATCH SIMPLE"
 	 upd-action="CASCADE" del-action="RESTRICT" ref-table="public.&quot;Usuarios&quot;" table="public.&quot;Movimentacoes&quot;">
 	<columns names="usuario_id" ref-type="src-columns"/>
+	<columns names="id" ref-type="dst-columns"/>
+</constraint>
+
+<constraint name="fk_ordem_compra_baixa" type="fk-constr" comparison-type="MATCH SIMPLE"
+	 upd-action="CASCADE" del-action="RESTRICT" ref-table="public.&quot;Ordens_Compra&quot;" table="public.&quot;Movimentacoes&quot;">
+	<columns names="ordem_compra_id" ref-type="src-columns"/>
 	<columns names="id" ref-type="dst-columns"/>
 </constraint>
 
@@ -234,10 +313,32 @@ CAUTION: Do not modify this file unless you know what you are doing.
 	<columns names="id" ref-type="dst-columns"/>
 </constraint>
 
-<relationship name="&quot;rel_Movimentacoes_Usuarios&quot;" type="relfk" layers="0"
+<constraint name="fk_oc_fornecedor" type="fk-constr" comparison-type="MATCH SIMPLE"
+	 upd-action="CASCADE" del-action="RESTRICT" ref-table="public.&quot;Fornecedores&quot;" table="public.&quot;Ordens_Compra&quot;">
+	<columns names="fornecedor_id" ref-type="src-columns"/>
+	<columns names="id" ref-type="dst-columns"/>
+</constraint>
+
+<constraint name="fk_ordem_compra_item" type="fk-constr" comparison-type="MATCH SIMPLE"
+	 upd-action="CASCADE" del-action="RESTRICT" ref-table="public.&quot;Ordens_Compra&quot;" table="public.&quot;Itens_Ordem_Compra&quot;">
+	<columns names="ordem_compra_id" ref-type="src-columns"/>
+	<columns names="id" ref-type="dst-columns"/>
+</constraint>
+
+<constraint name="fk_material_oc" type="fk-constr" comparison-type="MATCH SIMPLE"
+	 upd-action="CASCADE" del-action="RESTRICT" ref-table="public.&quot;Materiais&quot;" table="public.&quot;Itens_Ordem_Compra&quot;">
+	<columns names="material_id" ref-type="src-columns"/>
+	<columns names="id" ref-type="dst-columns"/>
+</constraint>
+
+<relationship name="rel_Movimentacoes_Usuarios" type="relfk" layers="0"
 	 src-table="public.&quot;Movimentacoes&quot;"
 	 dst-table="public.&quot;Usuarios&quot;" reference-fk="fk_usuario_id"
-	 src-required="false" dst-required="true"/>
+	 src-required="false" dst-required="true">
+	<label ref-type="name-label">
+		<position x="19.1381" y="-97.4846"/>
+	</label>
+</relationship>
 
 <relationship name="rel_Itens_Movimento_Movimentacoes" type="relfk" layers="0"
 	 src-table="public.&quot;Itens_Movimento&quot;"
@@ -253,7 +354,7 @@ CAUTION: Do not modify this file unless you know what you are doing.
 	 dst-table="public.&quot;Materiais&quot;" reference-fk="fk_material_id"
 	 src-required="false" dst-required="true">
 	<label ref-type="name-label">
-		<position x="18.3881" y="-105.407"/>
+		<position x="-125.087" y="-50.353"/>
 	</label>
 </relationship>
 
@@ -272,6 +373,39 @@ CAUTION: Do not modify this file unless you know what you are doing.
 	 src-required="false" dst-required="true">
 	<label ref-type="name-label">
 		<position x="110.088" y="-30.053"/>
+	</label>
+</relationship>
+
+<relationship name="&quot;rel_Ordens_Compra_Fornecedores&quot;" type="relfk" layers="0"
+	 src-table="public.&quot;Ordens_Compra&quot;"
+	 dst-table="public.&quot;Fornecedores&quot;" reference-fk="fk_oc_fornecedor"
+	 src-required="false" dst-required="true"/>
+
+<relationship name="&quot;rel_Materiais_Fabricantes&quot;" type="relfk" layers="0"
+	 src-table="public.&quot;Materiais&quot;"
+	 dst-table="public.&quot;Fabricantes&quot;" reference-fk="fk_fabricante_material"
+	 src-required="false" dst-required="true"/>
+
+<relationship name="rel_Movimentacoes_Ordens_Compra" type="relfk" layers="0"
+	 src-table="public.&quot;Movimentacoes&quot;"
+	 dst-table="public.&quot;Ordens_Compra&quot;" reference-fk="fk_ordem_compra_baixa"
+	 src-required="false" dst-required="false">
+	<label ref-type="name-label">
+		<position x="162.114" y="-37.753"/>
+	</label>
+</relationship>
+
+<relationship name="&quot;rel_Itens_Ordem_Compra_Ordens_Compra&quot;" type="relfk" layers="0"
+	 src-table="public.&quot;Itens_Ordem_Compra&quot;"
+	 dst-table="public.&quot;Ordens_Compra&quot;" reference-fk="fk_ordem_compra_item"
+	 src-required="false" dst-required="true"/>
+
+<relationship name="rel_Itens_Ordem_Compra_Materiais" type="relfk" layers="0"
+	 src-table="public.&quot;Itens_Ordem_Compra&quot;"
+	 dst-table="public.&quot;Materiais&quot;" reference-fk="fk_material_oc"
+	 src-required="false" dst-required="true">
+	<label ref-type="name-label">
+		<position x="26.0938" y="44.6109"/>
 	</label>
 </relationship>
 
