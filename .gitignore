@@ -1,0 +1,12 @@
+# Node Modules
+src/web/node_modules
+src/api/node_modules
+
+# VSCODE
+src/web/.vscode
+src/api/.vscode
+
+# Environments
+src/web/src/environments
+src/api/.env
+
