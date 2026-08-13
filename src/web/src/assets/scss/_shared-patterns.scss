@@ -1,0 +1,475 @@
+// =============================================================================
+// _shared-patterns.scss
+// -----------------------------------------------------------------------------
+// Padrões visuais repetidos em telas de cadastro/lista (cabeçalho de página,
+// card de formulário, tabela, ações do formulário, chip de status,
+// snackbars). Usar via @extend nos componentes (ver arquivos em components/)
+// em vez de reescrever a cada tela.
+//
+// Import este arquivo com `@use '../shared-patterns' as *;` (ou caminho
+// relativo equivalente) em cada .scss de componente.
+//
+// NOTA DE MIGRAÇÃO: este arquivo veio de um projeto anterior. Os padrões
+// abaixo são genéricos (não dependem de nenhuma identidade visual específica,
+// só de var(--mat-sys-*) / var(--app-*) de _tokens.scss e _palette.scss) e
+// foram mantidos. Trechos que eram específicos do domínio do projeto antigo
+// (grid/card de equipamento, código `eq-*`, status "disponível/emprestado/
+// manutenção") foram removidos — veja os blocos "PLACEHOLDER" abaixo para
+// recriá-los sob medida quando o protótipo desta tela existir.
+// =============================================================================
+
+// -----------------------------------------------------------------------------
+// Layout de página
+// -----------------------------------------------------------------------------
+%page-container {
+  padding: var(--app-space-lg);
+  margin: 0 auto;
+}
+
+%page-header {
+  border-bottom: 1px solid var(--mat-sys-outline-variant);
+  padding-bottom: 1.25rem;
+  margin-bottom: var(--app-space-xl);
+
+  &.with-actions {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+  }
+
+  .title-area {
+    display: flex;
+    flex-direction: column;
+
+    .breadcrumb {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--mat-sys-on-surface-variant);
+      font-weight: 600;
+      margin-bottom: 2px;
+    }
+
+    h2 {
+      margin: 0;
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--mat-sys-primary);
+    }
+  }
+
+  .action-area {
+    display: flex;
+    gap: var(--app-space-md);
+  }
+}
+
+// -----------------------------------------------------------------------------
+// Botões de cabeçalho (novo item / ação discreta)
+// -----------------------------------------------------------------------------
+%btn {
+  background-color: var(--mat-sys-primary);
+  color: var(--mat-sys-on-primary);
+  padding: 0 var(--app-space-lg);
+  height: 44px;
+  border-radius: var(--app-radius-md);
+  font-weight: 500;
+
+  &:hover {
+    filter: brightness(0.92);
+  }
+
+  mat-icon {
+    margin-right: var(--app-space-xs);
+  }
+}
+
+%btn-discrete {
+  background-color: transparent;
+  color: var(--mat-sys-on-surface);
+  padding: 0 var(--app-space-lg);
+  height: 44px;
+  border-radius: var(--app-radius-md);
+  font-weight: 500;
+  border: 1px solid var(--mat-sys-outline);
+
+  &:hover {
+    border-width: 2px;
+  }
+
+  mat-icon {
+    margin-right: var(--app-space-xs);
+  }
+}
+
+// -----------------------------------------------------------------------------
+// Card de formulário
+// -----------------------------------------------------------------------------
+%form-container {
+  position: relative;
+  background-color: var(--mat-sys-surface-container-low);
+  border-radius: var(--app-radius-lg);
+  padding: var(--app-space-xl);
+  box-shadow: var(--app-shadow-sm);
+  border: 1px solid var(--mat-sys-outline-variant);
+  border-top: 3px solid var(--mat-sys-primary);
+}
+
+%cadastro-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--app-space-lg);
+}
+
+%form-row {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: var(--app-space-lg);
+  width: 100%;
+
+  .section-label {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--mat-sys-on-surface-variant);
+    margin-bottom: var(--app-space-sm);
+  }
+}
+
+%full-width {
+  width: 100%;
+}
+
+%field-icon {
+  color: var(--mat-sys-on-surface-variant);
+  margin-right: var(--app-space-sm);
+}
+
+%loading-overlay {
+  position: absolute;
+  inset: 0;
+  background-color: color-mix(in srgb, var(--mat-sys-surface) 75%, transparent);
+  backdrop-filter: blur(2px);
+  z-index: 10;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+// -----------------------------------------------------------------------------
+// Ações de formulário (rodapé com Cancelar / Salvar)
+// -----------------------------------------------------------------------------
+%form-actions {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: var(--app-space-md);
+  margin-top: var(--app-space-md);
+  padding-top: var(--app-space-lg);
+  border-top: 1px solid var(--mat-sys-outline-variant);
+
+  .spacer {
+    flex: 1;
+  }
+
+  button {
+    padding: var(--app-space-lg);
+    font-size: 0.95rem;
+    font-weight: 500;
+    border-radius: var(--app-radius-md);
+  }
+
+  .btn-cancel {
+    color: var(--mat-sys-on-surface-variant);
+    border-color: var(--mat-sys-outline);
+  }
+
+  .btn-save {
+    background-color: var(--mat-sys-primary);
+    color: var(--mat-sys-on-primary);
+
+    &:hover {
+      filter: brightness(0.92);
+    }
+  }
+}
+
+// -----------------------------------------------------------------------------
+// Tabela padrão de listagem
+// -----------------------------------------------------------------------------
+%table-container {
+  background-color: var(--mat-sys-surface-container-low);
+  border-radius: var(--app-radius-lg);
+  box-shadow: var(--app-shadow-sm);
+  border: 1px solid var(--mat-sys-outline-variant);
+  border-top: 3px solid var(--mat-sys-primary);
+  overflow: hidden;
+}
+
+%custom-table {
+  width: 100%;
+
+  th.mat-mdc-header-cell {
+    // Mistura com o próprio primary, então acompanha o tema (claro/escuro)
+    // sem precisar de um hex fixo.
+    background-color: var(--mat-sys-primary);
+    color: var(--mat-sys-on-primary);
+    font-weight: 600;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    border: 2px solid var(--mat-sys-primary);
+  }
+
+  td.mat-mdc-cell {
+    color: var(--mat-sys-on-surface);
+    border-bottom: 1px solid var(--mat-sys-surface-container);
+    font-size: 0.95rem;
+    padding-top: 0.75rem;
+    padding-bottom: 0.75rem;
+  }
+
+  .custom-row {
+    transition: background-color 0.2s ease;
+    &:hover {
+      background-color: color-mix(in srgb, var(--mat-sys-primary) 6%, var(--mat-sys-surface-container));
+    }
+  }
+}
+
+%custom-paginator {
+  border-top: 1px solid var(--mat-sys-outline-variant);
+  background-color: var(--mat-sys-surface-container-low);
+}
+
+%filtros-container {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--app-space-md);
+  margin-bottom: 1.25rem;
+
+  .btn-limpar {
+    height: 56px;
+    color: var(--mat-sys-on-surface-variant);
+
+    mat-icon {
+      margin-right: var(--app-space-xs);
+    }
+  }
+}
+
+%fw-500 {
+  font-weight: 500;
+  color: var(--mat-sys-on-surface) !important;
+}
+
+%inline-icon {
+  font-size: 1.1rem;
+  width: 1.1rem;
+  height: 1.1rem;
+  vertical-align: sub;
+  color: var(--mat-sys-on-surface-variant);
+  margin-right: var(--app-space-xs);
+}
+
+%align-right {
+  text-align: right;
+  padding-right: var(--app-space-lg) !important;
+}
+
+%action-btn {
+  color: var(--mat-sys-on-surface-variant);
+  transform: scale(0.9);
+
+  &.edit-btn:hover {
+    color: var(--mat-sys-primary);
+    background-color: var(--app-info-soft-bg);
+  }
+
+  &.delete-btn:hover {
+    color: var(--app-danger);
+    background-color: var(--app-danger-soft-bg);
+  }
+}
+
+%empty-state {
+  text-align: center;
+  padding: 3rem 1rem !important;
+  color: var(--mat-sys-on-surface-variant);
+  font-style: italic;
+}
+
+// -----------------------------------------------------------------------------
+// Padrão de tela de relatório/dashboard: container largo + cabeçalho em linha.
+// Genérico — o grid de cartões específico do domínio fica no bloco
+// PLACEHOLDER logo abaixo.
+// -----------------------------------------------------------------------------
+%report-container {
+  padding: var(--app-space-lg);
+}
+
+%report-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid var(--mat-sys-outline-variant);
+  padding-bottom: 1.25rem;
+  margin-bottom: var(--app-space-lg);
+
+  .title-area {
+    display: flex;
+    flex-direction: column;
+
+    .breadcrumb {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--mat-sys-on-surface-variant);
+      font-weight: 600;
+      margin-bottom: 2px;
+    }
+
+    h2 {
+      margin: 0;
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--mat-sys-primary);
+    }
+  }
+}
+
+%state-message {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  padding: 3rem 1rem;
+  color: var(--mat-sys-on-surface-variant);
+  font-size: 0.9rem;
+
+  mat-icon {
+    font-size: 32px;
+    height: 32px;
+    width: 32px;
+    color: var(--mat-sys-outline);
+  }
+}
+
+// -----------------------------------------------------------------------------
+// PLACEHOLDER — grid de cards de dashboard/relatório
+// -----------------------------------------------------------------------------
+// No projeto anterior isso era um grid de cards de equipamento (`.eq-icon`,
+// `.eq-code`, indicador de status lateral). O layout abaixo é o esqueleto
+// genérico (grid responsivo + card com faixa lateral colorida), sem nomes
+// de domínio. Ajuste/renomeie as classes internas quando o protótipo desta
+// tela existir — o grid e o hover já funcionam prontos.
+// -----------------------------------------------------------------------------
+%card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: var(--app-space-md);
+}
+
+%status-card {
+  display: flex;
+  flex-direction: row;
+  padding: 0 !important;
+  overflow: hidden;
+  box-shadow: var(--app-shadow-sm) !important;
+  transition:
+    transform 0.2s,
+    box-shadow 0.2s;
+
+  &:hover {
+    box-shadow: var(--app-shadow-md) !important;
+    transform: translateY(-2px);
+  }
+
+  // Faixa lateral colorida indicando status — combine com .success/.warning/
+  // .danger/.info (ver %status-chip) ou defina cores próprias do domínio.
+  .status-indicator {
+    width: 6px;
+    flex-shrink: 0;
+  }
+
+  .card-content {
+    padding: 12px 16px;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+}
+
+%status-badge {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 2px 6px;
+  border-radius: var(--app-radius-sm);
+  width: fit-content;
+}
+
+// -----------------------------------------------------------------------------
+// Chip de status (genérico — combine com as classes de cor semântica abaixo).
+// Só os 4 estados semânticos base (success/warning/danger/info) foram
+// mantidos. Os aliases de domínio do projeto anterior (ex.: "disponivel",
+// "emprestado", "manutencao", "entidade") foram removidos — adicione os
+// aliases do seu domínio aqui quando definidos, seguindo o mesmo padrão:
+//
+//   &.novo-estado {
+//     background-color: var(--app-xxx-soft-bg);
+//     color: var(--app-xxx-soft-on);
+//   }
+// -----------------------------------------------------------------------------
+%status-chip {
+  padding: 4px 10px;
+  border-radius: var(--app-radius-pill);
+  font-size: 0.8rem;
+  font-weight: 600;
+  white-space: nowrap;
+  display: inline-block;
+
+  &.success {
+    background-color: var(--app-success-soft-bg);
+    color: var(--app-success-soft-on);
+  }
+
+  &.warning {
+    background-color: var(--app-warning-soft-bg);
+    color: var(--app-warning-soft-on);
+  }
+
+  &.danger {
+    background-color: var(--app-danger-soft-bg);
+    color: var(--app-danger-soft-on);
+  }
+
+  &.info {
+    background-color: var(--app-info-soft-bg);
+    color: var(--app-info-soft-on);
+  }
+}
+
+// NOTA: a classe concreta `.status-chip` (usada nos templates) deve ser
+// declarada uma única vez, de forma global, em styles.scss — não a redeclare
+// dentro de cada componente, senão o CSS duplica em todos os bundles.
+
+// -----------------------------------------------------------------------------
+// Snackbars (globais — SnackBar do Angular Material injeta no <body>, então
+// isso também é importado no styles.scss principal com ::ng-deep/global)
+// -----------------------------------------------------------------------------
+%success-snackbar {
+  --mdc-snackbar-container-color: var(--app-success);
+  --mdc-snackbar-supporting-text-color: var(--app-success-on);
+  font-weight: 500;
+}
+
+%error-snackbar {
+  --mdc-snackbar-container-color: var(--app-danger);
+  --mdc-snackbar-supporting-text-color: var(--app-danger-on);
+  font-weight: 500;
+}

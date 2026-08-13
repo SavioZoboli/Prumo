@@ -1,0 +1,94 @@
+// =============================================================================
+// _themes.scss
+// -----------------------------------------------------------------------------
+// Define os temas claro e escuro do Angular Material (M3 / mat.theme()) com
+// base nas paletas de _palette.scss, e sobrepõe as duas variáveis de sistema
+// que controlam o "branco" e o "preto" da marca (background/surface), já que
+// o M3 gera brancos/pretos puros por padrão e o projeto pede #F4F4F4 / #1C1C1C.
+//
+// mat.theme() (Angular Material 19+) só aceita `primary` e `tertiary` na
+// config de cor — secondary/neutral/neutral-variant/error vêm aninhados
+// dentro do mapa $app-primary-palette (ver _palette.scss).
+//
+// Alternância claro/escuro: adicione/remova a classe `.dark-theme` na tag
+// <html> (ex.: um serviço que grava a preferência em localStorage). O sistema
+// também respeita `prefers-color-scheme` como valor inicial via `color-scheme`.
+// =============================================================================
+
+@use '@angular/material' as mat;
+@use 'palette' as p;
+
+@mixin light-theme-overrides {
+  // Ajusta os extremos de superfície para os neutros de marca (#F4F4F4 fica
+  // a 1.10:1 do branco puro, #1C1C1C a 1.23:1 do preto puro — troca segura,
+  // sem perda perceptível de contraste em relação ao M3 padrão).
+  --mat-sys-surface: #{p.$brand-white};
+  --mat-sys-surface-container-lowest: #{p.$brand-white};
+  --mat-sys-background: #{p.$brand-white};
+  --mat-sys-on-surface: #{p.$brand-black};
+  --mat-sys-on-background: #{p.$brand-black};
+}
+
+@mixin dark-theme-overrides {
+  --mat-sys-surface: #{p.$brand-black};
+  --mat-sys-surface-container-lowest: #{p.$brand-black};
+  --mat-sys-background: #{p.$brand-black};
+  --mat-sys-on-surface: #{p.$brand-white};
+  --mat-sys-on-background: #{p.$brand-white};
+
+  --mat-sys-outline-variant: #707070;
+}
+
+html {
+  height: 100%;
+  color-scheme: light dark;
+
+  // Tema claro (padrão)
+  @include mat.theme(
+    (
+      color: (
+        theme-type: light,
+        primary: p.$app-primary-palette,
+        tertiary: p.$app-tertiary-palette,
+      ),
+      typography: Roboto,
+      density: 0,
+    )
+  );
+  @include light-theme-overrides;
+
+  // Tema escuro, ativado manualmente via classe no <html>
+  &.dark-theme {
+    @include mat.theme(
+      (
+        color: (
+          theme-type: dark,
+          primary: p.$app-primary-palette,
+          tertiary: p.$app-tertiary-palette,
+        ),
+        typography: Roboto,
+        density: 0,
+      )
+    );
+    @include dark-theme-overrides;
+  }
+
+  // Se o usuário não escolheu manualmente (nem .light-theme nem .dark-theme),
+  // segue a preferência do sistema operacional.
+  &:not(.light-theme):not(.dark-theme) {
+    @media (prefers-color-scheme: dark) {
+      @include mat.theme(
+        (
+          color: (
+            theme-type: dark,
+            primary: p.$app-primary-palette,
+            tertiary: p.$app-tertiary-palette,
+          ),
+          typography: Roboto,
+          density: 0,
+        )
+      );
+      @include dark-theme-overrides;
+    }
+  }
+}

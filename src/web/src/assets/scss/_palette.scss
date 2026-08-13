@@ -1,0 +1,189 @@
+// =============================================================================
+// _palette.scss
+// -----------------------------------------------------------------------------
+// Paletas tonais M3 (Material 3 / HCT color space), geradas a partir das cores
+// de marca via @material/material-color-utilities (mesma biblioteca que o
+// schematic oficial `ng generate @angular/material:m3-theme` usa por trás).
+// Estrutura e chaves validadas por compilação real contra @angular/material@19.
+//
+// Cores-fonte:
+//   primária:      #072138  (petróleo)
+//   secundária:    #FA741A  (laranja)
+//   neutra clara:  #F4F4F4
+//   neutra escura: #1C1C1C
+//
+// Por que os tons não batem com o hex literal da marca:
+// Em M3, cada "role" de cor (primary, secondary...) usa um TOM fixo da rampa
+// (40 no tema claro, 80 no escuro) para garantir contraste mínimo de texto.
+// O laranja #FA741A puro, sobre fundo branco, mede só 2.77:1 de contraste
+// (falha texto normal AA, que exige 4.5:1). Por isso a rampa desloca esse
+// laranja para o tom 40 (#9e4300) no papel de "secondary" — que já garante
+// 6.45:1. O hex literal da marca continua disponível como $brand-secondary
+// (e como var(--app-brand-secondary) em _tokens.scss) para uso decorativo
+// (logo, ícones grandes, ilustrações), onde 3:1 já é suficiente.
+// O petróleo #072138 já nasce muito escuro e acessível (16.36:1 sobre branco);
+// no tom 40 da rampa fica em #4a607a (6.47:1), mantendo o mesmo requisito
+// mínimo de contraste dos demais roles.
+//
+// -----------------------------------------------------------------------------
+// Estrutura exigida pelo Angular Material 19 (mat.theme):
+// - mat.theme() só aceita as chaves `primary` e `tertiary` na config de cor.
+// - `primary` precisa ser um mapa com os 16 tons padrão (0,10,20,25,30,35,40,
+//   50,60,70,80,90,95,98,99,100) MAIS as chaves aninhadas `secondary`,
+//   `neutral`, `neutral-variant` e `error` (cada uma com os mesmos 16 tons).
+// - `neutral` exige 10 tons extras e mais finos (4,6,12,17,22,24,87,92,94,96)
+//   usados internamente para os níveis de superfície
+//   (--mat-sys-surface-container-low/high/highest etc.).
+// - Não existe chave `contrast`: o Angular Material decide internamente qual
+//   tom de texto usar sobre cada tom de fundo, seguindo a especificação M3
+//   (é exatamente esse par de tons — 40/branco no claro, 80/preto no escuro —
+//   que já garante os contrastes verificados acima).
+// - `tertiary` é só a rampa simples de 16 tons (sem aninhados).
+// =============================================================================
+
+@use 'sass:map';
+
+// -----------------------------------------------------------------------------
+// Tokens de marca (uso decorativo / logo / grandes áreas ilustrativas)
+// Não usar para texto normal sobre fundo claro sem checar contraste.
+// -----------------------------------------------------------------------------
+$brand-primary: #072138;
+$brand-secondary: #fa741a;
+$brand-white: #f4f4f4;
+$brand-black: #1c1c1c;
+
+// -----------------------------------------------------------------------------
+// Paleta primária + rampas aninhadas (secondary/neutral/neutral-variant/error)
+// -----------------------------------------------------------------------------
+$app-primary-palette: (
+  0: #000000,
+  10: #031d34,
+  20: #1b324a,
+  25: #263d55,
+  30: #324861,
+  35: #3e546e,
+  40: #4a607a,
+  50: #637994,
+  60: #7c93af,
+  70: #96adca,
+  80: #b2c8e6,
+  90: #d1e4ff,
+  95: #e9f1ff,
+  98: #f8f9ff,
+  99: #fdfcff,
+  100: #ffffff,
+  secondary: (
+    0: #000000,
+    10: #341100,
+    20: #552100,
+    25: #662900,
+    30: #783100,
+    35: #8b3a00,
+    40: #9e4300,
+    50: #c55500,
+    60: #ec6a0b,
+    70: #ff8d4c,
+    80: #ffb690,
+    90: #ffdbcb,
+    95: #ffede6,
+    98: #fff8f6,
+    99: #fffbff,
+    100: #ffffff,
+  ),
+  neutral: (
+    0: #000000,
+    10: #1a1c1e,
+    20: #2f3033,
+    25: #3a3b3e,
+    30: #45474a,
+    35: #515255,
+    40: #5d5e61,
+    50: #76777a,
+    60: #909094,
+    70: #ababae,
+    80: #c6c6ca,
+    90: #e2e2e6,
+    95: #f1f0f4,
+    98: #f9f9fc,
+    99: #fdfcff,
+    100: #ffffff,
+    4: #0d0e11,
+    6: #121316,
+    12: #1e2022,
+    17: #282a2d,
+    22: #333538,
+    24: #38393c,
+    87: #dadadd,
+    92: #e8e8eb,
+    94: #eeedf1,
+    96: #f4f3f7,
+  ),
+  neutral-variant: (
+    0: #000000,
+    10: #171c22,
+    20: #2c3137,
+    25: #373c42,
+    30: #42474e,
+    35: #4e535a,
+    40: #5a5f66,
+    50: #73777f,
+    60: #8d9199,
+    70: #a7abb3,
+    80: #c3c7cf,
+    90: #dfe2eb,
+    95: #edf1f9,
+    98: #f8f9ff,
+    99: #fdfcff,
+    100: #ffffff,
+  ),
+  error: (
+    0: #000000,
+    10: #410002,
+    20: #690005,
+    25: #7e0007,
+    30: #93000a,
+    35: #a80710,
+    40: #ba1a1a,
+    50: #de3730,
+    60: #ff5449,
+    70: #ff897d,
+    80: #ffb4ab,
+    90: #ffdad6,
+    95: #ffedea,
+    98: #fff8f7,
+    99: #fffbff,
+    100: #ffffff,
+  ),
+);
+
+// -----------------------------------------------------------------------------
+// Paleta terciária (tom derivado: hue da primária + 60°, usada por alguns
+// componentes do Material como acento adicional — datepicker, sliders etc.)
+// -----------------------------------------------------------------------------
+$app-tertiary-palette: (
+  0: #000000,
+  10: #241432,
+  20: #3a2948,
+  25: #463454,
+  30: #524060,
+  35: #5e4b6c,
+  40: #6a5778,
+  50: #846f92,
+  60: #9e89ad,
+  70: #baa3c9,
+  80: #d6bee5,
+  90: #f2daff,
+  95: #faecff,
+  98: #fff7fd,
+  99: #fffbff,
+  100: #ffffff,
+  // Estes 4 mapas aninhados são exigidos apenas pelo validador de "paleta M3
+  // válida" do Angular Material (mesmas chaves do $primary). Na prática,
+  // secondary/neutral/neutral-variant daqui são descartados e substituídos
+  // pelos de $app-primary-palette — só o `error` de $app-primary-palette é
+  // usado; reaproveitamos os mesmos submapas para não duplicar valores.
+  secondary: map.get($app-primary-palette, secondary),
+  neutral: map.get($app-primary-palette, neutral),
+  neutral-variant: map.get($app-primary-palette, neutral-variant),
+  error: map.get($app-primary-palette, error),
+);
