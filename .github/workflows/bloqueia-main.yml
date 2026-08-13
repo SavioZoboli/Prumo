@@ -1,0 +1,17 @@
+name: Restringe PR para a Main
+
+on:
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  verifica-branch-origem:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checar se a origem é a develop
+        if: github.head_ref != 'develop'
+        run: |
+          echo "ERRO: Pull Requests para a branch 'main' só podem vir da branch 'develop'!"
+          echo "Branch de origem atual: ${{ github.head_ref }}"
+          exit 1
