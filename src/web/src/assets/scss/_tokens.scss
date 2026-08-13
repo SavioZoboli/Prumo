@@ -1,0 +1,69 @@
+// =============================================================================
+// _tokens.scss
+// -----------------------------------------------------------------------------
+// Tokens de apoio que o Angular Material não cobre: espaçamento, raio, sombra
+// e cores semânticas de status (sucesso/alerta/perigo/informação). Todas as
+// cores semânticas foram checadas contra WCAG 2.1 (contraste mínimo 4.5:1
+// para texto normal, 3:1 para texto grande/ícone/UI).
+// =============================================================================
+
+@use 'palette' as p;
+
+:root,
+.dark-theme {
+  // Cores de marca "cruas" — só para uso decorativo/grande escala (logo,
+  // ícones ≥ 24px, ilustrações). --app-brand-secondary (laranja) tem só
+  // 2.77:1 contra branco (abaixo dos 4.5:1 exigidos para texto normal) —
+  // não usar em texto pequeno. --app-brand-primary (petróleo) já é escuro o
+  // suficiente para passar em texto normal isoladamente, mas para
+  // texto/ícone pequeno com significado semântico, prefira sempre
+  // var(--mat-sys-primary) (ver _palette.scss / _themes.scss).
+  --app-brand-primary: #{p.$brand-primary};
+  --app-brand-secondary: #{p.$brand-secondary};
+
+  // Espaçamento
+  --app-space-xs: 0.25rem; // 4px
+  --app-space-sm: 0.5rem; // 8px
+  --app-space-md: 1rem; // 16px
+  --app-space-lg: 1.5rem; // 24px
+  --app-space-xl: 2rem; // 32px
+
+  // Raio de borda
+  --app-radius-sm: 4px;
+  --app-radius-md: 6px;
+  --app-radius-lg: 8px;
+  --app-radius-xl: 12px;
+  --app-radius-pill: 999px;
+
+  // Sombras (mesma alpha nos dois temas: sobre superfície escura o preto
+  // ainda funciona como sombra, só percebido com um pouco menos de força)
+  --app-shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.08);
+  --app-shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+
+  // ---------------------------------------------------------------------------
+  // Cores semânticas de status — pares (fundo forte + texto branco) checados
+  // a 4.5:1+ para uso em snackbars/badges de alto contraste.
+  // ---------------------------------------------------------------------------
+  --app-success: #0c7a57; // 5.33:1 sobre branco (era #10b981 = 2.54:1, falhava AA)
+  --app-success-on: #ffffff;
+  --app-danger: #b91c1c; // 6.47:1 sobre branco (era #ef4444 = 3.76:1, falhava AA)
+  --app-danger-on: #ffffff;
+  --app-warning: #92400e; // 7.09:1 sobre branco, para uso em texto/snackbar
+  --app-warning-on: #ffffff;
+  --app-info: var(--mat-sys-secondary);
+  --app-info-on: var(--mat-sys-on-secondary);
+
+  // ---------------------------------------------------------------------------
+  // Pares suaves para chips de status (fundo claro + texto escuro da mesma
+  // família). Mantidos porque já passam em AA (>= 4.5:1) e servem bem para
+  // "tag" de baixo contraste no fundo, funcionam igual nos dois temas.
+  // ---------------------------------------------------------------------------
+  --app-success-soft-bg: #dcfce7;
+  --app-success-soft-on: #15803d; // 4.57:1
+  --app-warning-soft-bg: #fef3c7;
+  --app-warning-soft-on: #b45309; // 4.51:1
+  --app-danger-soft-bg: #fee2e2;
+  --app-danger-soft-on: #b91c1c; // 5.30:1
+  --app-info-soft-bg: #e0f2fe;
+  --app-info-soft-on: #0369a1; // ~5.6:1
+}

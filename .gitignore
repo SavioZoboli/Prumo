@@ -10,3 +10,7 @@ src/api/.vscode
 src/web/src/environments
 src/api/.env
 
+# Pasta temporária do Angular
+src/web/.angular
+
+
