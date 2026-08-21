@@ -1,5 +1,5 @@
 @use '../../../assets/scss/shared-patterns' as *;
 
 button{
-    @extend %btn;
+    @extend %btn-discrete;
 }

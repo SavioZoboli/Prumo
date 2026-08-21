@@ -1,0 +1,46 @@
+@switch (variant) {
+  @case ('secondary') {
+    <button
+      mat-stroked-button
+      [type]="type"
+      [disabled]="disabled || loading"
+      class="app-button"
+      [class.app-button--full]="fullWidth"
+    >
+      <ng-container *ngTemplateOutlet="content"></ng-container>
+    </button>
+  }
+  @case ('text') {
+    <button
+      mat-button
+      [type]="type"
+      [disabled]="disabled || loading"
+      class="app-button"
+      [class.app-button--full]="fullWidth"
+    >
+      <ng-container *ngTemplateOutlet="content"></ng-container>
+    </button>
+  }
+  @default {
+    <button
+      mat-flat-button
+      color="primary"
+      [type]="type"
+      [disabled]="disabled || loading"
+      class="app-button"
+      [class.app-button--full]="fullWidth"
+    >
+      <ng-container *ngTemplateOutlet="content"></ng-container>
+    </button>
+  }
+}
+
+<ng-template #content>
+  <mat-progress-spinner
+    *ngIf="loading"
+    diameter="20"
+    mode="indeterminate"
+    class="app-button__spinner"
+  ></mat-progress-spinner>
+  <span *ngIf="!loading">{{ label }}</span>
+</ng-template>

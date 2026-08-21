@@ -1,9 +1,39 @@
-<form>
-    <mat-form-field>
-        <mat-label>Usuário</mat-label>
-        <input matInput>
-    </mat-form-field>
-    
-</form>
+<div class="login-page">
+  <div class="login-page__bg_image">
+  </div>
 
-<app-theme-toggler></app-theme-toggler>
+  <div class="login-page__form-panel">
+    <div class="login-page__form-content">
+      <img class="login-page__image" src="/logo/logo.svg">
+      <h1>Identifique-se para entrar.</h1>
+
+      <form [formGroup]="loginForm" (ngSubmit)="onSubmit()" class="login-page__form">
+        <app-input
+          label="Usuário"
+          placeholder="Ex: John Doe"
+          icon="user"
+          [required]="true"
+          formControlName="username"
+          [hasError]="!!username?.invalid && !!username?.touched"
+          errorMessage="Usuário é obrigatório"
+        ></app-input>
+
+        <app-input
+          label="Senha"
+          type="password"
+          icon="lock"
+          [required]="true"
+          formControlName="password"
+          [hasError]="!!password?.invalid && !!password?.touched"
+          errorMessage="Senha é obrigatória"
+        ></app-input>
+
+        <app-button label="ENTRAR" type="submit" [loading]="loading"></app-button>
+        <app-theme-toggler></app-theme-toggler>
+      </form>
+
+      <p class="login-page__footer">© 2026 PRUMO INDUSTRIAL OS</p>
+    </div>
+  </div>
+</div>
+

@@ -1,0 +1,19 @@
+<mat-form-field appearance="outline" class="app-input">
+  <mat-label *ngIf="label">
+    {{ label }}<span *ngIf="required" class="app-input__required">&nbsp;*</span>
+  </mat-label>
+
+  <mat-icon matPrefix *ngIf="icon" class="app-input__icon">{{ matIconName }}</mat-icon>
+
+  <input
+    matInput
+    [type]="type"
+    [placeholder]="placeholder"
+    [value]="value"
+    [disabled]="disabled"
+    (input)="handleInput($event)"
+    (blur)="handleBlur()"
+  />
+
+  <mat-error *ngIf="hasError && errorMessage">{{ errorMessage }}</mat-error>
+</mat-form-field>

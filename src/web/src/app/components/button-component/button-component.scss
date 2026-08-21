@@ -1,0 +1,25 @@
+:host {
+  display: block;
+  width: 100%;
+}
+
+// Cor/tipografia/estado disabled já vêm do tema M3 via mat-flat-button /
+// mat-stroked-button / mat-button + color="primary". Só cobrimos aqui o
+// que o Material não resolve: largura total e alinhamento do spinner.
+.app-button {
+  height: 44px;
+  border-radius: var(--app-radius-md);
+
+  &--full {
+    width: 100%;
+  }
+}
+
+.app-button__spinner {
+  display: inline-flex;
+  margin: 0 auto;
+
+  ::ng-deep circle {
+    stroke: var(--mat-sys-on-primary);
+  }
+}
