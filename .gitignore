@@ -13,4 +13,4 @@ src/api/.env
 # Pasta temporária do Angular
 src/web/.angular
 
-
+src/api/dist
