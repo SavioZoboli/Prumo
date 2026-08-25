@@ -1,0 +1,129 @@
+:host {
+  display: block;
+  min-height: 100vh;
+  background: var(--mat-sys-surface-container-lowest);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--app-space-lg);
+}
+
+.login-page {
+  display: flex;
+  width: 100%;
+  max-width: 1000px;
+  min-height: 540px;
+  border-radius: var(--app-radius-xl);
+  overflow: hidden;
+  box-shadow: var(--app-shadow-md);
+  background: var(--mat-sys-surface);
+  border: 1px solid var(--mat-sys-outline-variant);
+
+  &__bg_image{
+    flex: 1;
+
+    background-image: url('/img/factory.avif');
+    background-size:cover;
+
+    @media (min-width: 768px) {
+      display: block;
+    }
+  }
+
+  &__image {
+    flex: 1;
+    display: none;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    margin-bottom:30px;
+
+    @media (min-width: 768px) {
+      display: block;
+    }
+  }
+
+  &__form-panel {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: var(--app-space-xl) var(--app-space-xl);
+  }
+
+  &__form-content {
+    width: 100%;
+    max-width: 320px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
+
+  &__logo {
+    width: 64px;
+    height: 64px;
+    border-radius: var(--app-radius-xl);
+    background: var(--mat-sys-surface-container-high);
+    margin-bottom: var(--app-space-lg);
+    // Espaço reservado para inserir a logo (imagem/SVG)
+  }
+
+  &__title {
+    font-size: 1.75rem;
+    font-weight: 800;
+    color: var(--mat-sys-on-surface);
+    margin: 0;
+  }
+
+  &__subtitle {
+    font-size: 0.875rem;
+    color: var(--mat-sys-on-surface-variant);
+    margin: var(--app-space-xs) 0 var(--app-space-xl);
+  }
+
+  &__form {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: var(--app-space-md);
+    text-align: left;
+    align-items: flex-end;
+  }
+
+  &__password-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: calc(-1 * var(--app-space-sm));
+  }
+
+  &__password-label {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--mat-sys-on-surface);
+  }
+
+  &__required {
+    color: var(--app-danger);
+  }
+
+  &__forgot-link {
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: var(--mat-sys-tertiary);
+    cursor: pointer;
+    text-decoration: none;
+
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+
+  &__footer {
+    margin-top: var(--app-space-xl);
+    font-size: 0.6875rem;
+    letter-spacing: 0.05em;
+    color: var(--mat-sys-on-surface-variant);
+  }
+}
