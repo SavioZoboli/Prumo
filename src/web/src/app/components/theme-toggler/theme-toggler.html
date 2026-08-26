@@ -1,1 +1,3 @@
-<button mat-flat-button (click)="toggleService.toggleTheme()">Toggle</button>
+<button mat-mini-fab (click)="toggleService.toggleTheme()">
+    <mat-icon>{{toggleService.isDarkTheme()?'light_mode':'dark_mode'}}</mat-icon>
+</button>

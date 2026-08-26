@@ -7,7 +7,7 @@
 //
 @use './assets/scss/themes';
 @use './assets/scss/tokens';
-@use './assets/scss/shared-patterns' as shared;
+@use './assets/scss/shared-patterns' as *;
 
 body {
   color-scheme: light dark;
@@ -32,3 +32,6 @@ html {
     'opsz' 24;
 }
 
+.success-snackbar {
+  @extend %success-snackbar;
+}
