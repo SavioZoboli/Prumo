@@ -5,6 +5,7 @@ import { dataSourceOptions } from './database/data-source';
 import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { UsuarioModule } from './usuarios/usuario.module';
+import { AuthModule } from './auth/auth.module';
 import { FornecedorModule } from './fornecedores/fornecedor.module';
 
 @Module({
@@ -16,6 +17,7 @@ import { FornecedorModule } from './fornecedores/fornecedor.module';
     }),
 
     UsuarioModule,
+    AuthModule,
     FornecedorModule,
   ],
   controllers: [AppController],

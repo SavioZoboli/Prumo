@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post } from "@nestjs/common";
+import { Body, Controller, Delete, Get, Param, Patch, Post, UseGuards } from "@nestjs/common";
 import { UpdateUsuarioDto } from "./dto/update-usuario.dto";
 import { CreateUsuarioDto } from "./dto/create-usuario.dto";
 import { Usuario } from "./usuario.entity";
@@ -9,9 +9,9 @@ import {
   ApiResponse,
   ApiParam,
 } from '@nestjs/swagger';
+import { JwtAuthGuard } from "../auth/jwt-auth.guard";
 
 @ApiTags('Usuários')
-@Controller('usuarios')
 @Controller('usuarios')
 export class UsuarioController {
   constructor(private readonly usuarioService: UsuarioService) {}
@@ -23,6 +23,7 @@ export class UsuarioController {
   type: Usuario,
 })
 @Post()
+@UseGuards(JwtAuthGuard)
 async create(
   @Body() createUsuarioDto: CreateUsuarioDto,
 ): Promise<Usuario> {
@@ -36,6 +37,7 @@ async create(
   type: [Usuario],
 })
 @Get()
+@UseGuards(JwtAuthGuard)
 findAll() {
   return this.usuarioService.findAll();
 }
@@ -56,6 +58,7 @@ findAll() {
   description: 'Usuário não encontrado.',
 })
 @Get(':id')
+@UseGuards(JwtAuthGuard)
 findOne(@Param('id') id: number) {
   return this.usuarioService.findOne(id);
 }
@@ -76,6 +79,7 @@ findOne(@Param('id') id: number) {
   description: 'Usuário não encontrado.',
 })
 @Patch(':id')
+@UseGuards(JwtAuthGuard)
 update(
   @Param('id') id: number,
   @Body() updateUsuarioDto: UpdateUsuarioDto,
@@ -109,6 +113,7 @@ update(
   },
 })
 @Delete(':id')
+@UseGuards(JwtAuthGuard)
 remove(@Param('id') id: number) {
   return this.usuarioService.desativar(id);
 }

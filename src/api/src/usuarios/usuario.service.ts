@@ -5,6 +5,7 @@ import { UpdateUsuarioDto } from "./dto/update-usuario.dto";
 import { ConflictException } from '@nestjs/common';
 import { CreateUsuarioDto } from "./dto/create-usuario.dto";
 import { InjectRepository } from "@nestjs/typeorm";
+import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class UsuarioService {
@@ -15,6 +16,7 @@ export class UsuarioService {
 
  async create(createUsuarioDto: CreateUsuarioDto): Promise<Usuario> {
   try {
+     const senhaHash = await bcrypt.hash(createUsuarioDto.senha, 10)
     return await this.usuarioRepository.save(createUsuarioDto);
 } catch (error: any) {
         if (error.code === '23505') {
@@ -37,6 +39,10 @@ export class UsuarioService {
         where: { id},
     });
 
+}
+
+async findByUsuario(usuario: string): Promise<Usuario | null> {
+  return this.usuarioRepository.findOne({ where: { usuario } });
 }
 
 async update(
