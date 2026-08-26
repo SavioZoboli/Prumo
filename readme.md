@@ -112,3 +112,14 @@ npm run migration:run                                                    # aplic
 npm run migration:revert                                                  # desfaz a última migration aplicada
 
 Ao rodar npm run start:dev, as migrations pendentes já são aplicadas.
+
+4. Variável do JWT (autenticação):
+
+**Sobre o `JWT_SECRET`:** é a chave usada para assinar e validar o token de login. Cada
+desenvolvedor deve gerar o próprio valor localmente. Gere o seu com:
+
+bash
+node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+
+Copie o resultado para `JWT_SECRET` no seu `src/api/.env`. Em ambientes compartilhados (HML/produção), o segredo é configurado direto no
+servidor, fora do repositório.
