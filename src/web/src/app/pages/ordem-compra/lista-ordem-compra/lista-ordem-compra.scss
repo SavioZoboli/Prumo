@@ -1,0 +1,54 @@
+@use '../../../../assets/scss/shared-patterns' as *;
+
+:host {
+  display: block;
+  min-height: 100vh;
+  background-color: var(--mat-sys-surface);
+  color: var(--mat-sys-on-surface);
+}
+
+.ordens-compra-page {
+  @extend %page-container;
+
+  min-height: 100vh;
+  box-sizing: border-box;
+
+  &__header {
+    @extend %page-header;
+
+    .title-area p {
+      margin: var(--app-space-xs) 0 0;
+      color: var(--mat-sys-on-surface-variant);
+    }
+
+    .action-area {
+      flex-shrink: 0;
+
+      app-button {
+        width: auto;
+      }
+    }
+  }
+
+  &__table-container {
+    @extend %table-container;
+  }
+
+  &__table {
+    @extend %custom-table;
+  }
+}
+
+@media (max-width: 768px) {
+  .ordens-compra-page {
+    &__header.with-actions {
+      align-items: stretch;
+      flex-direction: column;
+      gap: var(--app-space-lg);
+    }
+
+    &__table-container {
+      overflow-x: auto;
+    }
+  }
+}
