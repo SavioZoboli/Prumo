@@ -1,0 +1,41 @@
+<mat-sidenav-container class="layout-container">
+  <mat-sidenav
+    #drawer
+    class="sidenav"
+    [mode]="(isHandset$ | async) ? 'over' : 'side'"
+    [opened]="(isHandset$ | async) === false"
+  >
+    <div class="sidenav-header">
+      <img src="/logo/logo.svg">
+    </div>
+
+    <nav class="sidenav-menu">
+      @for (item of navItems; track item.route) {
+        <a class="menu-item" [routerLink]="item.route" routerLinkActive="active">
+          <mat-icon>{{ item.icon }}</mat-icon>
+          <span>{{ item.label }}</span>
+        </a>
+      }
+    </nav>
+
+    <div class="sidenav-footer">
+      <app-theme-toggler />
+      <a class="logout-link" href="/login">
+        <mat-icon>logout</mat-icon>
+        <span>Sair</span>
+      </a>
+    </div>
+  </mat-sidenav>
+
+  <mat-sidenav-content class="content">
+    @if (isHandset$ | async) {
+      <mat-toolbar class="mobile-toolbar">
+        <button mat-icon-button type="button" (click)="drawer.toggle()">
+          <mat-icon>menu</mat-icon>
+        </button>
+      </mat-toolbar>
+    }
+
+    <ng-content />
+  </mat-sidenav-content>
+</mat-sidenav-container>
