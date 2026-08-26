@@ -1,0 +1,285 @@
+<div class="usuarios-page">
+
+  <header class="usuarios-page__header with-actions">
+    <div class="title-area">
+      <span class="breadcrumb">Administração</span>
+
+      <h2>Usuários</h2>
+
+      <p>Gerencie os usuários e seus níveis de acesso.</p>
+    </div>
+
+    <div class="action-area">
+      <app-button
+        label="+ NOVO USUÁRIO"
+        [fullWidth]="false"
+        (click)="abrirCadastro()"
+      ></app-button>
+    </div>
+  </header>
+
+  <section class="usuarios-page__table-container">
+
+    <table
+      mat-table
+      [dataSource]="usuarios"
+      class="usuarios-page__table"
+    >
+
+      <ng-container matColumnDef="nome">
+        <th mat-header-cell *matHeaderCellDef>
+          Nome
+        </th>
+
+        <td mat-cell *matCellDef="let item">
+          {{ item.nome }} {{ item.sobrenome }}
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="usuario">
+        <th mat-header-cell *matHeaderCellDef>
+          Usuário
+        </th>
+
+        <td mat-cell *matCellDef="let item">
+          {{ item.usuario }}
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="email">
+        <th mat-header-cell *matHeaderCellDef>
+          E-mail
+        </th>
+
+        <td mat-cell *matCellDef="let item">
+          {{ item.email }}
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="perfil">
+        <th mat-header-cell *matHeaderCellDef>
+          Perfil
+        </th>
+
+        <td mat-cell *matCellDef="let item">
+          {{ formatarPerfil(item.perfil) }}
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="status">
+        <th mat-header-cell *matHeaderCellDef>
+          Status
+        </th>
+
+        <td mat-cell *matCellDef="let item">
+
+          <span
+            class="usuarios-page__status"
+            [class.success]="item.ativo"
+            [class.danger]="!item.ativo"
+          >
+            {{ item.ativo ? 'Ativo' : 'Inativo' }}
+          </span>
+
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="acoes">
+        <th mat-header-cell *matHeaderCellDef>
+          Ações
+        </th>
+
+        <td mat-cell *matCellDef="let item">
+
+          <button
+            mat-icon-button
+            type="button"
+            aria-label="Editar usuário"
+            (click)="abrirEdicao(item)"
+          >
+            <mat-icon>edit</mat-icon>
+          </button>
+
+        </td>
+      </ng-container>
+
+      <tr
+        mat-header-row
+        *matHeaderRowDef="colunasExibidas"
+      ></tr>
+
+      <tr
+        mat-row
+        *matRowDef="let row; columns: colunasExibidas"
+        class="custom-row"
+      ></tr>
+
+    </table>
+
+  </section>
+
+
+  <aside
+    class="usuarios-page__drawer"
+    [class.usuarios-page__drawer--open]="painelAberto"
+  >
+
+    <div class="usuarios-page__drawer-header">
+
+      <div>
+
+        <h2>
+          {{
+            usuarioEmEdicao
+              ? 'Editar Usuário'
+              : 'Cadastro de Usuário'
+          }}
+        </h2>
+
+        <p>
+          {{
+            usuarioEmEdicao
+              ? 'Altere os dados do usuário.'
+              : 'Preencha os dados do novo usuário.'
+          }}
+        </p>
+
+      </div>
+
+      <button
+        mat-icon-button
+        type="button"
+        aria-label="Fechar cadastro"
+        (click)="fecharCadastro()"
+      >
+        <mat-icon>close</mat-icon>
+      </button>
+
+    </div>
+
+
+    <form
+      [formGroup]="usuarioForm"
+      (ngSubmit)="salvarUsuario()"
+      class="usuarios-page__form"
+    >
+
+      <app-input
+        label="Nome"
+        placeholder="Ex: John"
+        [required]="true"
+        formControlName="nome"
+        [hasError]="!!nome?.invalid && !!nome?.touched"
+        errorMessage="Nome é obrigatório"
+      ></app-input>
+
+
+      <app-input
+        label="Sobrenome"
+        placeholder="Ex: Doe"
+        [required]="true"
+        formControlName="sobrenome"
+        [hasError]="!!sobrenome?.invalid && !!sobrenome?.touched"
+        errorMessage="Sobrenome é obrigatório"
+      ></app-input>
+
+
+      <app-input
+        label="E-mail"
+        type="email"
+        placeholder="Ex: john.doe@prumo.com"
+        [required]="true"
+        formControlName="email"
+        [hasError]="!!email?.invalid && !!email?.touched"
+        errorMessage="Informe um e-mail válido"
+      ></app-input>
+
+
+      <app-input
+        label="Usuário"
+        placeholder="Ex: john.doe"
+        [required]="true"
+        formControlName="usuario"
+        [hasError]="!!usuario?.invalid && !!usuario?.touched"
+        errorMessage="Usuário é obrigatório"
+      ></app-input>
+
+
+      <app-input
+        [label]="usuarioEmEdicao ? 'Nova senha' : 'Senha'"
+        type="password"
+        [placeholder]="
+          usuarioEmEdicao
+            ? 'Preencha somente se quiser alterar'
+            : ''
+        "
+        [required]="!usuarioEmEdicao"
+        formControlName="senha"
+        [hasError]="!!senha?.invalid && !!senha?.touched"
+        errorMessage="Senha é obrigatória"
+      ></app-input>
+
+
+      <mat-form-field appearance="outline">
+
+        <mat-label>
+          Perfil
+        </mat-label>
+
+        <mat-select formControlName="perfil">
+
+          <mat-option value="ADMIN">
+            Administrador
+          </mat-option>
+
+          <mat-option value="LIDER">
+            Líder
+          </mat-option>
+
+          <mat-option value="USUARIO">
+            Usuário
+          </mat-option>
+
+        </mat-select>
+
+      </mat-form-field>
+
+
+      <mat-slide-toggle formControlName="ativo">
+        Usuário ativo
+      </mat-slide-toggle>
+
+
+      <div class="usuarios-page__form-actions">
+
+        <app-button
+          label="CANCELAR"
+          type="button"
+          variant="secondary"
+          [fullWidth]="false"
+          (click)="fecharCadastro()"
+        ></app-button>
+
+
+        <app-button
+          [label]="usuarioEmEdicao ? 'ATUALIZAR' : 'SALVAR'"
+          type="submit"
+          [loading]="salvando"
+          [fullWidth]="false"
+        ></app-button>
+
+      </div>
+
+    </form>
+
+  </aside>
+
+
+  @if (painelAberto) {
+    <div
+      class="usuarios-page__backdrop"
+      (click)="fecharCadastro()"
+    ></div>
+  }
+
+</div>
