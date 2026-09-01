@@ -6,7 +6,7 @@ import { MatInputModule } from '@angular/material/input';
 import { MatIconModule } from '@angular/material/icon';
 
 export type InputIcon = 'user' | 'lock' | null;
-export type InputType = 'text' | 'password' | 'email';
+export type InputType = 'text' | 'password' | 'email' | 'number';
 
 @Component({
   selector: 'app-input',

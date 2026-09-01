@@ -1,0 +1,155 @@
+<div class="movimentacao-form">
+
+  @if (aberto) {
+    <div class="movimentacao-form__backdrop" (click)="fecharPainel()"></div>
+  }
+
+  <aside
+    class="movimentacao-form__drawer"
+    [class.movimentacao-form__drawer--open]="aberto"
+  >
+
+    <div class="movimentacao-form__drawer-header">
+
+      <div>
+        <h2>
+          {{ movimentacaoEmEdicao ? 'Editar Movimentação' : 'Cadastro de Movimentação' }}
+        </h2>
+
+        <p>
+          {{
+            movimentacaoEmEdicao
+              ? 'Altere os dados da movimentação.'
+              : 'Informe o tipo de operação e os materiais movimentados.'
+          }}
+        </p>
+      </div>
+
+      <button
+        mat-icon-button
+        type="button"
+        aria-label="Fechar cadastro"
+        (click)="fecharPainel()"
+      >
+        <mat-icon>close</mat-icon>
+      </button>
+
+    </div>
+
+
+    <form
+      [formGroup]="movimentacaoForm"
+      (ngSubmit)="salvarMovimentacao()"
+      class="movimentacao-form__form"
+    >
+
+      <mat-form-field appearance="outline">
+        <mat-label>Tipo de operação</mat-label>
+
+        <mat-select formControlName="operacao">
+          <mat-option value="E">Entrada</mat-option>
+          <mat-option value="S">Saída</mat-option>
+        </mat-select>
+
+        @if (operacao?.hasError('required')) {
+          <mat-error>Selecione o tipo de operação</mat-error>
+        }
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Ordem de compra vinculada (opcional)</mat-label>
+
+        <mat-select formControlName="ordemCompra">
+          <mat-option [value]="null">Nenhuma</mat-option>
+          @for (ordem of ordensCompraDisponiveis; track ordem.numero) {
+            <mat-option [value]="ordem">
+              OC #{{ ordem.numero }}
+            </mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+
+      <app-input
+        label="Motivo (opcional)"
+        placeholder="Ex: Ajuste de inventário, uso em produção..."
+        formControlName="motivo"
+      ></app-input>
+
+
+      <div class="movimentacao-form__itens-header">
+        <span class="section-label">Materiais</span>
+      </div>
+
+      <div formArrayName="itens" class="movimentacao-form__itens">
+        @for (grupo of itens.controls; track grupo; let i = $index) {
+          <div class="movimentacao-form__item" [formGroupName]="i">
+
+            <mat-form-field appearance="outline" class="movimentacao-form__item-material">
+              <mat-label>Material</mat-label>
+
+              <mat-select formControlName="material">
+                @for (material of materiaisDisponiveis; track material.codigo) {
+                  <mat-option [value]="material">
+                    {{ material.nome }} ({{ material.estoqueAtual }} un. em estoque)
+                  </mat-option>
+                }
+              </mat-select>
+            </mat-form-field>
+
+            <app-input
+              class="movimentacao-form__item-quantidade"
+              label="Qtd"
+              type="number"
+              [required]="true"
+              formControlName="quantidade"
+            ></app-input>
+
+            <button
+              mat-icon-button
+              type="button"
+              aria-label="Remover item"
+              [disabled]="itens.length === 1"
+              (click)="removerItem(i)"
+            >
+              <mat-icon>delete</mat-icon>
+            </button>
+
+          </div>
+        }
+      </div>
+
+      <button
+        mat-icon-button
+        type="button"
+        class="movimentacao-form__add-item"
+        aria-label="Adicionar item"
+        (click)="adicionarItem()"
+      >
+        <mat-icon>add_circle</mat-icon>
+        <span>Adicionar item</span>
+      </button>
+
+      <div class="movimentacao-form__form-actions">
+
+        <app-button
+          label="CANCELAR"
+          type="button"
+          variant="secondary"
+          [fullWidth]="false"
+          (click)="fecharPainel()"
+        ></app-button>
+
+        <app-button
+          [label]="movimentacaoEmEdicao ? 'ATUALIZAR' : 'SALVAR'"
+          type="submit"
+          [loading]="salvando"
+          [fullWidth]="false"
+        ></app-button>
+
+      </div>
+
+    </form>
+
+  </aside>
+
+</div>
