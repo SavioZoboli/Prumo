@@ -1,0 +1,355 @@
+<div class="materiais-page">
+
+  <header class="materiais-page__header with-actions">
+    <div class="title-area">
+      <span class="breadcrumb">Estoque</span>
+      <h2>Materiais</h2>
+      <p>Gerencie os materiais e seus níveis de estoque.</p>
+    </div>
+
+    <div class="action-area">
+      <app-button
+        label="+ NOVO MATERIAL"
+        [fullWidth]="false"
+        (click)="abrirCadastro()"
+      ></app-button>
+    </div>
+  </header>
+
+
+  <!-- TABELA -->
+  <section class="materiais-page__table-container">
+
+    <table
+      mat-table
+      [dataSource]="materiais"
+      class="materiais-page__table"
+    >
+
+      <!-- CÓDIGO -->
+      <ng-container matColumnDef="codigo">
+        <th mat-header-cell *matHeaderCellDef>
+          Código
+        </th>
+
+        <td mat-cell *matCellDef="let item">
+          {{ item.codigo }}
+        </td>
+      </ng-container>
+
+
+      <!-- MATERIAL -->
+      <ng-container matColumnDef="nome">
+        <th mat-header-cell *matHeaderCellDef>
+          Material
+        </th>
+
+        <td mat-cell *matCellDef="let item">
+          {{ item.nome }}
+        </td>
+      </ng-container>
+
+
+      <!-- EQUIPAMENTO -->
+      <ng-container matColumnDef="equipamento">
+        <th mat-header-cell *matHeaderCellDef>
+          Equipamento
+        </th>
+
+        <td mat-cell *matCellDef="let item">
+          {{ item.equipamento }}
+        </td>
+      </ng-container>
+
+
+      <!-- FABRICANTE -->
+      <ng-container matColumnDef="fabricante">
+        <th mat-header-cell *matHeaderCellDef>
+          Fabricante
+        </th>
+
+        <td mat-cell *matCellDef="let item">
+          {{ item.fabricante }}
+        </td>
+      </ng-container>
+
+
+      <!-- ESTOQUE -->
+      <ng-container matColumnDef="estoque">
+        <th mat-header-cell *matHeaderCellDef>
+          Estoque
+        </th>
+
+        <td mat-cell *matCellDef="let item">
+          <div class="materiais-page__estoque-info">
+
+            <span>
+              {{ item.estoqueAtual }} {{ item.unidadeMedida }}
+              / mín. {{ item.estoqueMinimo }}
+            </span>
+
+            <span
+              class="materiais-page__estoque-status"
+              [ngClass]="classeStatusEstoque(item)"
+            >
+              {{ statusEstoque(item) }}
+            </span>
+
+          </div>
+        </td>
+      </ng-container>
+
+
+      <!-- ÚLTIMO VALOR -->
+      <ng-container matColumnDef="ultimoValor">
+        <th mat-header-cell *matHeaderCellDef>
+          Último valor
+        </th>
+
+        <td mat-cell *matCellDef="let item">
+          {{ formatarValor(item.ultimoValor) }}
+        </td>
+      </ng-container>
+
+
+      <!-- STATUS -->
+      <ng-container matColumnDef="status">
+        <th mat-header-cell *matHeaderCellDef>
+          Status
+        </th>
+
+        <td mat-cell *matCellDef="let item">
+          <span
+            class="materiais-page__status"
+            [class.success]="item.ativo"
+            [class.danger]="!item.ativo"
+          >
+            {{ item.ativo ? 'Ativo' : 'Inativo' }}
+          </span>
+        </td>
+      </ng-container>
+
+
+      <!-- AÇÕES -->
+      <ng-container matColumnDef="acoes">
+        <th mat-header-cell *matHeaderCellDef>
+          Ações
+        </th>
+
+        <td mat-cell *matCellDef="let item">
+          <button
+            mat-icon-button
+            type="button"
+            aria-label="Editar material"
+            (click)="abrirEdicao(item)"
+          >
+            <mat-icon>edit</mat-icon>
+          </button>
+        </td>
+      </ng-container>
+
+
+      <tr
+        mat-header-row
+        *matHeaderRowDef="colunasExibidas"
+      ></tr>
+
+      <tr
+        mat-row
+        *matRowDef="let row; columns: colunasExibidas"
+        class="custom-row"
+      ></tr>
+
+    </table>
+
+  </section>
+
+
+  <!-- DRAWER CADASTRO / EDIÇÃO -->
+  <aside
+    class="materiais-page__drawer"
+    [class.materiais-page__drawer--open]="painelAberto"
+  >
+
+    <div class="materiais-page__drawer-header">
+
+      <div>
+        <h2>
+          {{
+            materialEmEdicao
+              ? 'Editar Material'
+              : 'Cadastro de Material'
+          }}
+        </h2>
+
+        <p>
+          {{
+            materialEmEdicao
+              ? 'Altere os dados do material.'
+              : 'Preencha os dados do novo material.'
+          }}
+        </p>
+      </div>
+
+      <button
+        mat-icon-button
+        type="button"
+        aria-label="Fechar cadastro"
+        (click)="fecharCadastro()"
+      >
+        <mat-icon>close</mat-icon>
+      </button>
+
+    </div>
+
+
+    <!-- FORMULÁRIO -->
+    <form
+      [formGroup]="materialForm"
+      (ngSubmit)="salvarMaterial()"
+      class="materiais-page__form"
+    >
+
+      <!-- NOME -->
+      <app-input
+        label="Nome"
+        placeholder="Ex: Inserto de torneamento"
+        [required]="true"
+        formControlName="nome"
+        [hasError]="!!nome?.invalid && !!nome?.touched"
+        errorMessage="Nome é obrigatório"
+      ></app-input>
+
+
+      <!-- CÓDIGO -->
+      <app-input
+        label="Código"
+        placeholder="Ex: CNMG120408"
+        [required]="true"
+        formControlName="codigo"
+        [hasError]="!!codigo?.invalid && !!codigo?.touched"
+        errorMessage="Código é obrigatório"
+      ></app-input>
+
+
+      <!-- EQUIPAMENTO -->
+      <app-input
+        label="Equipamento"
+        placeholder="Ex: Torno CNC"
+        [required]="true"
+        formControlName="equipamento"
+        [hasError]="!!equipamento?.invalid && !!equipamento?.touched"
+        errorMessage="Equipamento é obrigatório"
+      ></app-input>
+
+
+      <!-- FABRICANTE -->
+      <mat-form-field appearance="outline">
+        <mat-label>Fabricante</mat-label>
+
+        <mat-select formControlName="fabricante">
+
+          @for (fabricante of fabricantes; track fabricante) {
+            <mat-option [value]="fabricante">
+              {{ fabricante }}
+            </mat-option>
+          }
+
+        </mat-select>
+      </mat-form-field>
+
+
+      <!-- UNIDADE DE MEDIDA -->
+      <mat-form-field appearance="outline">
+        <mat-label>Unidade de medida</mat-label>
+
+        <mat-select formControlName="unidadeMedida">
+
+          @for (unidade of unidadesMedida; track unidade) {
+            <mat-option [value]="unidade">
+              {{ unidade }}
+            </mat-option>
+          }
+
+        </mat-select>
+      </mat-form-field>
+
+
+      <!-- LOCALIZAÇÃO -->
+      <app-input
+        label="Localização"
+        placeholder="Ex: A-01"
+        formControlName="localizacao"
+      ></app-input>
+
+
+      <!-- ESTOQUE MÍNIMO -->
+      <app-input
+        label="Estoque mínimo"
+        placeholder="Ex: 10"
+        [required]="true"
+        formControlName="estoqueMinimo"
+        [hasError]="!!estoqueMinimo?.invalid && !!estoqueMinimo?.touched"
+        errorMessage="Informe um estoque mínimo válido"
+      ></app-input>
+
+
+      <!-- ESTOQUE ATUAL -->
+      <app-input
+        label="Estoque atual"
+        placeholder="Ex: 25"
+        [required]="true"
+        formControlName="estoqueAtual"
+        [hasError]="!!estoqueAtual?.invalid && !!estoqueAtual?.touched"
+        errorMessage="Informe um estoque válido"
+      ></app-input>
+
+
+      <!-- ÚLTIMO VALOR -->
+      <app-input
+        label="Último valor"
+        placeholder="Ex: 25,90"
+        formControlName="ultimoValor"
+      ></app-input>
+
+
+      <!-- ATIVO -->
+      <mat-slide-toggle formControlName="ativo">
+        Material ativo
+      </mat-slide-toggle>
+
+
+      <!-- BOTÕES -->
+      <div class="materiais-page__form-actions">
+
+        <app-button
+          label="CANCELAR"
+          type="button"
+          variant="secondary"
+          [fullWidth]="false"
+          (click)="fecharCadastro()"
+        ></app-button>
+
+        <app-button
+          [label]="materialEmEdicao ? 'ATUALIZAR' : 'SALVAR'"
+          type="submit"
+          [loading]="salvando"
+          [fullWidth]="false"
+        ></app-button>
+
+      </div>
+
+    </form>
+
+  </aside>
+
+
+  <!-- FUNDO ESCURO DO DRAWER -->
+  @if (painelAberto) {
+    <div
+      class="materiais-page__backdrop"
+      (click)="fecharCadastro()"
+    ></div>
+  }
+
+</div>

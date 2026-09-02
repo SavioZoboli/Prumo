@@ -1,0 +1,148 @@
+@use '../../../assets/scss/shared-patterns' as *;
+
+:host {
+  display: block;
+  background-color: var(--mat-sys-surface);
+  color: var(--mat-sys-on-surface);
+}
+
+.materiais-page {
+  @extend %page-container;
+
+  min-height: calc(100vh - 48px);
+  box-sizing: border-box;
+
+  &__header {
+    @extend %page-header;
+
+    .title-area p {
+      margin: var(--app-space-xs) 0 0;
+      color: var(--mat-sys-on-surface-variant);
+    }
+
+    .action-area {
+      flex-shrink: 0;
+
+      app-button {
+        width: auto;
+      }
+    }
+  }
+
+  &__table-container {
+    @extend %table-container;
+    overflow-x: auto;
+  }
+
+  &__table {
+    @extend %custom-table;
+
+    min-width: 900px;
+  }
+
+  &__status {
+    @extend %status-chip;
+  }
+
+  &__estoque-info {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--app-space-xs);
+  }
+
+  &__estoque-status {
+  @extend %status-chip;
+  }
+
+  &__drawer {
+    position: fixed;
+    top: 0;
+    right: 0;
+    z-index: 1001;
+
+    width: min(480px, 100vw);
+    height: 100vh;
+    box-sizing: border-box;
+
+    padding: var(--app-space-xl);
+
+    background-color: var(--mat-sys-surface-container-low);
+    border-left: 1px solid var(--mat-sys-outline-variant);
+    box-shadow: var(--app-shadow-md);
+
+    transform: translateX(100%);
+    transition: transform 0.25s ease;
+
+    overflow-y: auto;
+    overflow-x: hidden;
+
+    &--open {
+      transform: translateX(0);
+    }
+  }
+
+  &__drawer-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+
+    padding-bottom: var(--app-space-lg);
+    margin-bottom: var(--app-space-lg);
+
+    border-bottom: 1px solid var(--mat-sys-outline-variant);
+
+    h2 {
+      margin: 0;
+      color: var(--mat-sys-primary);
+    }
+
+    p {
+      margin: var(--app-space-xs) 0 0;
+      color: var(--mat-sys-on-surface-variant);
+    }
+  }
+
+  &__form {
+    @extend %cadastro-form;
+  }
+
+  &__form-actions {
+    @extend %form-actions;
+
+    app-button {
+      width: auto;
+    }
+  }
+
+  &__backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+
+    background-color: color-mix(
+      in srgb,
+      var(--mat-sys-on-surface) 35%,
+      transparent
+    );
+  }
+}
+
+@media (max-width: 768px) {
+  .materiais-page {
+    &__header.with-actions {
+      align-items: stretch;
+      flex-direction: column;
+      gap: var(--app-space-lg);
+    }
+
+    &__drawer {
+      width: 100vw;
+      padding: var(--app-space-lg);
+    }
+
+    &__table-container {
+      overflow-x: auto;
+    }
+  }
+}
