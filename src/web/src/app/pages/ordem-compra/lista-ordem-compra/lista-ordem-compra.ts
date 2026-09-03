@@ -25,7 +25,7 @@ export class ListaOrdemCompra {
   painelAberto = false;
   ordemEmEdicao: OrdemCompraLista | null = null;
 
-  colunasExibidas = ['numero', 'fornecedor', 'dataEntrega', 'itens', 'total', 'acoes'];
+  colunasExibidas = ['numero', 'fornecedor', 'dataEntrega', 'itens', 'total','status', 'acoes'];
 
   // Mock — no lugar entrará a chamada ao service/API.
   fornecedores: Fornecedor[] = [
@@ -47,7 +47,8 @@ export class ListaOrdemCompra {
       numero: 1001,
       fornecedor: this.fornecedores[0],
       dataEntrega: new Date(2026, 8, 10),
-      itens: [{ material: this.materiaisDisponiveis[0], quantidade: 50, valor: 12.5 }],
+      status:'ABERTO',
+      itens: [{ material: this.materiaisDisponiveis[0], quantidade: 50, valor: 12.5}],
     },
   ];
 
@@ -74,6 +75,7 @@ export class ListaOrdemCompra {
       material: this.materiaisDisponiveis.find((m) => m.codigo === item.materialCodigo)!,
       quantidade: item.quantidade,
       valor: item.valor,
+      status:payload.status
     }));
 
     const editando = this.ordemEmEdicao !== null;
@@ -87,7 +89,7 @@ export class ListaOrdemCompra {
     } else {
       this.ordens = [
         ...this.ordens,
-        { numero: this.proximoNumero(), fornecedor, dataEntrega: payload.dataEntrega, itens },
+        { numero: this.proximoNumero(), fornecedor, dataEntrega: payload.dataEntrega, itens,status:'ABERTO' },
       ];
     }
 
@@ -109,6 +111,10 @@ export class ListaOrdemCompra {
 
   calcularTotal(itens: OrdemCompraItem[]): number {
     return itens.reduce((total, item) => total + item.quantidade * item.valor, 0);
+  }
+
+  finalizarOC(item:OrdemCompraLista){
+    this.ordens.find(oc=>oc==item)!.status = 'FECHADO';
   }
 
   private proximoNumero(): number {

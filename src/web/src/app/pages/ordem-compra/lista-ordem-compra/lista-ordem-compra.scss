@@ -39,6 +39,11 @@
   }
 }
 
+.cell-with-buttons{
+  display: flex;
+  gap:12px;
+}
+
 @media (max-width: 768px) {
   .ordens-compra-page {
     &__header.with-actions {

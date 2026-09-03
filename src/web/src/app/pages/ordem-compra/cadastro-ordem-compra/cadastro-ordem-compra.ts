@@ -44,6 +44,7 @@ export interface OrdemCompraLista {
   numero: number;
   fornecedor: Fornecedor;
   dataEntrega: Date;
+  status:'ABERTO'|'FECHADO'|'CANCELADO'
   itens: OrdemCompraItem[];
 }
 
@@ -52,6 +53,7 @@ export interface OrdemCompraLista {
 export interface OrdemCompraPayload {
   fornecedorCodigo: number;
   dataEntrega: Date;
+  status:'ABERTO'|'FECHADO'|'CANCELADO'
   itens: {
     materialCodigo: number;
     quantidade: number;
@@ -199,6 +201,7 @@ export class CadastroOrdemCompra implements OnChanges {
     const payload: OrdemCompraPayload = {
       fornecedorCodigo: dados.fornecedor.codigo,
       dataEntrega: dados.dataEntrega,
+      status:'ABERTO',
       itens: dados.itens.map((item: { material: Material; quantidade: number; valor: number }) => ({
         materialCodigo: item.material.codigo,
         quantidade: item.quantidade,
