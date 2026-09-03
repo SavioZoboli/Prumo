@@ -1,12 +1,6 @@
 import { Component, EventEmitter, Input, OnChanges, Output, SimpleChanges } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import {
-  FormArray,
-  FormControl,
-  FormGroup,
-  ReactiveFormsModule,
-  Validators,
-} from '@angular/forms';
+import { FormArray, FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { map, Observable, startWith } from 'rxjs';
 
 import { MatIconModule } from '@angular/material/icon';
@@ -44,7 +38,7 @@ export interface OrdemCompraLista {
   numero: number;
   fornecedor: Fornecedor;
   dataEntrega: Date;
-  status:'ABERTO'|'FECHADO'|'CANCELADO'
+  status: 'ABERTO' | 'FECHADO' | 'CANCELADO';
   itens: OrdemCompraItem[];
 }
 
@@ -53,7 +47,7 @@ export interface OrdemCompraLista {
 export interface OrdemCompraPayload {
   fornecedorCodigo: number;
   dataEntrega: Date;
-  status:'ABERTO'|'FECHADO'|'CANCELADO'
+  status: 'ABERTO' | 'FECHADO' | 'CANCELADO';
   itens: {
     materialCodigo: number;
     quantidade: number;
@@ -94,7 +88,7 @@ export class CadastroOrdemCompra implements OnChanges {
 
   ordemForm: FormGroup = new FormGroup({
     fornecedor: new FormControl(null, Validators.required),
-    dataEntrega: new FormControl(null, [Validators.required,dataNaoAnteriorAHojeValidator()]),
+    dataEntrega: new FormControl(null, [Validators.required, dataNaoAnteriorAHojeValidator()]),
     itens: new FormArray([]),
   });
 
@@ -110,7 +104,7 @@ export class CadastroOrdemCompra implements OnChanges {
     return this.ordemForm.get('itens') as FormArray;
   }
 
-   get dataEntrega() {
+  get dataEntrega() {
     return this.ordemForm.get('dataEntrega');
   }
 
@@ -161,10 +155,19 @@ export class CadastroOrdemCompra implements OnChanges {
   }
 
   private filtrarMateriais(valor: string | Material | null): Material[] {
-    const termo = (typeof valor === 'string' ? valor : valor?.nome ?? '').toLowerCase();
+    const termo = (typeof valor === 'string' ? valor : (valor?.nome ?? '')).toLowerCase();
 
-    return this.materiaisDisponiveis.filter((material) =>
-      material.nome.toLowerCase().includes(termo),
+    let itens_na_lista = this.itens.value.filter((i: any) => i.material != null);
+    if (itens_na_lista.length > 0) {
+      itens_na_lista.forEach((i:any)=>{
+        console.log(i.material.codigo)
+      })
+    }
+
+    return this.materiaisDisponiveis.filter(
+      (material) =>
+        material.nome.toLowerCase().includes(termo) &&
+        !itens_na_lista.find((i: any) => i.material == material),
     );
   }
 
@@ -201,7 +204,7 @@ export class CadastroOrdemCompra implements OnChanges {
     const payload: OrdemCompraPayload = {
       fornecedorCodigo: dados.fornecedor.codigo,
       dataEntrega: dados.dataEntrega,
-      status:'ABERTO',
+      status: 'ABERTO',
       itens: dados.itens.map((item: { material: Material; quantidade: number; valor: number }) => ({
         materialCodigo: item.material.codigo,
         quantidade: item.quantidade,
