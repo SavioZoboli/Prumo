@@ -1,0 +1,176 @@
+<div class="ordem-compra-form">
+
+  @if (aberto) {
+    <div class="ordem-compra-form__backdrop" (click)="fecharPainel()"></div>
+  }
+
+  <aside
+    class="ordem-compra-form__drawer"
+    [class.ordem-compra-form__drawer--open]="aberto"
+  >
+
+    <div class="ordem-compra-form__drawer-header">
+
+      <div>
+        <h2>
+          {{ ordemEmEdicao ? 'Editar Ordem de Compra' : 'Cadastro de Ordem de Compra' }}
+        </h2>
+
+        <p>
+          {{
+            ordemEmEdicao
+              ? 'Altere os dados da ordem de compra.'
+              : 'Selecione o fornecedor, a data de entrega e os materiais.'
+          }}
+        </p>
+      </div>
+
+      <button
+        mat-icon-button
+        type="button"
+        aria-label="Fechar cadastro"
+        (click)="fecharPainel()"
+      >
+        <mat-icon>close</mat-icon>
+      </button>
+
+    </div>
+
+
+    <form
+      [formGroup]="ordemForm"
+      (ngSubmit)="salvarOrdem()"
+      class="ordem-compra-form__form"
+    >
+
+      <mat-form-field appearance="outline">
+        <mat-label>Fornecedor</mat-label>
+
+        <mat-select formControlName="fornecedor">
+          @for (fornecedor of fornecedores; track fornecedor.codigo) {
+            <mat-option [value]="fornecedor">
+              {{ fornecedor.nome }}
+            </mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Data de entrega</mat-label>
+        <input matInput [matDatepicker]="pickerEntrega" formControlName="dataEntrega" />
+        <mat-datepicker-toggle matIconSuffix [for]="pickerEntrega"></mat-datepicker-toggle>
+        <mat-datepicker #pickerEntrega></mat-datepicker>
+         @if (dataEntrega?.hasError('required')) {
+          <mat-error>Data de entrega é obrigatória</mat-error>
+        } @else if (dataEntrega?.hasError('dataAnterior')) {
+          <mat-error>A data não pode ser anterior a hoje</mat-error>
+        }
+      </mat-form-field>
+
+
+      <div class="ordem-compra-form__itens-header">
+        <span class="section-label">Materiais</span>
+      </div>
+
+      <div formArrayName="itens" class="ordem-compra-form__itens">
+        @for (grupo of itens.controls; track grupo; let i = $index) {
+          <div class="ordem-compra-form__item" [formGroupName]="i">
+
+            <mat-autocomplete
+              #autoMaterial="matAutocomplete"
+              (optionSelected)="selecionarMaterial(i, $event.option.value)"
+            >
+              @for (material of (itensFiltrados[i] | async); track material.codigo) {
+                <mat-option [value]="material">
+                  {{ material.nome }} — {{ material.fabricante }}
+                </mat-option>
+              }
+            </mat-autocomplete>
+
+            <app-input
+              class="ordem-compra-form__item-material"
+              label="Material"
+              placeholder="Buscar material"
+              [required]="true"
+              formControlName="material"
+              [autocompletePanel]="autoMaterial"
+              [displayWith]="displayMaterial"
+            ></app-input>
+
+            <app-input
+              class="ordem-compra-form__item-quantidade"
+              label="Qtd"
+              type="number"
+              [required]="true"
+              formControlName="quantidade"
+            ></app-input>
+
+            <app-input
+              class="ordem-compra-form__item-valor"
+              label="Valor unit."
+              type="number"
+              [required]="true"
+              formControlName="valor"
+            ></app-input>
+
+            <button
+              mat-icon-button
+              type="button"
+              aria-label="Remover item"
+              [disabled]="itens.length === 1"
+              (click)="removerItem(i)"
+            >
+              <mat-icon>delete</mat-icon>
+            </button>
+
+          </div>
+        }
+      </div>
+
+      <button
+        mat-icon-button
+        type="button"
+        class="ordem-compra-form__add-item"
+        aria-label="Adicionar item"
+        (click)="adicionarItem()"
+      >
+        <mat-icon>add_circle</mat-icon>
+        <span>Adicionar item</span>
+      </button>
+
+      <div class="ordem-compra-form__total">
+        <span>Total da ordem</span>
+        <strong>{{ calcularTotal() | currency: 'BRL' }}</strong>
+      </div>
+
+      <div class="ordem-compra-form__form-actions">
+
+        <button
+          mat-stroked-button
+          type="button"
+          [disabled]="salvando"
+          (click)="fecharPainel()"
+        >
+          CANCELAR
+        </button>
+
+        <button
+          mat-flat-button
+          color="primary"
+          type="submit"
+          [disabled]="salvando"
+        >
+          @if (salvando) {
+            <mat-spinner diameter="18"></mat-spinner>
+          } @else {
+            {{ ordemEmEdicao ? 'ATUALIZAR' : 'SALVAR' }}
+          }
+        </button>
+
+      </div>
+
+    </form>
+
+  </aside>
+
+</div>
