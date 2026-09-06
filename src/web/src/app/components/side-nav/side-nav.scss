@@ -1,0 +1,115 @@
+:host {
+  display: block;
+  height: 100%;
+}
+
+.layout-container {
+  height: 100%;
+}
+
+.sidenav {
+  width: 260px;
+  background-color: var(--app-brand-tertiary);
+  border-radius: 0;
+  color: var(--app-brand-on-tertiary);
+  border-right: none;
+  display: flex;
+  flex-direction: column;
+  padding: var(--app-space-lg) 0;
+}
+
+.sidenav-header {
+  display: flex;
+  justify-content: center;
+  padding-bottom: var(--app-space-xl);
+  padding:20px;
+
+  img{
+    width: 100%;
+  }
+}
+
+.sidenav-menu {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--app-space-xs);
+  padding: 0 var(--app-space-sm);
+}
+
+.menu-item {
+  display: flex;
+  align-items: center;
+  gap: var(--app-space-md);
+  padding: 0.75rem var(--app-space-md);
+  border-radius: var(--app-radius-md);
+  color: var(--app-brand-on-tertiary);
+  text-decoration: none;
+  font-weight: 500;
+  font-size: 0.95rem;
+  border-left: 3px solid transparent;
+  transition:
+    background-color 0.2s ease,
+    color 0.2s ease;
+
+  mat-icon {
+    font-size: 20px;
+    width: 20px;
+    height: 20px;
+  }
+
+  &:hover {
+    background-color: rgba(255, 255, 255, 0.06);
+  color: var(--app-brand-secondary);
+  }
+
+  &.active {
+    color: var(--app-brand-secondary);
+    background-color: rgba(250, 116, 26, 0.1);
+    border-left-color: var(--app-brand-secondary);
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
+  }
+}
+
+.sidenav-footer {
+  display: flex;
+  flex-direction: column;
+  gap: var(--app-space-sm);
+  padding: var(--app-space-md);
+  margin-top: var(--app-space-md);
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+
+  .logout-link {
+    display: flex;
+    align-items: center;
+    gap: var(--app-space-md);
+    padding: 0.75rem var(--app-space-md);
+    color: var(--app-brand-secondary);
+    text-decoration: none;
+    font-weight: 500;
+    font-size: 0.95rem;
+
+    mat-icon {
+      font-size: 20px;
+      width: 20px;
+      height: 20px;
+    }
+
+    &:hover {
+      opacity: 0.85;
+    }
+  }
+}
+
+.content {
+  background-color: var(--mat-sys-surface);
+}
+
+.mobile-toolbar {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  background-color: var(--mat-sys-surface);
+}
