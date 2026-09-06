@@ -7,7 +7,6 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { UsuarioModule } from './usuarios/usuario.module';
 import { AuthModule } from './auth/auth.module';
 import { FornecedorModule } from './fornecedores/fornecedor.module';
-import { MaterialModule } from './materiais/material.module';
 
 @Module({
   imports: [
@@ -20,7 +19,6 @@ import { MaterialModule } from './materiais/material.module';
     UsuarioModule,
     AuthModule,
     FornecedorModule,
-    MaterialModule,
   ],
   controllers: [AppController],
   providers: [AppService],
