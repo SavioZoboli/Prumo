@@ -293,18 +293,6 @@
         errorMessage="Informe um estoque mínimo válido"
       ></app-input>
 
-
-      <!-- ESTOQUE ATUAL -->
-      <app-input
-        label="Estoque atual"
-        placeholder="Ex: 25"
-        [required]="true"
-        formControlName="estoqueAtual"
-        [hasError]="!!estoqueAtual?.invalid && !!estoqueAtual?.touched"
-        errorMessage="Informe um estoque válido"
-      ></app-input>
-
-
       <!-- ÚLTIMO VALOR -->
       <app-input
         label="Último valor"

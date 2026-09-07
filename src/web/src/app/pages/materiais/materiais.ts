@@ -96,7 +96,6 @@ export class Materiais {
       unidadeMedida: ['UN', Validators.required],
       localizacao: [''],
       estoqueMinimo: [0, [Validators.required, Validators.min(0)]],
-      estoqueAtual: [0, [Validators.required, Validators.min(0)]],
       ultimoValor: [null],
       ativo: [true],
     });
@@ -108,7 +107,6 @@ export class Materiais {
     this.materialForm.reset({
       unidadeMedida: 'UN',
       estoqueMinimo: 0,
-      estoqueAtual: 0,
       ultimoValor: null,
       ativo: true,
     });
@@ -127,7 +125,6 @@ export class Materiais {
       unidadeMedida: material.unidadeMedida,
       localizacao: material.localizacao,
       estoqueMinimo: material.estoqueMinimo,
-      estoqueAtual: material.estoqueAtual,
       ultimoValor: material.ultimoValor,
       ativo: material.ativo,
     });
@@ -157,7 +154,9 @@ export class Materiais {
       unidadeMedida: dadosMaterial.unidadeMedida,
       localizacao: dadosMaterial.localizacao,
       estoqueMinimo: Number(dadosMaterial.estoqueMinimo),
-      estoqueAtual: Number(dadosMaterial.estoqueAtual),
+      estoqueAtual: this.materialEmEdicao
+        ? this.materialEmEdicao.estoqueAtual
+        : 0,
       ultimoValor: this.converterValor(dadosMaterial.ultimoValor),
       ativo: dadosMaterial.ativo,
     };
@@ -173,7 +172,6 @@ export class Materiais {
     this.materialForm.reset({
       unidadeMedida: 'UN',
       estoqueMinimo: 0,
-      estoqueAtual: 0,
       ultimoValor: null,
       ativo: true,
     });
@@ -223,26 +221,16 @@ export class Materiais {
   }
 
   statusEstoque(material: MaterialLista): string {
-    if (material.estoqueAtual < material.estoqueMinimo) {
+    if (material.estoqueAtual <= material.estoqueMinimo) {
       return 'Crítico';
     }
-
-    if (material.estoqueAtual === material.estoqueMinimo) {
-      return 'Atenção';
-    }
-
     return 'Normal';
   }
 
   classeStatusEstoque(material: MaterialLista): string {
-    if (material.estoqueAtual < material.estoqueMinimo) {
+    if (material.estoqueAtual <= material.estoqueMinimo) {
       return 'danger';
     }
-
-    if (material.estoqueAtual === material.estoqueMinimo) {
-      return 'warning';
-    }
-
     return 'success';
   }
 
@@ -264,9 +252,5 @@ export class Materiais {
 
   get estoqueMinimo() {
     return this.materialForm.get('estoqueMinimo');
-  }
-
-  get estoqueAtual() {
-    return this.materialForm.get('estoqueAtual');
   }
 }
