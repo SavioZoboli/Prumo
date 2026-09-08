@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Param, ParseIntPipe, Patch, Post, Req, UseGuards } from "@nestjs/common";
+import { Body, Controller, Delete, Get, NotFoundException, Param, ParseIntPipe, Patch, Post, Query, Req, UseGuards } from "@nestjs/common";
 import {
   ApiTags,
   ApiOperation,
@@ -9,6 +9,8 @@ import { JwtAuthGuard } from "../auth/jwt-auth.guard";
 import { MovimentacaoService } from "./movimentacao.service";
 import { Movimentacao } from "./movimentacao.entity";
 import { CreateMovimentacaoDto } from "./dto/create-movimentacao.dto";
+import { FiltrarMovimentacaoDto } from "./dto/filtrar-movimentacao.dto";
+import { EstornarMovimentacaoDto } from "./dto/estornar-movimentacao.dto";
 
 @ApiTags('Movimentações')
 @Controller('movimentacoes')
@@ -36,7 +38,10 @@ export class MovimentacaoController {
     );
   }
 
- @ApiOperation({ summary: 'Listar movimentações' })
+ @ApiOperation({
+  summary: 'Listar movimentações',
+  description: 'RF09: aceita filtros combinaveis por material, operação e período.',
+})
 @ApiResponse({
   status: 200,
   description: 'Lista de movimentações.',
@@ -44,8 +49,8 @@ export class MovimentacaoController {
 })
 @Get()
 @UseGuards(JwtAuthGuard)
-findAll() {
-  return this.movimentacaoService.findAll();
+findAll(@Query() filtros: FiltrarMovimentacaoDto) {
+  return this.movimentacaoService.findAll(filtros);
 }
 
  @ApiOperation({ summary: 'Buscar movimentação por ID' })
@@ -65,9 +70,42 @@ findAll() {
 })
 @Get(':id')
 @UseGuards(JwtAuthGuard)
-findOne(@Param('id', ParseIntPipe) id: number) {
-  return this.movimentacaoService.findOne(id);
+async findOne(@Param('id', ParseIntPipe) id: number) {
+  const movimentacao = await this.movimentacaoService.findOne(id);
+  if (!movimentacao) {
+    throw new NotFoundException('Movimentação não encontrada.');
+  }
+  return movimentacao;
 }
 
-  
+@ApiOperation({
+  summary: 'Estornar uma movimentação',
+  description: 'RF12: exige o motivo do estorno. Ainda não reverte o estoque (depende de "Materiais").',
+})
+@ApiParam({
+  name: 'id',
+  example: 1,
+  description: 'ID da movimentação',
+})
+@ApiResponse({
+  status: 200,
+  description: 'Movimentação estornada com sucesso.',
+  type: Movimentacao,
+})
+@ApiResponse({
+  status: 400,
+  description: 'Movimentação já estornada.',
+})
+@ApiResponse({
+  status: 404,
+  description: 'Movimentação não encontrada.',
+})
+@Patch(':id/estorno')
+@UseGuards(JwtAuthGuard)
+estornar(
+  @Param('id', ParseIntPipe) id: number,
+  @Body() estornarDto: EstornarMovimentacaoDto,
+) {
+  return this.movimentacaoService.estornar(id, estornarDto.motivo_estorno);
+}
 }

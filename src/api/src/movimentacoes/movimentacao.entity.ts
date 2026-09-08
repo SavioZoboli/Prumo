@@ -3,14 +3,22 @@ import {
   PrimaryGeneratedColumn,
   Column,
   ManyToOne,
+  OneToMany,
   JoinColumn,
 } from 'typeorm';
 
 import { ApiProperty } from '@nestjs/swagger';
 
 import { Usuario } from '../usuarios/usuario.entity';
-// import { Material } from '../materiais/material.entity';
+import { ItemMovimento } from './item-movimento.entity';
+// Idem para Ordens de Compra (ainda so tem front-end mockado, sem backend).
+// import { OrdemCompra } from '../ordens-compra/ordem-compra.entity';
 
+/**
+ * Capa da movimentacao. O material e a quantidade moram em ItemMovimento
+ * (Itens_Movimento) — uma movimentacao pode envolver varios materiais de
+ * uma vez (ex.: recebimento de uma compra com 5 itens diferentes).
+ */
 @Entity('Movimentacoes')
 export class Movimentacao {
   @ApiProperty({
@@ -25,10 +33,10 @@ export class Movimentacao {
   declare id: number;
 
   @ApiProperty({
-    example: '2026-08-26T10:30:00',
+    example: '2026-08-26T10:30:00Z',
     description: 'Data e hora da movimentação',
   })
-  @Column({ type: 'timestamp' })
+  @Column({ type: 'timestamptz' })
   declare data: Date;
 
   @ApiProperty({
@@ -37,13 +45,6 @@ export class Movimentacao {
   })
   @Column({ type: 'varchar', length: 1 })
   declare operacao: string;
-
-  @ApiProperty({
-    example: 10,
-    description: 'Quantidade de material movimentada',
-  })
-  @Column({ type: 'smallint' })
-  declare quantidade: number;
 
   @ApiProperty({
     example: 'Entrada de produtos no estoque',
@@ -67,18 +68,11 @@ export class Movimentacao {
   declare usuario: Usuario;
 
   @ApiProperty({
-    example: 1,
-    description: 'Identificador do material movimentado',
+    type: () => [ItemMovimento],
+    description: 'Materiais e quantidades envolvidos nesta movimentação',
   })
-  @Column({ type: 'smallint' })
-  declare material_id: number;
-
-  // @ManyToOne(() => Material)
-  // @JoinColumn({
-  //   name: 'material_id',
-  //   foreignKeyConstraintName: 'fk_material_id',
-  // })
-  // declare material: Material;
+  @OneToMany(() => ItemMovimento, (item) => item.movimentacao, { cascade: true })
+  declare itens: ItemMovimento[];
 
   @ApiProperty({
     example: 'OP-2026-001',
@@ -91,6 +85,24 @@ export class Movimentacao {
     nullable: true,
   })
   declare ordem_producao: string | null;
+
+  @ApiProperty({
+    example: 1,
+    description: 'Identificador da Ordem de Compra, quando a movimentação for um recebimento de compra',
+    required: false,
+  })
+  @Column({ type: 'smallint', nullable: true })
+  declare ordem_compra_id: number | null;
+
+  // Sem FK ainda: a tabela "Ordens_Compra" nao existe no codigo (so tem
+  // front-end mockado). Descomentar junto com o entity de OrdemCompra e a
+  // migration que adiciona a constraint fk_ordem_compra_baixa (ver diagrama).
+  // @ManyToOne(() => OrdemCompra)
+  // @JoinColumn({
+  //   name: 'ordem_compra_id',
+  //   foreignKeyConstraintName: 'fk_ordem_compra_baixa',
+  // })
+  // declare ordemCompra: OrdemCompra;
 
   @ApiProperty({
     example: false,
