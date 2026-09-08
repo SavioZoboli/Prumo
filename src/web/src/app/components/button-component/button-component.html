@@ -42,5 +42,10 @@
     mode="indeterminate"
     class="app-button__spinner"
   ></mat-progress-spinner>
-  <span *ngIf="!loading">{{ label }}</span>
+  <span *ngIf="!loading">
+    @if (icon != '') {
+      <mat-icon>{{ icon }}</mat-icon>
+    }
+    {{ label }}</span
+  >
 </ng-template>
