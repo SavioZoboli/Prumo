@@ -1,3 +1,5 @@
+@use '../../../assets/scss/shared-patterns' as *;
+
 :host {
   display: block;
   width: 100%;
@@ -7,12 +9,17 @@
 // mat-stroked-button / mat-button + color="primary". Só cobrimos aqui o
 // que o Material não resolve: largura total e alinhamento do spinner.
 .app-button {
-  height: 44px;
-  border-radius: var(--app-radius-md);
-
+  @extend %btn;
+  
   &--full {
     width: 100%;
   }
+}
+
+ng-content{
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .app-button__spinner {
