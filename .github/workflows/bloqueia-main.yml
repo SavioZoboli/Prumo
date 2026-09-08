@@ -1,19 +1,25 @@
-name: Restringe PR para a Main
+name: Valida Fluxo Git
 
 on:
   pull_request:
     types: [opened, reopened, synchronize, edited]
     branches:
       - main
+      - develop
 
 jobs:
-  verifica-branch-origem:
+  valida-origem-main:
     runs-on: ubuntu-latest
     steps:
-      - name: Checar se a origem é a develop
+      - name: Bloquear PR para a main que não venha da develop
         if: github.base_ref == 'main' && github.head_ref != 'develop'
         run: |
-          echo "ERRO: Pull Requests para a branch 'main' só podem vir da branch 'develop'!"
-          echo "Branch de destino: ${{ github.base_ref }}"
-          echo "Branch de origem atual: ${{ github.head_ref }}"
+          echo "::error::Regra violada! A branch 'main' só aceita PRs vindos da 'develop'."
+          echo "Destino: ${{ github.base_ref }}"
+          echo "Origem: ${{ github.head_ref }}"
           exit 1
+
+      - name: Sucesso
+        if: github.base_ref != 'main' || github.head_ref == 'develop'
+        run: |
+          echo "Validação aprovada para o destino ${{ github.base_ref }} a partir de ${{ github.head_ref }}."
