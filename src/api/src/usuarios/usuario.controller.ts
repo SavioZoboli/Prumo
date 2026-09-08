@@ -23,7 +23,7 @@ export class UsuarioController {
   type: Usuario,
 })
 @Post()
-@UseGuards(JwtAuthGuard)
+//@UseGuards(JwtAuthGuard)
 async create(
   @Body() createUsuarioDto: CreateUsuarioDto,
 ): Promise<Usuario> {
@@ -37,7 +37,7 @@ async create(
   type: [Usuario],
 })
 @Get()
-@UseGuards(JwtAuthGuard)
+//@UseGuards(JwtAuthGuard)
 findAll() {
   return this.usuarioService.findAll();
 }
@@ -79,7 +79,7 @@ findOne(@Param('id') id: number) {
   description: 'Usuário não encontrado.',
 })
 @Patch(':id')
-@UseGuards(JwtAuthGuard)
+//@UseGuards(JwtAuthGuard)
 update(
   @Param('id') id: number,
   @Body() updateUsuarioDto: UpdateUsuarioDto,
@@ -113,7 +113,7 @@ update(
   },
 })
 @Delete(':id')
-@UseGuards(JwtAuthGuard)
+//@UseGuards(JwtAuthGuard)
 remove(@Param('id') id: number) {
   return this.usuarioService.desativar(id);
 }
