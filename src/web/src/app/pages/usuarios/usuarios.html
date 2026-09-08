@@ -36,16 +36,6 @@
         </td>
       </ng-container>
 
-      <ng-container matColumnDef="usuario">
-        <th mat-header-cell *matHeaderCellDef>
-          Usuário
-        </th>
-
-        <td mat-cell *matCellDef="let item">
-          {{ item.usuario }}
-        </td>
-      </ng-container>
-
       <ng-container matColumnDef="email">
         <th mat-header-cell *matHeaderCellDef>
           E-mail
@@ -202,16 +192,6 @@
         formControlName="email"
         [hasError]="!!email?.invalid && !!email?.touched"
         errorMessage="Informe um e-mail válido"
-      ></app-input>
-
-
-      <app-input
-        label="Usuário"
-        placeholder="Ex: john.doe"
-        [required]="true"
-        formControlName="usuario"
-        [hasError]="!!usuario?.invalid && !!usuario?.touched"
-        errorMessage="Usuário é obrigatório"
       ></app-input>
 
 

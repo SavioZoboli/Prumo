@@ -17,7 +17,6 @@ export class UsuarioService {
     nome:string,
     sobrenome:string,
     email:string,
-    usuario:string,
     senha:string,
     perfil:string
   ):Observable<number>{
@@ -25,7 +24,6 @@ export class UsuarioService {
       nome,
       sobrenome,
       email,
-      usuario,
       senha,
       perfil,
       ativo:true
@@ -37,7 +35,6 @@ export class UsuarioService {
     nome:string,
     sobrenome:string,
     email:string,
-    usuario:string,
     ativo:boolean,
     perfil:string
   ):Observable<void>{
@@ -45,7 +42,6 @@ export class UsuarioService {
       nome,
       sobrenome,
       email,
-      usuario,
       ativo,
       perfil
     })
