@@ -104,6 +104,11 @@ export class CadastroMovimentacao implements OnChanges {
     return this.movimentacaoForm.get('operacao');
   }
 
+  quantidadeInvalida(index: number): boolean {
+    const controle = this.itens.at(index).get('quantidade');
+    return !!controle?.invalid && !!controle?.touched;
+  }
+
   private inicializarForm(): void {
     this.itens.clear();
 

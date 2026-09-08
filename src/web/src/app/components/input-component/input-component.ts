@@ -30,6 +30,7 @@ export class InputComponent implements ControlValueAccessor {
   @Input() icon: InputIcon = null;
   @Input() errorMessage = '';
   @Input() hasError = false;
+  @Input() min: number | null = null;
 
   value = '';
   disabled = false;

@@ -100,8 +100,11 @@
               class="movimentacao-form__item-quantidade"
               label="Qtd"
               type="number"
+              [min]="1"
               [required]="true"
               formControlName="quantidade"
+              [hasError]="quantidadeInvalida(i)"
+              errorMessage="Deve ser maior que zero"
             ></app-input>
 
             <button
