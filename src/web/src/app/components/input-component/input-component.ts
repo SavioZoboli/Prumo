@@ -7,7 +7,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatAutocomplete, MatAutocompleteModule } from '@angular/material/autocomplete';
 
 export type InputIcon = 'user' | 'lock' | null;
-export type InputType = 'text' | 'number' | 'password' | 'email';
+export type InputType = 'text' | 'password' | 'email' | 'number';
 
 @Component({
   selector: 'app-input',
@@ -31,6 +31,7 @@ export class InputComponent implements ControlValueAccessor {
   @Input() icon: InputIcon = null;
   @Input() errorMessage = '';
   @Input() hasError = false;
+  @Input() min: number | null = null;
 
   // Painel de um <mat-autocomplete> declarado pelo componente pai (sibling do app-input).
   @Input() autocompletePanel: MatAutocomplete | null = null;

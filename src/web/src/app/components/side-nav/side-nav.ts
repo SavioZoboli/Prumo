@@ -45,6 +45,7 @@ export class SideNav {
     { label: 'Dashboard', icon: 'dashboard', route: '/dashboard' },
     { label: 'Usuários', icon: 'group', route: '/usuarios' },
     { label: 'Materiais', icon: 'inventory_2', route: '/materiais' },
+    { label: 'Movimentações', icon: 'swap_horiz', route: '/movimentacoes' },
     { label: 'Ordens de Compra', icon: 'shopping_cart', route: '/ordens-compra' },
   ];
 }
