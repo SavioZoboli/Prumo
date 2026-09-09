@@ -10,7 +10,8 @@ export class AddOrdemCompraIdMovimentacoes1787833274189 implements MigrationInte
     // codigo (so tem front-end mockado, upstream/feature/cadastro-ordem-compra).
     // Quando ela existir, adicionar em migration separada:
     //   ALTER TABLE "Movimentacoes" ADD CONSTRAINT "fk_ordem_compra_baixa"
-    //   FOREIGN KEY ("ordem_compra_id") REFERENCES "Ordens_Compra"("id");
+    //   FOREIGN KEY ("ordem_compra_id") REFERENCES "Ordens_Compra"("id")
+    //   ON DELETE RESTRICT ON UPDATE CASCADE; -- convencao do diagrama
     await queryRunner.query(`
       ALTER TABLE "Movimentacoes" ADD COLUMN "ordem_compra_id" smallint;
     `);

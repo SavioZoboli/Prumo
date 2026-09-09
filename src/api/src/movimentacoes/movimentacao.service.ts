@@ -86,8 +86,6 @@ export class MovimentacaoService {
     // await this.materialRepository.save(materiaisEnvolvidos);
     // ==== FIM DO BLOQUEIO ====
 
-    // Capa + itens precisam ser gravados juntos: se um item falhar, a
-    // movimentacao inteira nao pode ficar registrada pela metade.
     return this.movimentacaoRepository.manager.transaction(async (manager) => {
       const movimentacao = manager.create(Movimentacao, {
         operacao,

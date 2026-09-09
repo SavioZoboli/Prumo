@@ -48,7 +48,9 @@ export class ItemMovimento {
   declare movimentacao: Movimentacao;
 
   // Sem FK ainda: a tabela "Materiais" nao existe no codigo (PR em revisao).
-  // Descomentar junto com o entity do Material quando o PR mergear.
+  // Descomentar junto com o entity do Material quando o PR mergear. A
+  // migration que criar essa FK deve usar ON DELETE RESTRICT ON UPDATE
+  // CASCADE, convencao ja usada em todas as FKs do diagrama.
   // @ManyToOne(() => Material)
   // @JoinColumn({
   //   name: 'material_id',

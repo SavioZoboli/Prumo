@@ -4,13 +4,6 @@ export class RevertMovimentacoesParaCapaItens1787833374189 implements MigrationI
   name = 'RevertMovimentacoesParaCapaItens1787833374189';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
-    // Volta pro modelo capa+itens do diagrama original: uma Movimentacao
-    // pode envolver varios materiais (ex.: recebimento de compra com varios
-    // itens de uma vez), em vez de ter material/quantidade fixos na capa.
-    // Sem FK pra "Materiais" ainda: essa tabela nao existe no codigo
-    // (PR do colega em revisao). Adicionar em migration separada quando existir:
-    //   ALTER TABLE "Itens_Movimento" ADD CONSTRAINT "fk_material_id"
-    //   FOREIGN KEY ("material_id") REFERENCES "Materiais"("id");
     await queryRunner.query(`
       CREATE TABLE "Itens_Movimento" (
         "movimento_id" smallint NOT NULL,
@@ -21,8 +14,6 @@ export class RevertMovimentacoesParaCapaItens1787833374189 implements MigrationI
       );
     `);
 
-    // Preserva dado existente (linhas de teste ja tinham material_id/quantidade
-    // direto na capa) migrando pra Itens_Movimento antes de derrubar as colunas.
     await queryRunner.query(`
       INSERT INTO "Itens_Movimento" ("movimento_id", "material_id", "quantidade")
       SELECT "id", "material_id", "quantidade" FROM "Movimentacoes";
@@ -44,10 +35,6 @@ export class RevertMovimentacoesParaCapaItens1787833374189 implements MigrationI
       ALTER TABLE "Movimentacoes" ADD COLUMN "quantidade" smallint;
     `);
 
-    // So reverte de forma exata quando cada movimentacao tinha exatamente
-    // um item (o caso de antes desta migration). Uma movimentacao com
-    // varios itens perde dado ao reverter — nao ha como voltar pro formato
-    // "um material por linha" sem decidir qual item vira o unico.
     await queryRunner.query(`
       UPDATE "Movimentacoes" m
       SET "material_id" = im."material_id", "quantidade" = im."quantidade"
