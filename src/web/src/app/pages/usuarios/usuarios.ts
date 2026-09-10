@@ -20,7 +20,6 @@ interface UsuarioLista {
   id: number;
   nome: string;
   sobrenome: string;
-  usuario: string;
   email: string;
   perfil: string;
   ativo: boolean;
@@ -53,7 +52,7 @@ export class Usuarios {
 
   usuarioEmEdicao: UsuarioLista | null = null;
 
-  colunasExibidas = ['nome', 'usuario', 'email', 'perfil', 'status', 'acoes'];
+  colunasExibidas = ['nome', 'email', 'perfil', 'status', 'acoes'];
 
   usuarios = signal<UsuarioLista[]>([]);
 
@@ -69,7 +68,6 @@ export class Usuarios {
       nome: ['', Validators.required],
       sobrenome: ['', Validators.required],
       email: ['', [Validators.required, Validators.email]],
-      usuario: ['', Validators.required],
       senha: ['', Validators.required],
       perfil: ['USUARIO', Validators.required],
       ativo: [true],
@@ -125,7 +123,6 @@ export class Usuarios {
       nome: usuario.nome,
       sobrenome: usuario.sobrenome,
       email: usuario.email,
-      usuario: usuario.usuario,
       senha: '',
       perfil: usuario.perfil,
       ativo: usuario.ativo,
@@ -152,7 +149,7 @@ export class Usuarios {
 
     if (this.usuarioEmEdicao) {
       this.usuarioService
-        .update(du.id, du.nome, du.sobrenome, du.email, du.usuario, du.ativo, du.perfil)
+        .update(du.id, du.nome, du.sobrenome, du.email, du.ativo, du.perfil)
         .subscribe({
           next: (res) => {
             this.listarUsuarios();
@@ -169,7 +166,7 @@ export class Usuarios {
         });
     } else {
       this.usuarioService
-        .create(du.nome, du.sobrenome, du.email, du.usuario, du.senha, du.perfil)
+        .create(du.nome, du.sobrenome, du.email, du.senha, du.perfil)
         .subscribe({
           next: (res) => {
             this.resetAndCloseForm();
@@ -261,10 +258,6 @@ export class Usuarios {
 
   get email() {
     return this.usuarioForm.get('email');
-  }
-
-  get usuario() {
-    return this.usuarioForm.get('usuario');
   }
 
   get senha() {

@@ -24,7 +24,7 @@ export class Fornecedor {
   declare nome: string;
 
   @ApiProperty({
-    example: '12.345.678/0001-90',
+    example: '33.000.167/0001-01',
     description: 'CNPJ do fornecedor',
   })
   @Column({ type: 'varchar', length: 18 })
@@ -34,6 +34,6 @@ export class Fornecedor {
     example: true,
     description: 'Indica se o fornecedor está ativo',
   })
-  @Column({ name: 'is_ativo', type: 'boolean', nullable: true, default: true })
+  @Column({ name: 'is_ativo', type: 'boolean', nullable: false, default: true })
   declare ativo: boolean;
 }
