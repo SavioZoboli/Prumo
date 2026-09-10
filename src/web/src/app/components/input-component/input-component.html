@@ -4,16 +4,32 @@
   </mat-label>
 
   <mat-icon matPrefix *ngIf="icon" class="app-input__icon">{{ matIconName }}</mat-icon>
-
-  <input
+@if(autocompletePanel){
+<input
     matInput
     [type]="type"
     [placeholder]="placeholder"
     [value]="value"
     [disabled]="disabled"
+    [attr.min]="min"
+    [matAutocomplete]="autocompletePanel"
     (input)="handleInput($event)"
     (blur)="handleBlur()"
   />
+}@else{
+<input
+    matInput
+    [type]="type"
+    [placeholder]="placeholder"
+    [value]="value"
+    [disabled]="disabled"
+    [attr.min]="min"
+    (input)="handleInput($event)"
+    (blur)="handleBlur()"
+  />
+}
+
+  
 
   <mat-error *ngIf="hasError && errorMessage">{{ errorMessage }}</mat-error>
 </mat-form-field>

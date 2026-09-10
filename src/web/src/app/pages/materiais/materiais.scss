@@ -2,15 +2,14 @@
 
 :host {
   display: block;
-  min-height: 100vh;
   background-color: var(--mat-sys-surface);
   color: var(--mat-sys-on-surface);
 }
 
-.usuarios-page {
+.materiais-page {
   @extend %page-container;
 
-  min-height: 100vh;
+  min-height: calc(100vh - 48px);
   box-sizing: border-box;
 
   &__header {
@@ -22,24 +21,38 @@
     }
 
     .action-area {
-        flex-shrink: 0;
+      flex-shrink: 0;
 
-        app-button {
-            width: auto;
-        }
+      app-button {
+        width: auto;
+      }
     }
   }
 
   &__table-container {
     @extend %table-container;
+    overflow-x: auto;
   }
 
   &__table {
     @extend %custom-table;
+
+    min-width: 900px;
   }
 
   &__status {
     @extend %status-chip;
+  }
+
+  &__estoque-info {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--app-space-xs);
+  }
+
+  &__estoque-status {
+  @extend %status-chip;
   }
 
   &__drawer {
@@ -48,7 +61,7 @@
     right: 0;
     z-index: 1001;
 
-    width: min(440px, 100vw);
+    width: min(480px, 100vw);
     height: 100vh;
     box-sizing: border-box;
 
@@ -96,6 +109,10 @@
 
   &__form-actions {
     @extend %form-actions;
+
+    app-button {
+      width: auto;
+    }
   }
 
   &__backdrop {
@@ -112,7 +129,7 @@
 }
 
 @media (max-width: 768px) {
-  .usuarios-page {
+  .materiais-page {
     &__header.with-actions {
       align-items: stretch;
       flex-direction: column;
@@ -128,8 +145,4 @@
       overflow-x: auto;
     }
   }
-}
-
-.delete{
-  color:var(--mat-sys-secondary)
 }
