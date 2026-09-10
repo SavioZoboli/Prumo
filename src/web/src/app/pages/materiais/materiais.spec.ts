@@ -53,6 +53,10 @@ describe('Materiais', () => {
     expect(component.painelAberto).toBe(false);
   });
 
+  it('não deve possuir estoque atual como campo editável', () => {
+    expect(component.materialForm.get('estoqueAtual')).toBeNull();
+  });
+
   it('não deve cadastrar material quando o formulário for inválido', () => {
     component.abrirCadastro();
 
@@ -62,7 +66,7 @@ describe('Materiais', () => {
     expect(component.materialForm.touched).toBe(true);
   });
 
-  it('deve cadastrar um novo material', () => {
+  it('deve cadastrar um novo material com estoque atual igual a zero', () => {
     component.abrirCadastro();
 
     component.materialForm.setValue({
@@ -73,7 +77,6 @@ describe('Materiais', () => {
       unidadeMedida: 'UN',
       localizacao: 'A-01',
       estoqueMinimo: 10,
-      estoqueAtual: 25,
       ultimoValor: '25,90',
       ativo: true,
     });
@@ -81,9 +84,12 @@ describe('Materiais', () => {
     component.salvarMaterial();
 
     expect(component.materiais.length).toBe(1);
+
     expect(component.materiais[0].nome).toBe(
       'Inserto de torneamento'
     );
+
+    expect(component.materiais[0].estoqueAtual).toBe(0);
     expect(component.materiais[0].ultimoValor).toBe(25.9);
     expect(component.materiais[0].ativo).toBe(true);
   });
@@ -105,14 +111,13 @@ describe('Materiais', () => {
     expect(component.materialForm.value.ultimoValor).toBe(25.9);
   });
 
-  it('deve atualizar um material existente', () => {
+  it('deve atualizar o material mantendo o estoque atual', () => {
     component.materiais = [materialTeste];
 
     component.abrirEdicao(materialTeste);
 
     component.materialForm.patchValue({
       nome: 'Inserto atualizado',
-      estoqueAtual: 30,
       ultimoValor: '30,50',
     });
 
@@ -124,7 +129,7 @@ describe('Materiais', () => {
       'Inserto atualizado'
     );
 
-    expect(component.materiais[0].estoqueAtual).toBe(30);
+    expect(component.materiais[0].estoqueAtual).toBe(25);
     expect(component.materiais[0].ultimoValor).toBe(30.5);
   });
 
@@ -140,51 +145,31 @@ describe('Materiais', () => {
     expect(valorFormatado).toContain('25,90');
   });
 
-  it('deve identificar corretamente o status do estoque', () => {
+  it('deve identificar estoque mínimo ou abaixo como crítico', () => {
     const normal = {
       ...materialTeste,
       estoqueAtual: 20,
       estoqueMinimo: 10,
     };
 
-    const atencao = {
+    const noMinimo = {
       ...materialTeste,
       estoqueAtual: 10,
       estoqueMinimo: 10,
     };
 
-    const critico = {
+    const abaixoMinimo = {
       ...materialTeste,
       estoqueAtual: 5,
       estoqueMinimo: 10,
     };
 
     expect(component.statusEstoque(normal)).toBe('Normal');
-    expect(component.statusEstoque(atencao)).toBe('Atenção');
-    expect(component.statusEstoque(critico)).toBe('Crítico');
-  });
-
-  it('deve retornar a classe correta para cada status de estoque', () => {
-    const normal = {
-      ...materialTeste,
-      estoqueAtual: 20,
-      estoqueMinimo: 10,
-    };
-
-    const atencao = {
-      ...materialTeste,
-      estoqueAtual: 10,
-      estoqueMinimo: 10,
-    };
-
-    const critico = {
-      ...materialTeste,
-      estoqueAtual: 5,
-      estoqueMinimo: 10,
-    };
+    expect(component.statusEstoque(noMinimo)).toBe('Crítico');
+    expect(component.statusEstoque(abaixoMinimo)).toBe('Crítico');
 
     expect(component.classeStatusEstoque(normal)).toBe('success');
-    expect(component.classeStatusEstoque(atencao)).toBe('warning');
-    expect(component.classeStatusEstoque(critico)).toBe('danger');
+    expect(component.classeStatusEstoque(noMinimo)).toBe('danger');
+    expect(component.classeStatusEstoque(abaixoMinimo)).toBe('danger');
   });
 });
