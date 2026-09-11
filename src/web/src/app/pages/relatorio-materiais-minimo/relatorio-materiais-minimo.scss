@@ -1,0 +1,136 @@
+.relatorio-container {
+  padding: 24px;
+}
+
+.relatorio-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24px;
+  margin-bottom: 24px;
+
+  h1 {
+    margin: 0 0 8px;
+    font-size: 28px;
+    font-weight: 600;
+  }
+
+  p {
+    margin: 0;
+    color: var(--mat-sys-on-surface-variant);
+  }
+}
+
+.resumo-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+
+  min-width: 180px;
+  padding: 16px 20px;
+
+  border: 1px solid var(--mat-sys-outline-variant);
+  border-radius: 12px;
+  background: var(--mat-sys-surface-container);
+
+  mat-icon {
+    color: var(--mat-sys-error);
+  }
+
+  div {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  strong {
+    font-size: 24px;
+  }
+}
+
+.resumo-label {
+  font-size: 13px;
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.tabela-container {
+  overflow-x: auto;
+
+  border: 1px solid var(--mat-sys-outline-variant);
+  border-radius: 12px;
+  background: var(--mat-sys-surface);
+}
+
+.materiais-table {
+  width: 100%;
+}
+
+.status-critico {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+
+  padding: 6px 10px;
+
+  border-radius: 999px;
+  background: var(--mat-sys-error-container);
+  color: var(--mat-sys-on-error-container);
+
+  font-size: 13px;
+  font-weight: 600;
+
+  mat-icon {
+    width: 18px;
+    height: 18px;
+    font-size: 18px;
+  }
+}
+
+.estado-vazio {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+
+  padding: 48px 24px;
+
+  border: 1px solid var(--mat-sys-outline-variant);
+  border-radius: 12px;
+  background: var(--mat-sys-surface);
+
+  text-align: center;
+
+  mat-icon {
+    width: 48px;
+    height: 48px;
+    margin-bottom: 12px;
+
+    font-size: 48px;
+    color: var(--mat-sys-primary);
+  }
+
+  h2 {
+    margin: 0 0 8px;
+    font-size: 20px;
+  }
+
+  p {
+    margin: 0;
+    color: var(--mat-sys-on-surface-variant);
+  }
+}
+
+@media (max-width: 768px) {
+  .relatorio-container {
+    padding: 16px;
+  }
+
+  .relatorio-header {
+    flex-direction: column;
+  }
+
+  .resumo-card {
+    width: 100%;
+    box-sizing: border-box;
+  }
+}
