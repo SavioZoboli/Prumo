@@ -21,7 +21,7 @@ CAUTION: Do not modify this file unless you know what you are doing.
 <table name="Usuarios" layers="0" collapse-mode="2" max-obj-count="9" z-value="0">
 	<schema name="public"/>
 	<role name="postgres"/>
-	<position x="120" y="500"/>
+	<position x="100" y="420"/>
 	<column name="id" not-null="true"
 	 identity-type="ALWAYS">
 		<type name="smallint" length="0"/>
@@ -61,7 +61,7 @@ CAUTION: Do not modify this file unless you know what you are doing.
 <table name="Materiais" layers="0" collapse-mode="2" max-obj-count="13" z-value="0">
 	<schema name="public"/>
 	<role name="postgres"/>
-	<position x="1320" y="200"/>
+	<position x="1320" y="140"/>
 	<column name="id" not-null="true"
 	 identity-type="ALWAYS">
 		<type name="smallint" length="0"/>
@@ -101,10 +101,10 @@ CAUTION: Do not modify this file unless you know what you are doing.
 	</constraint>
 </table>
 
-<table name="Movimentacoes" layers="0" collapse-mode="2" max-obj-count="8" z-value="0">
+<table name="Movimentacoes" layers="0" collapse-mode="2" max-obj-count="10" z-value="0">
 	<schema name="public"/>
 	<role name="postgres"/>
-	<position x="620" y="660"/>
+	<position x="740" y="560"/>
 	<column name="id" not-null="true"
 	 identity-type="ALWAYS">
 		<type name="smallint" length="0"/>
@@ -127,6 +127,12 @@ CAUTION: Do not modify this file unless you know what you are doing.
 	<column name="ordem_compra_id">
 		<type name="smallint" length="0"/>
 	</column>
+	<column name="ordem_producao">
+		<type name="varchar" length="10"/>
+	</column>
+	<column name="motivo_estorno">
+		<type name="varchar" length="100"/>
+	</column>
 	<constraint name="Movimentacoes_pk" type="pk-constr" table="public.&quot;Movimentacoes&quot;">
 		<columns names="id" ref-type="src-columns"/>
 	</constraint>
@@ -135,7 +141,7 @@ CAUTION: Do not modify this file unless you know what you are doing.
 <table name="Itens_Movimento" layers="0" collapse-mode="2" max-obj-count="3" z-value="0">
 	<schema name="public"/>
 	<role name="postgres"/>
-	<position x="1240" y="640"/>
+	<position x="1280" y="600"/>
 	<column name="movimento_id" not-null="true">
 		<type name="smallint" length="0"/>
 	</column>
@@ -153,7 +159,7 @@ CAUTION: Do not modify this file unless you know what you are doing.
 <table name="Logs_Perfil" layers="0" collapse-mode="2" max-obj-count="7" z-value="0">
 	<schema name="public"/>
 	<role name="postgres"/>
-	<position x="100" y="120"/>
+	<position x="100" y="40"/>
 	<column name="id" not-null="true"
 	 identity-type="ALWAYS">
 		<type name="smallint" length="0"/>
@@ -225,7 +231,7 @@ CAUTION: Do not modify this file unless you know what you are doing.
 <table name="Ordens_Compra" layers="0" collapse-mode="2" max-obj-count="7" z-value="0">
 	<schema name="public"/>
 	<role name="postgres"/>
-	<position x="460" y="320"/>
+	<position x="480" y="240"/>
 	<column name="id" not-null="true"
 	 identity-type="ALWAYS">
 		<type name="smallint" length="0"/>
@@ -253,7 +259,7 @@ CAUTION: Do not modify this file unless you know what you are doing.
 <table name="Itens_Ordem_Compra" layers="0" collapse-mode="2" max-obj-count="4" z-value="0">
 	<schema name="public"/>
 	<role name="postgres"/>
-	<position x="840" y="320"/>
+	<position x="900" y="220"/>
 	<column name="ordem_compra_id" not-null="true">
 		<type name="smallint" length="0"/>
 	</column>
