@@ -57,32 +57,4 @@ describe('RelatorioMateriaisMinimo', () => {
   it('deve retornar a quantidade correta de materiais críticos', () => {
     expect(component.totalCriticos).toBe(3);
   });
-
-  it('deve calcular a diferença necessária para atingir o estoque mínimo', () => {
-    const material = component.materiais.find(
-      (item) => item.codigo === 'CNMG120408'
-    );
-
-    expect(material).toBeTruthy();
-
-    if (material) {
-      expect(component.diferencaEstoque(material)).toBe(5);
-    }
-  });
-
-  it('não deve retornar diferença negativa quando estoque estiver acima do mínimo', () => {
-    const material = component.materiais.find(
-      (item) => item.codigo === 'BROCA008'
-    );
-
-    expect(material).toBeTruthy();
-
-    if (material) {
-      expect(component.diferencaEstoque(material)).toBe(0);
-    }
-  });
-
-  it('deve retornar status crítico', () => {
-    expect(component.statusEstoque()).toBe('Crítico');
-  });
 });

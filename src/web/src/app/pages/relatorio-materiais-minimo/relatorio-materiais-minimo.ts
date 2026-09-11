@@ -36,6 +36,7 @@ export class RelatorioMateriaisMinimo {
     'status',
   ];
 
+  // Mock temporário enquanto a integração com o backend de materiais não está disponível.
   materiais: MaterialRelatorio[] = [
     {
       codigo: 'CNMG120408',
@@ -89,16 +90,5 @@ export class RelatorioMateriaisMinimo {
 
   get totalCriticos(): number {
     return this.materiaisAbaixoDoMinimo.length;
-  }
-
-  diferencaEstoque(material: MaterialRelatorio): number {
-    return Math.max(
-      material.estoqueMinimo - material.estoqueAtual,
-      0
-    );
-  }
-
-  statusEstoque(): string {
-    return 'Crítico';
   }
 }
