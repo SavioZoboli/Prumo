@@ -11,10 +11,14 @@ import { Material } from "./material.entity";
 import { CreateMaterialDto } from "./dto/create-material.dto";
 import { UpdateMaterialDto } from "./dto/update-material.dto";
 import { JwtAuthGuard } from "../auth/jwt-auth.guard";
+import { RolesGuard } from "../auth/roles.guard";
+import { Roles } from "../auth/roles.decorator";
+import { PerfilUsuario } from "../usuarios/perfil.enum";
 
 @ApiTags('Materiais')
 @ApiBearerAuth()
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, RolesGuard)
+@Roles(PerfilUsuario.ADMIN, PerfilUsuario.LIDER)
 @Controller('materiais')
 export class MaterialController {
   constructor(private readonly materialService: MaterialService) {}
