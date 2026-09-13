@@ -1,9 +1,10 @@
 import { Entity, PrimaryGeneratedColumn, Column, Unique } from 'typeorm';
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiHideProperty, ApiProperty } from '@nestjs/swagger';
+import { Exclude } from 'class-transformer';
+import { PerfilUsuario } from './perfil.enum';
 
 @Entity('Usuarios')
 
-@Unique('uq_usuario', ['usuario'])
 @Unique('uq_email', ['email'])
 export class Usuario {
 
@@ -39,31 +40,23 @@ export class Usuario {
   @Column({ type: 'varchar', length: 60 })
   declare email: string;
 
-  @ApiProperty({
-    example: 'leticiaz',
-    description: 'Nome de usuário utilizado para acesso ao sistema',
-  })
-  @Column({ type: 'varchar', length: 50 })
-  declare usuario: string;
-
-  @ApiProperty({
-    example: '123456',
-    description: 'Senha do usuário',
-  })
+  @ApiHideProperty()
+  @Exclude()
   @Column({ type: 'varchar', length: 100 })
   declare senha: string;
 
   @ApiProperty({
-    example: 'USER',
+    enum: PerfilUsuario,
+    example: PerfilUsuario.USUARIO,
     description: 'Perfil de acesso do usuário',
   })
-  @Column({ type: 'varchar', length: 5, default: 'USER' })
-  declare perfil: string;
+  @Column({ type: 'varchar', length: 10, default: PerfilUsuario.USUARIO })
+  declare perfil: PerfilUsuario;
 
   @ApiProperty({
     example: true,
     description: 'Indica se o usuário está ativo',
   })
-  @Column({ type: 'boolean', nullable: true, default: true })
+  @Column({ type: 'boolean', nullable: false, default: true })
   declare ativo: boolean;
 }

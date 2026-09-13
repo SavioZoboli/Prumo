@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import {
   FormBuilder,
@@ -20,11 +20,14 @@ import {
 
 import { InputComponent } from '../../components/input-component/input-component';
 import { ButtonComponent } from '../../components/button-component/button-component';
+import { UsuarioService } from '../../services/usuario.service';
+import { MatDialog } from '@angular/material/dialog';
+import { Dialog } from '../../components/dialog/dialog';
 
 interface UsuarioLista {
+  id: number;
   nome: string;
   sobrenome: string;
-  usuario: string;
   email: string;
   perfil: string;
   ativo: boolean;
@@ -53,33 +56,48 @@ export class Usuarios {
   painelAberto = false;
   salvando = false;
 
+  dialog = inject(MatDialog);
+
   usuarioEmEdicao: UsuarioLista | null = null;
 
-  colunasExibidas = [
-    'nome',
-    'usuario',
-    'email',
-    'perfil',
-    'status',
-    'acoes',
-  ];
+  colunasExibidas = ['nome', 'email', 'perfil', 'status', 'acoes'];
 
-  usuarios: UsuarioLista[] = [];
+  usuarios = signal<UsuarioLista[]>([]);
 
   usuarioForm: FormGroup;
 
   constructor(
     private fb: FormBuilder,
-    private snackBar: MatSnackBar
+    private snackBar: MatSnackBar,
+    private usuarioService: UsuarioService,
   ) {
     this.usuarioForm = this.fb.group({
+      id: [''],
       nome: ['', Validators.required],
       sobrenome: ['', Validators.required],
       email: ['', [Validators.required, Validators.email]],
-      usuario: ['', Validators.required],
       senha: ['', Validators.required],
       perfil: ['USUARIO', Validators.required],
       ativo: [true],
+    });
+
+    this.listarUsuarios();
+  }
+
+  private listarUsuarios(): void {
+    this.usuarioService.listAll().subscribe({
+      next: (res) => {
+        this.usuarios.set(res);
+        console.log(res);
+      },
+      error: () => {
+        this.snackBar.open('Erro ao listar', '', {
+          duration: 5000,
+          horizontalPosition: 'right',
+          verticalPosition: 'top',
+          panelClass: ['success-snackbar'],
+        });
+      },
     });
   }
 
@@ -88,12 +106,14 @@ export class Usuarios {
 
     const senhaControl = this.usuarioForm.get('senha');
 
+    senhaControl?.enable();
     senhaControl?.setValidators(Validators.required);
     senhaControl?.updateValueAndValidity();
 
     this.usuarioForm.reset({
       perfil: 'USUARIO',
       ativo: true,
+      id: null,
     });
 
     this.painelAberto = true;
@@ -108,14 +128,16 @@ export class Usuarios {
     senhaControl?.updateValueAndValidity();
 
     this.usuarioForm.reset({
+      id: usuario.id,
       nome: usuario.nome,
       sobrenome: usuario.sobrenome,
       email: usuario.email,
-      usuario: usuario.usuario,
       senha: '',
       perfil: usuario.perfil,
       ativo: usuario.ativo,
     });
+
+    senhaControl?.disable();
 
     this.painelAberto = true;
   }
@@ -130,44 +152,57 @@ export class Usuarios {
       return;
     }
 
-    const dadosUsuario = this.usuarioForm.getRawValue();
-
+    const du = this.usuarioForm.getRawValue();
     const editando = this.usuarioEmEdicao !== null;
 
     if (this.usuarioEmEdicao) {
-      this.usuarios = this.usuarios.map((usuario) =>
-        usuario === this.usuarioEmEdicao
-          ? {
-              nome: dadosUsuario.nome,
-              sobrenome: dadosUsuario.sobrenome,
-              usuario: dadosUsuario.usuario,
-              email: dadosUsuario.email,
-              perfil: dadosUsuario.perfil,
-              ativo: dadosUsuario.ativo,
-            }
-          : usuario
-      );
+      this.usuarioService
+        .update(
+          du.id,
+          du.nome,
+          du.sobrenome,
+          du.email,
+          du.ativo,
+          du.perfil,
+        )
+        .subscribe({
+          next: () => {
+            this.listarUsuarios();
+            this.resetAndCloseForm();
+          },
+          error: (err) => {
+            this.snackBar.open(err.message, 'Ok', {
+              duration: 5000,
+              horizontalPosition: 'right',
+              verticalPosition: 'top',
+              panelClass: ['success-snackbar'],
+            });
+          },
+        });
     } else {
-      this.usuarios = [
-        ...this.usuarios,
-        {
-          nome: dadosUsuario.nome,
-          sobrenome: dadosUsuario.sobrenome,
-          usuario: dadosUsuario.usuario,
-          email: dadosUsuario.email,
-          perfil: dadosUsuario.perfil,
-          ativo: dadosUsuario.ativo,
-        },
-      ];
+      this.usuarioService
+        .create(
+          du.nome,
+          du.sobrenome,
+          du.email,
+          du.senha,
+          du.perfil,
+        )
+        .subscribe({
+          next: () => {
+            this.resetAndCloseForm();
+            this.listarUsuarios();
+          },
+          error: (err) => {
+            this.snackBar.open(err.message, 'Ok', {
+              duration: 5000,
+              horizontalPosition: 'right',
+              verticalPosition: 'top',
+              panelClass: ['success-snackbar'],
+            });
+          },
+        });
     }
-
-    this.usuarioForm.reset({
-      perfil: 'USUARIO',
-      ativo: true,
-    });
-
-    this.salvando = false;
-    this.fecharCadastro();
 
     this.snackBar.open(
       editando
@@ -179,8 +214,60 @@ export class Usuarios {
         horizontalPosition: 'right',
         verticalPosition: 'top',
         panelClass: ['success-snackbar'],
-      }
+      },
     );
+  }
+
+  desativar(usuario: UsuarioLista): void {
+    const dialogRef = this.dialog.open(Dialog, {
+      data: {
+        title: 'Exclusão de usuário',
+        message: `Deseja realmente excluir o usuário ${usuario.nome}?`,
+      },
+    });
+
+    dialogRef.afterClosed().subscribe((excluir) => {
+      if (excluir) {
+        this.usuarioService.desativar(usuario.id).subscribe({
+          next: () => {
+            this.snackBar.open(
+              'Usuário desativado com sucesso!',
+              '',
+              {
+                duration: 5000,
+                horizontalPosition: 'right',
+                verticalPosition: 'top',
+                panelClass: ['success-snackbar'],
+              },
+            );
+
+            this.listarUsuarios();
+          },
+          error: () => {
+            this.snackBar.open(
+              'Erro ao desativar o usuário!',
+              '',
+              {
+                duration: 5000,
+                horizontalPosition: 'right',
+                verticalPosition: 'top',
+                panelClass: ['error-snackbar'],
+              },
+            );
+          },
+        });
+      }
+    });
+  }
+
+  private resetAndCloseForm(): void {
+    this.usuarioForm.reset({
+      perfil: 'USUARIO',
+      ativo: true,
+    });
+
+    this.salvando = false;
+    this.fecharCadastro();
   }
 
   formatarPerfil(perfil: string): string {
@@ -203,10 +290,6 @@ export class Usuarios {
 
   get email() {
     return this.usuarioForm.get('email');
-  }
-
-  get usuario() {
-    return this.usuarioForm.get('usuario');
   }
 
   get senha() {

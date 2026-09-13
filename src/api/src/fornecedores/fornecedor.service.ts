@@ -5,6 +5,7 @@ import { InjectRepository } from "@nestjs/typeorm";
 import { Fornecedor } from "./fornecedor.entity";
 import { UpdateFornecedorDto } from "../usuarios/dto/update-fornecedor.dto";
 import { CreateFornecedorDto } from "../usuarios/dto/create-fornecedor.dto";
+import { normalizarCnpj } from "./cnpj.validator";
 
 @Injectable()
 export class FornecedorService {
@@ -15,10 +16,15 @@ export class FornecedorService {
 
  async create(createFornecedorDto: CreateFornecedorDto): Promise<Fornecedor> {
   try {
-    return await this.fornecedorRepository.save(createFornecedorDto);
+    const fornecedor = this.fornecedorRepository.create({
+      ...createFornecedorDto,
+      cnpj: normalizarCnpj(createFornecedorDto.cnpj),
+    });
+
+    return await this.fornecedorRepository.save(fornecedor);
 } catch (error: any) {
         if (error.code === '23505') {
-      throw new ConflictException('Fornecedorjá cadastrado.');
+      throw new ConflictException('Fornecedor já cadastrado.');
     }
     throw error;
   }
@@ -43,7 +49,13 @@ async update(
     id: number,
     updateFornecedorDto: UpdateFornecedorDto,
 ): Promise<Fornecedor | null>{
-    await this.fornecedorRepository.update(id, updateFornecedorDto);
+    const dados: UpdateFornecedorDto = { ...updateFornecedorDto };
+
+    if (dados.cnpj) {
+      dados.cnpj = normalizarCnpj(dados.cnpj);
+    }
+
+    await this.fornecedorRepository.update(id, dados);
     return this.findOne(id);
 }
 

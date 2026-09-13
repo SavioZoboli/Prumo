@@ -1,7 +1,8 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post, UseGuards } from "@nestjs/common";
+import { Body, Controller, Delete, ForbiddenException, Get, Param, ParseIntPipe, Patch, Post, Req, UseGuards } from "@nestjs/common";
 import { UpdateUsuarioDto } from "./dto/update-usuario.dto";
 import { CreateUsuarioDto } from "./dto/create-usuario.dto";
 import { Usuario } from "./usuario.entity";
+import { PerfilUsuario } from "./perfil.enum";
 import { UsuarioService } from "./usuario.service";
 import {
   ApiTags,
@@ -10,6 +11,8 @@ import {
   ApiParam,
 } from '@nestjs/swagger';
 import { JwtAuthGuard } from "../auth/jwt-auth.guard";
+import { RolesGuard } from "../auth/roles.guard";
+import { Roles } from "../auth/roles.decorator";
 
 @ApiTags('Usuários')
 @Controller('usuarios')
@@ -23,7 +26,8 @@ export class UsuarioController {
   type: Usuario,
 })
 @Post()
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, RolesGuard)
+@Roles(PerfilUsuario.ADMIN)
 async create(
   @Body() createUsuarioDto: CreateUsuarioDto,
 ): Promise<Usuario> {
@@ -59,7 +63,7 @@ findAll() {
 })
 @Get(':id')
 @UseGuards(JwtAuthGuard)
-findOne(@Param('id') id: number) {
+findOne(@Param('id', ParseIntPipe) id: number) {
   return this.usuarioService.findOne(id);
 }
 
@@ -81,10 +85,26 @@ findOne(@Param('id') id: number) {
 @Patch(':id')
 @UseGuards(JwtAuthGuard)
 update(
-  @Param('id') id: number,
+  @Param('id', ParseIntPipe) id: number,
   @Body() updateUsuarioDto: UpdateUsuarioDto,
+  @Req() req: Request,
 ) {
-  return this.usuarioService.update(id, updateUsuarioDto);
+  const solicitante = (req as any).user;
+  const ehAdmin = solicitante?.perfil === PerfilUsuario.ADMIN;
+
+  if (!ehAdmin && solicitante?.id !== id) {
+    throw new ForbiddenException(
+      'Você só pode editar o seu próprio cadastro.',
+    );
+  }
+
+  if (updateUsuarioDto.perfil && !ehAdmin) {
+    throw new ForbiddenException(
+      'Apenas usuários com perfil ADMIN podem alterar o perfil de um usuário.',
+    );
+  }
+
+  return this.usuarioService.update(id, updateUsuarioDto, solicitante?.id);
 }
 
  @ApiOperation({
@@ -105,16 +125,23 @@ update(
       nome: 'Letícia',
       sobrenome: 'Zalasik',
       email: 'leticia@email.com',
-      usuario: 'leticiaz',
-      senha: '123456',
-      perfil: 'USER',
+      perfil: 'USUARIO',
       ativo: false,
     },
   },
 })
 @Delete(':id')
 @UseGuards(JwtAuthGuard)
-remove(@Param('id') id: number) {
+remove(@Param('id', ParseIntPipe) id: number, @Req() req: Request) {
+  const solicitante = (req as any).user;
+  const ehAdmin = solicitante?.perfil === PerfilUsuario.ADMIN;
+
+  if (!ehAdmin && solicitante?.id !== id) {
+    throw new ForbiddenException(
+      'Você só pode desativar o seu próprio cadastro.',
+    );
+  }
+
   return this.usuarioService.desativar(id);
 }
 }

@@ -22,7 +22,7 @@
 
     <table
       mat-table
-      [dataSource]="usuarios"
+      [dataSource]="usuarios()"
       class="usuarios-page__table"
     >
 
@@ -33,16 +33,6 @@
 
         <td mat-cell *matCellDef="let item">
           {{ item.nome }} {{ item.sobrenome }}
-        </td>
-      </ng-container>
-
-      <ng-container matColumnDef="usuario">
-        <th mat-header-cell *matHeaderCellDef>
-          Usuário
-        </th>
-
-        <td mat-cell *matCellDef="let item">
-          {{ item.usuario }}
         </td>
       </ng-container>
 
@@ -98,6 +88,16 @@
             (click)="abrirEdicao(item)"
           >
             <mat-icon>edit</mat-icon>
+          </button>
+
+          <button
+            mat-icon-button
+            type="button"
+            aria-label="Desativar usuário"
+            (click)="desativar(item)"
+            class="delete"
+          >
+            <mat-icon>delete</mat-icon>
           </button>
 
         </td>
@@ -196,16 +196,6 @@
 
 
       <app-input
-        label="Usuário"
-        placeholder="Ex: john.doe"
-        [required]="true"
-        formControlName="usuario"
-        [hasError]="!!usuario?.invalid && !!usuario?.touched"
-        errorMessage="Usuário é obrigatório"
-      ></app-input>
-
-
-      <app-input
         [label]="usuarioEmEdicao ? 'Nova senha' : 'Senha'"
         type="password"
         [placeholder]="
@@ -252,13 +242,14 @@
 
       <div class="usuarios-page__form-actions">
 
-        <app-button
-          label="CANCELAR"
+        <button
+          mat-flat-button
           type="button"
           variant="secondary"
-          [fullWidth]="false"
           (click)="fecharCadastro()"
-        ></app-button>
+        >
+        CANCELAR
+      </button>
 
 
         <app-button

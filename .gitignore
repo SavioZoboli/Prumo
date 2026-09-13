@@ -9,6 +9,7 @@ src/api/.vscode
 # Environments
 src/web/src/environments
 src/api/.env
+.env
 
 # Pasta temporária do Angular
 src/web/.angular
@@ -20,3 +21,5 @@ src/web/.angular
 .DS_Store
 
 src/api/dist
+
+
