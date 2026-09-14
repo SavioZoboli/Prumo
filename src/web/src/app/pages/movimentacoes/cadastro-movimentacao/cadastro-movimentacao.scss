@@ -1,0 +1,128 @@
+@use '../../../../assets/scss/shared-patterns' as *;
+
+:host {
+  display: contents;
+}
+
+.movimentacao-form {
+
+  &__backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+
+    background-color: color-mix(
+      in srgb,
+      var(--mat-sys-on-surface) 35%,
+      transparent
+    );
+  }
+
+  &__drawer {
+    position: fixed;
+    top: 0;
+    right: 0;
+    z-index: 1001;
+
+    width: min(520px, 100vw);
+    height: 100vh;
+    box-sizing: border-box;
+
+    padding: var(--app-space-xl);
+
+    background-color: var(--mat-sys-surface-container-low);
+    border-left: 1px solid var(--mat-sys-outline-variant);
+    box-shadow: var(--app-shadow-md);
+
+    transform: translateX(100%);
+    transition: transform 0.25s ease;
+
+    overflow-y: auto;
+    overflow-x: hidden;
+
+    &--open {
+      transform: translateX(0);
+    }
+  }
+
+  &__drawer-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+
+    padding-bottom: var(--app-space-lg);
+    margin-bottom: var(--app-space-lg);
+
+    border-bottom: 1px solid var(--mat-sys-outline-variant);
+
+    h2 {
+      margin: 0;
+      color: var(--mat-sys-primary);
+    }
+
+    p {
+      margin: var(--app-space-xs) 0 0;
+      color: var(--mat-sys-on-surface-variant);
+    }
+  }
+
+  &__form {
+    @extend %cadastro-form;
+
+    mat-form-field {
+      width: 100%;
+    }
+  }
+
+  &__itens-header {
+    .section-label {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--mat-sys-on-surface-variant);
+    }
+  }
+
+  &__itens {
+    display: flex;
+    flex-direction: column;
+    gap: var(--app-space-sm);
+  }
+
+  &__item {
+    display: grid;
+    grid-template-columns: 1fr 100px auto;
+    gap: var(--app-space-sm);
+    align-items: start;
+  }
+
+  &__add-item {
+    width: fit-content;
+    display: flex;
+    align-items: center;
+    gap: var(--app-space-xs);
+    color: var(--mat-sys-primary);
+    padding: 0 var(--app-space-sm);
+
+    span {
+      font-size: 0.85rem;
+      font-weight: 500;
+    }
+  }
+
+  &__form-actions {
+    @extend %form-actions;
+  }
+}
+
+@media (max-width: 768px) {
+  .movimentacao-form {
+    &__drawer {
+      width: 100vw;
+      padding: var(--app-space-lg);
+    }
+
+    &__item {
+      grid-template-columns: 1fr;
+    }
+  }
+}
