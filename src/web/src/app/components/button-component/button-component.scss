@@ -16,6 +16,10 @@
   }
 }
 
+.app-button--secondary {
+  @extend %btn-discrete;
+}
+
 ng-content{
   display: inline-flex;
   align-items: center;

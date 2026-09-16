@@ -1,12 +1,16 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { of } from 'rxjs';
 
 import { Materiais } from './materiais';
+import { MaterialService } from '../../services/material.service';
 
 describe('Materiais', () => {
   let component: Materiais;
   let fixture: ComponentFixture<Materiais>;
 
   const materialTeste = {
+    id: 1,
+    fabricanteId: 1,
     nome: 'Inserto de torneamento',
     codigo: 'CNMG120408',
     equipamento: 'Torno CNC',
@@ -19,9 +23,55 @@ describe('Materiais', () => {
     ativo: true,
   };
 
+  const materialServiceMock = {
+    listAll: vi.fn(() => of([])),
+    create: vi.fn(() =>
+      of({
+        id: 1,
+        nome: 'Inserto de torneamento',
+        codigo: 'CNMG120408',
+        equipamento: 'Torno CNC',
+        estoqueMinimo: 10,
+        estoqueAtual: 0,
+        fabricanteId: 1,
+        ativo: true,
+        ultimoValor: 25.9,
+        unidadeMedida: 'UN',
+        localizacao: 'A-01',
+      })
+    ),
+    update: vi.fn(() =>
+      of({
+        id: 1,
+        nome: 'Inserto atualizado',
+        codigo: 'CNMG120408',
+        equipamento: 'Torno CNC',
+        estoqueMinimo: 10,
+        estoqueAtual: 25,
+        fabricanteId: 1,
+        ativo: true,
+        ultimoValor: 30.5,
+        unidadeMedida: 'UN',
+        localizacao: 'A-01',
+      })
+    ),
+  };
+
   beforeEach(async () => {
+    materialServiceMock.listAll.mockClear();
+    materialServiceMock.create.mockClear();
+    materialServiceMock.update.mockClear();
+
+    materialServiceMock.listAll.mockReturnValue(of([]));
+
     await TestBed.configureTestingModule({
       imports: [Materiais],
+      providers: [
+        {
+          provide: MaterialService,
+          useValue: materialServiceMock,
+        },
+      ],
     }).compileComponents();
 
     fixture = TestBed.createComponent(Materiais);
@@ -62,11 +112,11 @@ describe('Materiais', () => {
 
     component.salvarMaterial();
 
-    expect(component.materiais.length).toBe(0);
     expect(component.materialForm.touched).toBe(true);
+    expect(materialServiceMock.create).not.toHaveBeenCalled();
   });
 
-  it('deve cadastrar um novo material com estoque atual igual a zero', () => {
+  it('deve cadastrar um novo material pela API', () => {
     component.abrirCadastro();
 
     component.materialForm.setValue({
@@ -83,15 +133,19 @@ describe('Materiais', () => {
 
     component.salvarMaterial();
 
-    expect(component.materiais.length).toBe(1);
+    expect(materialServiceMock.create).toHaveBeenCalledWith({
+      nome: 'Inserto de torneamento',
+      codigo: 'CNMG120408',
+      equipamento: 'Torno CNC',
+      fabricanteId: 1,
+      unidadeMedida: 'UN',
+      localizacao: 'A-01',
+      estoqueMinimo: 10,
+      ultimoValor: 25.9,
+      ativo: true,
+    });
 
-    expect(component.materiais[0].nome).toBe(
-      'Inserto de torneamento'
-    );
-
-    expect(component.materiais[0].estoqueAtual).toBe(0);
-    expect(component.materiais[0].ultimoValor).toBe(25.9);
-    expect(component.materiais[0].ativo).toBe(true);
+    expect(component.painelAberto).toBe(false);
   });
 
   it('deve abrir a edição com os dados do material', () => {
@@ -111,9 +165,7 @@ describe('Materiais', () => {
     expect(component.materialForm.value.ultimoValor).toBe(25.9);
   });
 
-  it('deve atualizar o material mantendo o estoque atual', () => {
-    component.materiais = [materialTeste];
-
+  it('deve atualizar um material pela API', () => {
     component.abrirEdicao(materialTeste);
 
     component.materialForm.patchValue({
@@ -123,14 +175,22 @@ describe('Materiais', () => {
 
     component.salvarMaterial();
 
-    expect(component.materiais.length).toBe(1);
-
-    expect(component.materiais[0].nome).toBe(
-      'Inserto atualizado'
+    expect(materialServiceMock.update).toHaveBeenCalledWith(
+      1,
+      {
+        nome: 'Inserto atualizado',
+        codigo: 'CNMG120408',
+        equipamento: 'Torno CNC',
+        fabricanteId: 1,
+        unidadeMedida: 'UN',
+        localizacao: 'A-01',
+        estoqueMinimo: 10,
+        ultimoValor: 30.5,
+        ativo: true,
+      }
     );
 
-    expect(component.materiais[0].estoqueAtual).toBe(25);
-    expect(component.materiais[0].ultimoValor).toBe(30.5);
+    expect(component.painelAberto).toBe(false);
   });
 
   it('deve converter e formatar o último valor corretamente', () => {
