@@ -216,7 +216,7 @@
         placeholder="Ex: Inserto de torneamento"
         [required]="true"
         formControlName="nome"
-        [hasError]="!!nome?.invalid && !!nome?.touched"
+        [hasError]="!!nome.invalid && !!nome.touched"
         errorMessage="Nome é obrigatório"
       ></app-input>
 
@@ -227,7 +227,7 @@
         placeholder="Ex: CNMG120408"
         [required]="true"
         formControlName="codigo"
-        [hasError]="!!codigo?.invalid && !!codigo?.touched"
+        [hasError]="!!codigo.invalid && !!codigo.touched"
         errorMessage="Código é obrigatório"
       ></app-input>
 
@@ -238,7 +238,7 @@
         placeholder="Ex: Torno CNC"
         [required]="true"
         formControlName="equipamento"
-        [hasError]="!!equipamento?.invalid && !!equipamento?.touched"
+        [hasError]="!!equipamento.invalid && !!equipamento.touched"
         errorMessage="Equipamento é obrigatório"
       ></app-input>
 
@@ -249,9 +249,9 @@
 
         <mat-select formControlName="fabricante">
 
-          @for (fabricante of fabricantes; track fabricante) {
-            <mat-option [value]="fabricante">
-              {{ fabricante }}
+          @for (fabricante of fabricantes; track fabricante.id) {
+            <mat-option [value]="fabricante.nome">
+              {{ fabricante.nome }}
             </mat-option>
           }
 
@@ -289,7 +289,7 @@
         placeholder="Ex: 10"
         [required]="true"
         formControlName="estoqueMinimo"
-        [hasError]="!!estoqueMinimo?.invalid && !!estoqueMinimo?.touched"
+        [hasError]="!!estoqueMinimo.invalid && !!estoqueMinimo.touched"
         errorMessage="Informe um estoque mínimo válido"
       ></app-input>
 

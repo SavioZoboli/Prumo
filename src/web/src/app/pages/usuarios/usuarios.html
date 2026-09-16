@@ -12,6 +12,7 @@
     <div class="action-area">
       <app-button
         label="+ NOVO USUÁRIO"
+        type="button"
         [fullWidth]="false"
         (click)="abrirCadastro()"
       ></app-button>
@@ -242,15 +243,13 @@
 
       <div class="usuarios-page__form-actions">
 
-        <button
-          mat-flat-button
+        <app-button
+          label="CANCELAR"
           type="button"
           variant="secondary"
+          [fullWidth]="false"
           (click)="fecharCadastro()"
-        >
-        CANCELAR
-      </button>
-
+        ></app-button>
 
         <app-button
           [label]="usuarioEmEdicao ? 'ATUALIZAR' : 'SALVAR'"
