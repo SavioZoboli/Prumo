@@ -44,14 +44,6 @@ export class MovimentacaoService {
 
     return this.movimentacaoRepository.manager.transaction(async (manager) => {
       const materialRepository = manager.getRepository(Material);
-
-      // Nomes de campo conferidos contra a entity real (Material.entity.ts):
-      // estoqueAtual e estoqueMinimo, em camelCase (coluna no banco e'
-      // estoque_atual/estoque_minimo, mas o TypeORM expoe pela propriedade
-      // em camelCase). Acumula por material_id (nao por item) para o caso de
-      // a mesma movimentacao ter dois itens do mesmo material: assim a
-      // checagem de RN03 considera a soma das quantidades, e o UPDATE final
-      // nao sobrescreve um incremento com o outro.
       const materiaisPorId = new Map<number, Material>();
 
       for (const item of itens) {
@@ -64,13 +56,13 @@ export class MovimentacaoService {
 
           if (!encontrado) {
             throw new NotFoundException(
-              `Material ${item.material_id} não encontrado.`, // RN06
+              `Material ${item.material_id} não encontrado.`,
             );
           }
 
           if (!encontrado.ativo) {
             throw new BadRequestException(
-              `Material ${item.material_id} está inativo.`, // RN06
+              `Material ${item.material_id} está inativo.`, 
             );
           }
 
@@ -80,11 +72,11 @@ export class MovimentacaoService {
 
         if (operacao === 'S' && item.quantidade > material.estoqueAtual) {
           throw new BadRequestException(
-            `Quantidade solicitada de ${item.material_id} é maior que o estoque disponível.`, // RN03
+            `Quantidade solicitada de ${item.material_id} é maior que o estoque disponível.`,
           );
         }
 
-        material.estoqueAtual += operacao === 'E' ? item.quantidade : -item.quantidade; // RF06
+        material.estoqueAtual += operacao === 'E' ? item.quantidade : -item.quantidade;
       }
 
       const materiaisEnvolvidos = [...materiaisPorId.values()];
@@ -116,8 +108,6 @@ export class MovimentacaoService {
 
       movimentacaoSalva.itens = itensSalvos;
 
-      // RF08: decisao ja tomada com a Leticia - ADMIN e LIDER sempre recebem
-      // o alerta (nao precisa de tabela de responsaveis por material).
       for (const material of materiaisEnvolvidos) {
         if (material.estoqueAtual <= material.estoqueMinimo) {
           // TODO: chamar o servico de envio de e-mail aos usuarios ADMIN/LIDER.
@@ -130,7 +120,6 @@ export class MovimentacaoService {
     });
   }
 
-  // RF09: consulta do historico por periodo, material ou tipo de operacao.
   async findAll(filtros: FiltrarMovimentacaoDto = {}): Promise<Movimentacao[]> {
     const qb = this.movimentacaoRepository
       .createQueryBuilder('movimentacao')
@@ -139,8 +128,7 @@ export class MovimentacaoService {
       .orderBy('movimentacao.data', 'DESC');
 
     if (filtros.material_id) {
-      // Filtra pelas movimentacoes que TEM aquele material entre os itens,
-      // sem duplicar a linha da capa (por isso subquery, e nao um join direto).
+      
       qb.andWhere(
         `movimentacao.id IN (
           SELECT im.movimento_id FROM "Itens_Movimento" im WHERE im.material_id = :materialId
@@ -181,7 +169,6 @@ export class MovimentacaoService {
     });
   }
 
-  // RF12: estorno da movimentacao, com motivo obrigatorio.
   async estornar(id: number, motivoEstorno: string): Promise<Movimentacao> {
     const movimentacao = await this.movimentacaoRepository.findOne({
       where: { id },
@@ -199,8 +186,7 @@ export class MovimentacaoService {
     await this.movimentacaoRepository.manager.transaction(async (manager) => {
       const materialRepository = manager.getRepository(Material);
 
-      // RF12: reverte no estoque o efeito de CADA item desta movimentacao
-      // (o inverso do que "create" fez: E vira -quantidade, S vira +quantidade).
+
       for (const item of movimentacao.itens) {
         const material = await materialRepository.findOne({
           where: { id: item.material_id },

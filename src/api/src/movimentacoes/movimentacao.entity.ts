@@ -94,16 +94,6 @@ export class Movimentacao {
   @Column({ type: 'smallint', nullable: true })
   declare ordem_compra_id: number | null;
 
-  // Sem FK ainda: a tabela "Ordens_Compra" nao existe no codigo (so tem
-  // front-end mockado). Descomentar junto com o entity de OrdemCompra e a
-  // migration que adiciona a constraint fk_ordem_compra_baixa (ver diagrama).
-  // @ManyToOne(() => OrdemCompra)
-  // @JoinColumn({
-  //   name: 'ordem_compra_id',
-  //   foreignKeyConstraintName: 'fk_ordem_compra_baixa',
-  // })
-  // declare ordemCompra: OrdemCompra;
-
   @ApiProperty({
     example: false,
     description: 'Indica se a movimentação foi estornada',
