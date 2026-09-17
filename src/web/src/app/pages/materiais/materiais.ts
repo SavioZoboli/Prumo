@@ -20,8 +20,11 @@ import {
 
 import { InputComponent } from '../../components/input-component/input-component';
 import { ButtonComponent } from '../../components/button-component/button-component';
+import { MaterialService } from '../../services/material.service';
 
 interface MaterialLista {
+  id?: number;
+  fabricanteId?: number;
   nome: string;
   codigo: string;
   equipamento: string;
@@ -74,19 +77,21 @@ export class Materiais {
 
   materialForm: FormGroup;
 
+  // Mock temporário enquanto não existe integração com cadastro de fabricantes.
   fabricantes = [
-    'Sandvik',
-    'Seco',
-    'Walter',
-    'Kennametal',
-    'Iscar',
+    { id: 1, nome: 'Sandvik' },
+    { id: 2, nome: 'Seco' },
+    { id: 3, nome: 'Walter' },
+    { id: 4, nome: 'Kennametal' },
+    { id: 5, nome: 'Iscar' },
   ];
 
   unidadesMedida = ['UN', 'KG', 'CX'];
 
   constructor(
     private fb: FormBuilder,
-    private snackBar: MatSnackBar
+    private snackBar: MatSnackBar,
+    private materialService: MaterialService
   ) {
     this.materialForm = this.fb.group({
       nome: ['', Validators.required],
@@ -95,9 +100,50 @@ export class Materiais {
       fabricante: ['', Validators.required],
       unidadeMedida: ['UN', Validators.required],
       localizacao: [''],
-      estoqueMinimo: [0, [Validators.required, Validators.min(0)]],
+      estoqueMinimo: [
+        0,
+        [
+          Validators.required,
+          Validators.min(0),
+          Validators.pattern(/^\d+$/),
+        ],
+      ],
       ultimoValor: [null],
       ativo: [true],
+    });
+
+    this.listarMateriais();
+  }
+
+  listarMateriais(): void {
+    this.materialService.listAll().subscribe({
+      next: (materiais) => {
+        this.materiais = materiais.map((material) => ({
+          id: material.id,
+          fabricanteId: material.fabricanteId,
+          nome: material.nome,
+          codigo: material.codigo,
+          equipamento: material.equipamento,
+          fabricante:
+            this.fabricantes.find(
+              (fabricante) =>
+                fabricante.id === material.fabricanteId
+            )?.nome ??
+            `Fabricante ${material.fabricanteId}`,
+          unidadeMedida: material.unidadeMedida ?? '',
+          localizacao: material.localizacao ?? '',
+          estoqueMinimo: material.estoqueMinimo,
+          estoqueAtual: material.estoqueAtual,
+          ultimoValor: material.ultimoValor,
+          ativo: material.ativo,
+        }));
+      },
+      error: (erro) => {
+        console.error(
+          'Erro ao carregar materiais:',
+          erro
+        );
+      },
     });
   }
 
@@ -142,59 +188,100 @@ export class Materiais {
       return;
     }
 
-    const dadosMaterial = this.materialForm.getRawValue();
+    const dadosMaterial =
+      this.materialForm.getRawValue();
 
-    const editando = this.materialEmEdicao !== null;
+    const fabricanteSelecionado =
+      this.fabricantes.find(
+        (fabricante) =>
+          fabricante.nome ===
+          dadosMaterial.fabricante
+      );
 
-    const material: MaterialLista = {
+    if (!fabricanteSelecionado) {
+      return;
+    }
+
+    const editando =
+      this.materialEmEdicao !== null;
+
+    const material = {
       nome: dadosMaterial.nome,
       codigo: dadosMaterial.codigo,
       equipamento: dadosMaterial.equipamento,
-      fabricante: dadosMaterial.fabricante,
-      unidadeMedida: dadosMaterial.unidadeMedida,
+      fabricanteId: fabricanteSelecionado.id,
+      unidadeMedida:
+        dadosMaterial.unidadeMedida,
       localizacao: dadosMaterial.localizacao,
-      estoqueMinimo: Number(dadosMaterial.estoqueMinimo),
-      estoqueAtual: this.materialEmEdicao
-        ? this.materialEmEdicao.estoqueAtual
-        : 0,
-      ultimoValor: this.converterValor(dadosMaterial.ultimoValor),
+      estoqueMinimo: Number(
+        dadosMaterial.estoqueMinimo
+      ),
+      ultimoValor: this.converterValor(
+        dadosMaterial.ultimoValor
+      ),
       ativo: dadosMaterial.ativo,
     };
 
-    if (this.materialEmEdicao) {
-      this.materiais = this.materiais.map((item) =>
-        item === this.materialEmEdicao ? material : item
-      );
-    } else {
-      this.materiais = [...this.materiais, material];
-    }
+    this.salvando = true;
 
-    this.materialForm.reset({
-      unidadeMedida: 'UN',
-      estoqueMinimo: 0,
-      ultimoValor: null,
-      ativo: true,
+    const requisicao =
+      editando && this.materialEmEdicao?.id
+        ? this.materialService.update(
+            this.materialEmEdicao.id,
+            material
+          )
+        : this.materialService.create(material);
+
+    requisicao.subscribe({
+      next: () => {
+        this.listarMateriais();
+
+        this.materialForm.reset({
+          unidadeMedida: 'UN',
+          estoqueMinimo: 0,
+          ultimoValor: null,
+          ativo: true,
+        });
+
+        this.salvando = false;
+        this.fecharCadastro();
+
+        this.snackBar.open(
+          editando
+            ? 'Material atualizado com sucesso.'
+            : 'Material cadastrado com sucesso.',
+          'Fechar',
+          {
+            duration: 3000,
+            horizontalPosition: 'right',
+            verticalPosition: 'top',
+            panelClass: ['success-snackbar'],
+          }
+        );
+      },
+      error: (erro) => {
+        this.salvando = false;
+
+        this.snackBar.open(
+          erro.error?.message ??
+            'Erro ao salvar material.',
+          'Fechar',
+          {
+            duration: 3000,
+            horizontalPosition: 'right',
+            verticalPosition: 'top',
+          }
+        );
+      },
     });
-
-    this.salvando = false;
-    this.fecharCadastro();
-
-    this.snackBar.open(
-      editando
-        ? 'Material atualizado com sucesso.'
-        : 'Material cadastrado com sucesso.',
-      'Fechar',
-      {
-        duration: 3000,
-        horizontalPosition: 'right',
-        verticalPosition: 'top',
-        panelClass: ['success-snackbar'],
-      }
-    );
   }
 
   converterValor(valor: unknown): number | null {
-    if (valor === null || valor === undefined || valor === '') {
+    if (
+      valor === null ||
+      valor === undefined ||
+      valor === ''
+    ) {
       return null;
     }
 
@@ -210,7 +297,10 @@ export class Materiais {
   }
 
   formatarValor(valor: number | null): string {
-    if (valor === null || !Number.isFinite(valor)) {
+    if (
+      valor === null ||
+      !Number.isFinite(valor)
+    ) {
       return '-';
     }
 
@@ -220,37 +310,49 @@ export class Materiais {
     }).format(valor);
   }
 
-  statusEstoque(material: MaterialLista): string {
-    if (material.estoqueAtual <= material.estoqueMinimo) {
+  statusEstoque(
+    material: MaterialLista
+  ): string {
+    if (
+      material.estoqueAtual <=
+      material.estoqueMinimo
+    ) {
       return 'Crítico';
     }
+
     return 'Normal';
   }
 
-  classeStatusEstoque(material: MaterialLista): string {
-    if (material.estoqueAtual <= material.estoqueMinimo) {
+  classeStatusEstoque(
+    material: MaterialLista
+  ): string {
+    if (
+      material.estoqueAtual <=
+      material.estoqueMinimo
+    ) {
       return 'danger';
     }
+
     return 'success';
   }
 
   get nome() {
-    return this.materialForm.get('nome');
+    return this.materialForm.get('nome')!;
   }
 
   get codigo() {
-    return this.materialForm.get('codigo');
+    return this.materialForm.get('codigo')!;
   }
 
   get equipamento() {
-    return this.materialForm.get('equipamento');
+    return this.materialForm.get('equipamento')!;
   }
 
   get fabricante() {
-    return this.materialForm.get('fabricante');
+    return this.materialForm.get('fabricante')!;
   }
 
   get estoqueMinimo() {
-    return this.materialForm.get('estoqueMinimo');
+    return this.materialForm.get('estoqueMinimo')!;
   }
 }

@@ -10,16 +10,13 @@
 // que o Material não resolve: largura total e alinhamento do spinner.
 .app-button {
   @extend %btn;
-
+  
   &--full {
     width: 100%;
   }
 }
 
-// Seletor composto (especificidade maior) para vencer tanto o %btn acima
-// quanto a cor de texto que o Material aplica no mat-stroked-button — sem
-// isso o botão fica com texto na mesma cor do fundo, ou seja, invisível.
-.app-button--secondary.app-button {
+.app-button--secondary {
   @extend %btn-discrete;
 }
 
