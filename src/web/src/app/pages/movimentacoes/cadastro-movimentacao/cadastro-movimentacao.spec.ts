@@ -6,7 +6,7 @@ describe('CadastroMovimentacao', () => {
   let component: CadastroMovimentacao;
   let fixture: ComponentFixture<CadastroMovimentacao>;
 
-  const material: Material = { codigo: 1, nome: 'Pastilha A1', estoqueAtual: 120 };
+  const material: Material = { id: 1, nome: 'Pastilha A1', estoqueAtual: 120 };
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
@@ -95,7 +95,7 @@ describe('CadastroMovimentacao', () => {
       operacao: 'E',
       motivo: 'Recebimento de fornecedor',
       ordemCompraNumero: null,
-      itens: [{ materialCodigo: 1, quantidade: 10 }],
+      itens: [{ materialId: 1, quantidade: 10 }],
     });
   });
 });

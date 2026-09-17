@@ -5,6 +5,7 @@ import { MatTableModule } from '@angular/material/table';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 
 import { ButtonComponent } from '../../../components/button-component/button-component';
+import { MaterialService } from '../../../services/material.service';
 import {
   CadastroMovimentacao,
   Material,
@@ -34,13 +35,7 @@ export class ListaMovimentacoes {
 
   colunasExibidas = ['id', 'data', 'operacao', 'itens', 'motivo', 'acoes'];
 
-  // Mock — no lugar entrará a chamada ao service/API.
-  materiaisDisponiveis: Material[] = [
-    { codigo: 1, nome: 'Pastilha A1', estoqueAtual: 120 },
-    { codigo: 2, nome: 'Pastilha B2', estoqueAtual: 45 },
-    { codigo: 3, nome: 'Pastilha C2', estoqueAtual: 200 },
-    { codigo: 4, nome: 'Pastilha C4', estoqueAtual: 8 },
-  ];
+  materiaisDisponiveis: Material[] = [];
 
   // Mock — no lugar entrará a chamada ao service/API.
   ordensCompraDisponiveis: OrdemCompraResumo[] = [
@@ -48,26 +43,57 @@ export class ListaMovimentacoes {
     { numero: 1002 },
   ];
 
-  movimentacoes: MovimentacaoLista[] = [
-    {
-      id: 1,
-      data: new Date(2026, 7, 28, 9, 15),
-      operacao: 'E',
-      motivo: 'Recebimento de fornecedor',
-      ordemCompra: this.ordensCompraDisponiveis[0],
-      itens: [{ material: this.materiaisDisponiveis[0], quantidade: 50 }],
-    },
-    {
-      id: 2,
-      data: new Date(2026, 7, 29, 14, 30),
-      operacao: 'S',
-      motivo: 'Uso em produção',
-      ordemCompra: null,
-      itens: [{ material: this.materiaisDisponiveis[1], quantidade: 10 }],
-    },
-  ];
 
-  constructor(private snackBar: MatSnackBar) {}
+  movimentacoes: MovimentacaoLista[] = [];
+
+  constructor(
+    private snackBar: MatSnackBar,
+    private materialService: MaterialService,
+  ) {
+    this.listarMateriais();
+  }
+
+  private listarMateriais(): void {
+    this.materialService.listAll().subscribe({
+      next: (materiais) => {
+        this.materiaisDisponiveis = materiais;
+        this.movimentacoes = this.montarMovimentacoesMock(materiais);
+      },
+      error: () => {
+        this.snackBar.open('Erro ao carregar materiais', '', {
+          duration: 5000,
+          horizontalPosition: 'right',
+          verticalPosition: 'top',
+          panelClass: ['error-snackbar'],
+        });
+      },
+    });
+  }
+
+  private montarMovimentacoesMock(materiais: Material[]): MovimentacaoLista[] {
+    if (materiais.length < 2) {
+      return [];
+    }
+
+    return [
+      {
+        id: 1,
+        data: new Date(2026, 7, 28, 9, 15),
+        operacao: 'E',
+        motivo: 'Recebimento de fornecedor',
+        ordemCompra: this.ordensCompraDisponiveis[0],
+        itens: [{ material: materiais[0], quantidade: 50 }],
+      },
+      {
+        id: 2,
+        data: new Date(2026, 7, 29, 14, 30),
+        operacao: 'S',
+        motivo: 'Uso em produção',
+        ordemCompra: null,
+        itens: [{ material: materiais[1], quantidade: 10 }],
+      },
+    ];
+  }
 
   abrirCadastro(): void {
     this.movimentacaoEmEdicao = null;
@@ -85,7 +111,7 @@ export class ListaMovimentacoes {
 
   salvarMovimentacao(payload: MovimentacaoPayload): void {
     const itens: MovimentacaoItem[] = payload.itens.map((item) => ({
-      material: this.materiaisDisponiveis.find((m) => m.codigo === item.materialCodigo)!,
+      material: this.materiaisDisponiveis.find((m) => m.id === item.materialId)!,
       quantidade: item.quantidade,
     }));
 
