@@ -4,8 +4,13 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatTableModule } from '@angular/material/table';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { ButtonComponent } from '../../../components/button-component/button-component';
-import { CadastroOrdemCompra, Fornecedor, Material, OrdemCompraItem, OrdemCompraLista, OrdemCompraPayload } from "../cadastro-ordem-compra/cadastro-ordem-compra";
-
+import {
+  CadastroOrdemCompra,
+  Material,
+  OrdemCompraItem,
+  OrdemCompraLista,
+  OrdemCompraPayload,
+} from '../cadastro-ordem-compra/cadastro-ordem-compra';
 
 @Component({
   selector: 'app-ordens-compra',
@@ -16,8 +21,8 @@ import { CadastroOrdemCompra, Fornecedor, Material, OrdemCompraItem, OrdemCompra
     MatTableModule,
     MatSnackBarModule,
     ButtonComponent,
-    CadastroOrdemCompra
-],
+    CadastroOrdemCompra,
+  ],
   templateUrl: './lista-ordem-compra.html',
   styleUrl: './lista-ordem-compra.scss',
 })
@@ -25,17 +30,10 @@ export class ListaOrdemCompra {
   painelAberto = false;
   ordemEmEdicao: OrdemCompraLista | null = null;
 
-  colunasExibidas = ['numero', 'fornecedor', 'dataEntrega', 'itens', 'total','status', 'acoes'];
-
-  // Mock — no lugar entrará a chamada ao service/API.
-  fornecedores: Fornecedor[] = [
-    { codigo: 1, nome: 'Metalúrgica Ferro Forte Ltda' },
-    { codigo: 2, nome: 'Madeireira Bom Pinho' },
-    { codigo: 3, nome: 'Distribuidora Aço Sul' },
-  ];
+  colunasExibidas = ['numero', 'fornecedor', 'dataEntrega', 'itens', 'total', 'status', 'acoes'];
 
   // Mock do retorno da API: código, nome, fabricante e último valor comprado.
-  materiaisDisponiveis: Material[] = [
+  /*materiaisDisponiveis: Material[] = [
     { codigo: 1, nome: 'Pastilha A1', fabricante: 'Metal Ltda', ultimoValor: 12.5 },
     { codigo: 2, nome: 'Pastilha B2', fabricante: 'Ceras Brasil', ultimoValor: 8.9 },
     { codigo: 3, nome: 'Pastilha C2', fabricante: 'Madeireira Bom Pinho', ultimoValor: 22.3 },
@@ -45,12 +43,12 @@ export class ListaOrdemCompra {
   ordens: OrdemCompraLista[] = [
     {
       numero: 1001,
-      fornecedor: this.fornecedores[0],
+      fornecedor: {codigo:1,nome:'MOCK'},
       dataEntrega: new Date(2026, 8, 10),
       status:'ABERTO',
       itens: [{ material: this.materiaisDisponiveis[0], quantidade: 50, valor: 12.5}],
     },
-  ];
+  ];*/
 
   constructor(private snackBar: MatSnackBar) {}
 
@@ -69,9 +67,8 @@ export class ListaOrdemCompra {
   }
 
   salvarOrdem(payload: OrdemCompraPayload): void {
-    const fornecedor = this.fornecedores.find((f) => f.codigo === payload.fornecedorCodigo)!;
-
-    const itens: OrdemCompraItem[] = payload.itens.map((item) => ({
+    //const fornecedor = this.fornecedores.find((f) => f.codigo === payload.fornecedorCodigo)!;
+    /*const itens: OrdemCompraItem[] = payload.itens.map((item) => ({
       material: this.materiaisDisponiveis.find((m) => m.codigo === item.materialCodigo)!,
       quantidade: item.quantidade,
       valor: item.valor,
@@ -107,8 +104,9 @@ export class ListaOrdemCompra {
         panelClass: ['success-snackbar'],
       },
     );
+    */
   }
-
+  /*
   calcularTotal(itens: OrdemCompraItem[]): number {
     return itens.reduce((total, item) => total + item.quantidade * item.valor, 0);
   }
@@ -120,4 +118,6 @@ export class ListaOrdemCompra {
   private proximoNumero(): number {
     return this.ordens.length ? Math.max(...this.ordens.map((o) => o.numero)) + 1 : 1001;
   }
+
+  */
 }

@@ -1,4 +1,13 @@
-import { Component, EventEmitter, Input, OnChanges, Output, SimpleChanges } from '@angular/core';
+import {
+  Component,
+  EventEmitter,
+  inject,
+  Input,
+  OnChanges,
+  Output,
+  signal,
+  SimpleChanges,
+} from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormArray, FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { map, Observable, startWith } from 'rxjs';
@@ -14,11 +23,12 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { InputComponent } from '../../../components/input-component/input-component';
 import { dataNaoAnteriorAHojeValidator } from '../../../../utils/validators.utils';
+import { CadastroFornecedor } from '../cadastro-fornecedor/cadastro-fornecedor';
+import { Fornecedor, FornecedorService } from '../../../services/fornecedor.service';
+import { MatSnackBar } from '@angular/material/snack-bar';
+import { NgxMaskDirective } from 'ngx-mask';
+import { formatarCNPJ } from '../../../../utils/formatarCnpj.utils';
 
-export interface Fornecedor {
-  codigo: number;
-  nome: string;
-}
 
 // Retorno esperado da API: código do material, nome, fabricante e último valor comprado.
 export interface Material {
@@ -71,6 +81,7 @@ export interface OrdemCompraPayload {
     MatButtonModule,
     MatProgressSpinnerModule,
     InputComponent,
+    CadastroFornecedor
   ],
   templateUrl: './cadastro-ordem-compra.html',
   styleUrl: './cadastro-ordem-compra.scss',
@@ -78,11 +89,14 @@ export interface OrdemCompraPayload {
 export class CadastroOrdemCompra implements OnChanges {
   @Input() aberto = false;
   @Input() ordemEmEdicao: OrdemCompraLista | null = null;
-  @Input() fornecedores: Fornecedor[] = [];
   @Input() materiaisDisponiveis: Material[] = [];
 
   @Output() fechar = new EventEmitter<void>();
   @Output() salvar = new EventEmitter<OrdemCompraPayload>();
+
+  fornecedores = signal<Fornecedor[]>([])
+
+  formatarCnpj = formatarCNPJ
 
   salvando = false;
 
@@ -94,9 +108,15 @@ export class CadastroOrdemCompra implements OnChanges {
 
   itensFiltrados: Observable<Material[]>[] = [];
 
+  isAddingFornecedor = signal(false);
+  private fornecedorService = inject(FornecedorService)
+
+  private snackBar = inject(MatSnackBar);
+
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['aberto'] && this.aberto) {
       this.inicializarForm();
+      this.buscarFornecedores();
     }
   }
 
@@ -159,9 +179,9 @@ export class CadastroOrdemCompra implements OnChanges {
 
     let itens_na_lista = this.itens.value.filter((i: any) => i.material != null);
     if (itens_na_lista.length > 0) {
-      itens_na_lista.forEach((i:any)=>{
-        console.log(i.material.codigo)
-      })
+      itens_na_lista.forEach((i: any) => {
+        console.log(i.material.codigo);
+      });
     }
 
     return this.materiaisDisponiveis.filter(
@@ -213,5 +233,32 @@ export class CadastroOrdemCompra implements OnChanges {
     };
 
     this.salvar.emit(payload);
+  }
+
+  buscarFornecedores(){
+    this.fornecedorService.listAll().subscribe({
+      next:(res)=>{
+        console.log(res)
+        this.fornecedores.set(res);
+      },
+      error:(err)=>{
+        this.snackBar.open('Erro ao buscar fornecedores', '', {
+          duration: 5000,
+          horizontalPosition: 'right',
+          verticalPosition: 'top',
+          panelClass: ['error-snackbar'],
+        });
+        console.error(err)
+      }
+    })
+  }
+
+  toggleAdicionandoFornecedor() {
+    this.isAddingFornecedor.set(!this.isAddingFornecedor());
+    if (this.isAddingFornecedor()) {
+      this.ordemForm.disable();
+    } else {
+      this.ordemForm.enable();
+    }
   }
 }
