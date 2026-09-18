@@ -1,5 +1,12 @@
-import { Entity, PrimaryGeneratedColumn, Column } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  ManyToOne,
+  JoinColumn,
+} from 'typeorm';
 import { ApiProperty } from '@nestjs/swagger';
+import { Fabricante } from '../fabricantes/fabricante.entity';
 
 @Entity('Materiais')
 export class Material {
@@ -83,8 +90,19 @@ export class Material {
 
   @ApiProperty({
     example: 3,
-    description: 'ID do fabricante (referência simples, sem relação formal por enquanto)',
+    description: 'ID do fabricante',
   })
   @Column({ name: 'fabricante_id', type: 'smallint' })
   declare fabricanteId: number;
+
+  @ApiProperty({
+    type: () => Fabricante,
+    description: 'Fabricante do material',
+  })
+  @ManyToOne(() => Fabricante)
+  @JoinColumn({
+    name: 'fabricante_id',
+    foreignKeyConstraintName: 'fk_fabricante_material',
+  })
+  declare fabricante: Fabricante;
 }
