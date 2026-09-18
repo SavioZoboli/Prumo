@@ -1,0 +1,70 @@
+.gerenciar-fabricantes {
+  &__titulo {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--app-space-md);
+
+    padding-top: var(--app-space-lg);
+
+    h2 {
+      margin: 0;
+      font: inherit;
+    }
+
+    button {
+      margin-right: calc(var(--app-space-sm) * -1);
+    }
+  }
+
+  &__aviso {
+    margin: var(--app-space-md) 0;
+    color: var(--mat-sys-on-surface-variant);
+  }
+
+  &__lista {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    width: 100%;
+  }
+
+  &__item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: var(--app-space-sm) var(--app-space-md);
+
+    padding: var(--app-space-sm) 0;
+    border-bottom: 1px solid var(--mat-sys-outline-variant);
+
+    &:last-child {
+      border-bottom: none;
+    }
+
+    app-input {
+      flex: 1;
+    }
+  }
+
+  &__nome {
+    flex: 1;
+    overflow-wrap: anywhere;
+  }
+
+  &__acoes {
+    display: flex;
+    align-items: center;
+    gap: var(--app-space-xs);
+    flex-shrink: 0;
+
+    app-button {
+      width: auto;
+    }
+  }
+
+  &__inativar {
+    color: var(--mat-sys-error);
+  }
+}

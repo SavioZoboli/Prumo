@@ -1,8 +1,9 @@
-import { Component } from '@angular/core';
+import { Component, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import {
   FormBuilder,
   FormGroup,
+  FormsModule,
   ReactiveFormsModule,
   Validators,
 } from '@angular/forms';
@@ -17,10 +18,16 @@ import {
   MatSnackBar,
   MatSnackBarModule,
 } from '@angular/material/snack-bar';
+import { MatDialog } from '@angular/material/dialog';
 
 import { InputComponent } from '../../components/input-component/input-component';
 import { ButtonComponent } from '../../components/button-component/button-component';
 import { MaterialService } from '../../services/material.service';
+import {
+  Fabricante,
+  FabricanteService,
+} from '../../services/fabricante.service';
+import { GerenciarFabricantes } from '../../components/gerenciar-fabricantes/gerenciar-fabricantes';
 
 interface MaterialLista {
   id?: number;
@@ -42,6 +49,7 @@ interface MaterialLista {
   standalone: true,
   imports: [
     CommonModule,
+    FormsModule,
     ReactiveFormsModule,
     MatIconModule,
     MatTableModule,
@@ -57,8 +65,8 @@ interface MaterialLista {
   styleUrl: './materiais.scss',
 })
 export class Materiais {
-  painelAberto = false;
-  salvando = false;
+  painelAberto = signal(false);
+  salvando = signal(false);
 
   materialEmEdicao: MaterialLista | null = null;
 
@@ -73,31 +81,30 @@ export class Materiais {
     'acoes',
   ];
 
-  materiais: MaterialLista[] = [];
+  materiais = signal<MaterialLista[]>([]);
 
   materialForm: FormGroup;
 
-  // Mock temporário enquanto não existe integração com cadastro de fabricantes.
-  fabricantes = [
-    { id: 1, nome: 'Sandvik' },
-    { id: 2, nome: 'Seco' },
-    { id: 3, nome: 'Walter' },
-    { id: 4, nome: 'Kennametal' },
-    { id: 5, nome: 'Iscar' },
-  ];
+  fabricantes = signal<Fabricante[]>([]);
+
+  cadastrandoFabricante = signal(false);
+  novoFabricante = signal('');
+  salvandoFabricante = signal(false);
 
   unidadesMedida = ['UN', 'KG', 'CX'];
 
   constructor(
     private fb: FormBuilder,
     private snackBar: MatSnackBar,
-    private materialService: MaterialService
+    private dialog: MatDialog,
+    private materialService: MaterialService,
+    private fabricanteService: FabricanteService
   ) {
     this.materialForm = this.fb.group({
       nome: ['', Validators.required],
       codigo: ['', Validators.required],
       equipamento: ['', Validators.required],
-      fabricante: ['', Validators.required],
+      fabricanteId: [null, Validators.required],
       unidadeMedida: ['UN', Validators.required],
       localizacao: [''],
       estoqueMinimo: [
@@ -112,31 +119,66 @@ export class Materiais {
       ativo: [true],
     });
 
-    this.listarMateriais();
+    this.listarFabricantes();
+  }
+
+  listarFabricantes(): void {
+    this.fabricanteService.listAll().subscribe({
+      next: (fabricantes) => {
+        this.fabricantes.set(fabricantes);
+
+        const selecionado = this.materialForm.value.fabricanteId;
+
+        if (
+          selecionado &&
+          !fabricantes.some((fabricante) => fabricante.id === selecionado)
+        ) {
+          this.materialForm.patchValue({ fabricanteId: null });
+        }
+
+        this.listarMateriais();
+      },
+      error: () => {
+        this.listarMateriais();
+
+        this.snackBar.open(
+          'Erro ao carregar fabricantes.',
+          'Fechar',
+          {
+            duration: 3000,
+            horizontalPosition: 'right',
+            verticalPosition: 'top',
+          }
+        );
+      },
+    });
+  }
+
+  nomeFabricante(fabricanteId?: number): string {
+    return (
+      this.fabricantes().find(
+        (fabricante) => fabricante.id === fabricanteId
+      )?.nome ?? '-'
+    );
   }
 
   listarMateriais(): void {
     this.materialService.listAll().subscribe({
       next: (materiais) => {
-        this.materiais = materiais.map((material) => ({
+        this.materiais.set(materiais.map((material) => ({
           id: material.id,
           fabricanteId: material.fabricanteId,
           nome: material.nome,
           codigo: material.codigo,
           equipamento: material.equipamento,
-          fabricante:
-            this.fabricantes.find(
-              (fabricante) =>
-                fabricante.id === material.fabricanteId
-            )?.nome ??
-            `Fabricante ${material.fabricanteId}`,
+          fabricante: this.nomeFabricante(material.fabricanteId),
           unidadeMedida: material.unidadeMedida ?? '',
           localizacao: material.localizacao ?? '',
           estoqueMinimo: material.estoqueMinimo,
           estoqueAtual: material.estoqueAtual,
           ultimoValor: material.ultimoValor,
           ativo: material.ativo,
-        }));
+        })));
       },
       error: (erro) => {
         console.error(
@@ -149,6 +191,7 @@ export class Materiais {
 
   abrirCadastro(): void {
     this.materialEmEdicao = null;
+    this.cancelarNovoFabricante();
 
     this.materialForm.reset({
       unidadeMedida: 'UN',
@@ -157,17 +200,18 @@ export class Materiais {
       ativo: true,
     });
 
-    this.painelAberto = true;
+    this.painelAberto.set(true);
   }
 
   abrirEdicao(material: MaterialLista): void {
     this.materialEmEdicao = material;
+    this.cancelarNovoFabricante();
 
     this.materialForm.reset({
       nome: material.nome,
       codigo: material.codigo,
       equipamento: material.equipamento,
-      fabricante: material.fabricante,
+      fabricanteId: material.fabricanteId,
       unidadeMedida: material.unidadeMedida,
       localizacao: material.localizacao,
       estoqueMinimo: material.estoqueMinimo,
@@ -175,11 +219,11 @@ export class Materiais {
       ativo: material.ativo,
     });
 
-    this.painelAberto = true;
+    this.painelAberto.set(true);
   }
 
   fecharCadastro(): void {
-    this.painelAberto = false;
+    this.painelAberto.set(false);
   }
 
   salvarMaterial(): void {
@@ -191,17 +235,6 @@ export class Materiais {
     const dadosMaterial =
       this.materialForm.getRawValue();
 
-    const fabricanteSelecionado =
-      this.fabricantes.find(
-        (fabricante) =>
-          fabricante.nome ===
-          dadosMaterial.fabricante
-      );
-
-    if (!fabricanteSelecionado) {
-      return;
-    }
-
     const editando =
       this.materialEmEdicao !== null;
 
@@ -209,7 +242,7 @@ export class Materiais {
       nome: dadosMaterial.nome,
       codigo: dadosMaterial.codigo,
       equipamento: dadosMaterial.equipamento,
-      fabricanteId: fabricanteSelecionado.id,
+      fabricanteId: Number(dadosMaterial.fabricanteId),
       unidadeMedida:
         dadosMaterial.unidadeMedida,
       localizacao: dadosMaterial.localizacao,
@@ -222,7 +255,7 @@ export class Materiais {
       ativo: dadosMaterial.ativo,
     };
 
-    this.salvando = true;
+    this.salvando.set(true);
 
     const requisicao =
       editando && this.materialEmEdicao?.id
@@ -243,7 +276,7 @@ export class Materiais {
           ativo: true,
         });
 
-        this.salvando = false;
+        this.salvando.set(false);
         this.fecharCadastro();
 
         this.snackBar.open(
@@ -260,11 +293,70 @@ export class Materiais {
         );
       },
       error: (erro) => {
-        this.salvando = false;
+        this.salvando.set(false);
 
         this.snackBar.open(
           erro.error?.message ??
             'Erro ao salvar material.',
+          'Fechar',
+          {
+            duration: 3000,
+            horizontalPosition: 'right',
+            verticalPosition: 'top',
+          }
+        );
+      },
+    });
+  }
+
+  abrirGerenciarFabricantes(): void {
+    const modal = this.dialog.open(GerenciarFabricantes, {
+      width: '480px',
+      maxWidth: '95vw',
+    });
+
+    modal.afterClosed().subscribe(() => this.listarFabricantes());
+  }
+
+  abrirNovoFabricante(): void {
+    this.cadastrandoFabricante.set(true);
+    this.novoFabricante.set('');
+  }
+
+  cancelarNovoFabricante(): void {
+    this.cadastrandoFabricante.set(false);
+    this.novoFabricante.set('');
+    this.salvandoFabricante.set(false);
+  }
+
+  salvarNovoFabricante(): void {
+    const nome = this.novoFabricante().trim();
+
+    if (!nome) {
+      return;
+    }
+
+    this.salvandoFabricante.set(true);
+
+    this.fabricanteService.create(nome).subscribe({
+      next: (fabricante) => {
+        this.fabricantes.set(
+          [...this.fabricantes(), fabricante].sort((a, b) =>
+            a.nome.localeCompare(b.nome)
+          )
+        );
+        this.materialForm.patchValue({
+          fabricanteId: fabricante.id,
+        });
+
+        this.cancelarNovoFabricante();
+      },
+      error: (erro) => {
+        this.salvandoFabricante.set(false);
+
+        this.snackBar.open(
+          erro.error?.message ??
+            'Erro ao cadastrar fabricante.',
           'Fechar',
           {
             duration: 3000,
@@ -348,8 +440,8 @@ export class Materiais {
     return this.materialForm.get('equipamento')!;
   }
 
-  get fabricante() {
-    return this.materialForm.get('fabricante')!;
+  get fabricanteId() {
+    return this.materialForm.get('fabricanteId')!;
   }
 
   get estoqueMinimo() {
