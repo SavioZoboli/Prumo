@@ -133,6 +133,16 @@
     }
   }
 }
+.form-row{
+  width: 100%;
+  display:flex;
+  gap:12px;
+}
+
+.fornecedor{
+  padding:12px;
+  border-bottom:1px var(--mat-sys-secondary) dashed;
+}
 
 @media (max-width: 768px) {
   .ordem-compra-form {
