@@ -6,13 +6,15 @@ import { Materiais } from './pages/materiais/materiais';
 import { ListaMovimentacoes } from './pages/movimentacoes/lista-movimentacoes/lista-movimentacoes';
 import { MainLayout } from './components/main-layout/main-layout';
 import { ListaOrdemCompra } from './pages/ordem-compra/lista-ordem-compra/lista-ordem-compra';
+import { authGuard } from './guards/auth.guard';
 
 export const routes: Routes = [
   { path: '', redirectTo: 'login', pathMatch: 'full' },
   { path: 'login', component: LoginPageComponent },
   {
     path: '',
-    component: MainLayout,
+    component:MainLayout,
+    canActivate: [authGuard],
     children: [
       { path: 'dashboard', component: Dashboard },
       { path: 'usuarios', component: Usuarios },

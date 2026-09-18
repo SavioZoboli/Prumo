@@ -28,7 +28,11 @@
           errorMessage="Senha é obrigatória"
         ></app-input>
 
-        <app-button label="ENTRAR" type="submit" [loading]="loading"></app-button>
+        @if (erroLogin()) {
+          <p class="login-page__erro">E-mail ou senha inválidos.</p>
+        }
+
+        <app-button label="ENTRAR" type="submit" [loading]="loading()"></app-button>
         <app-theme-toggler></app-theme-toggler>
       </form>
 

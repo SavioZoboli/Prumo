@@ -32,8 +32,12 @@ export class AuthService {
       perfil: usuario.perfil,
     };
 
-    return { access_token: this.jwtService.sign(payload) 
+    return { access_token: this.jwtService.sign(payload)
 
     };
+  }
+
+  async logout(usuarioId: number): Promise<void> {
+    await this.usuarioService.invalidarTokens(usuarioId);
   }
 }

@@ -1,0 +1,7 @@
+{
+  "version": 3,
+  "sources": ["src/app/components/input-component/input-component.scss"],
+  "sourcesContent": [":host {\r\n  display: block;\r\n  width: 100%;\r\n}\r\n\r\n.app-input {\r\n  width: 100%;\r\n\r\n  // mat-form-field já resolve cor de borda/label/erro via tema M3\r\n  // (var(--mat-sys-outline), var(--mat-sys-error) etc). Só ajustamos\r\n  // o que o tema não cobre: densidade do prefixo de ícone.\r\n  .app-input__icon {\r\n    margin-right: var(--app-space-xs);\r\n    color: var(--mat-sys-on-surface-variant);\r\n  }\r\n\r\n  .app-input__required {\r\n    color: var(--app-danger);\r\n  }\r\n}"],
+  "mappings": ";AAAA;AACE,WAAA;AACA,SAAA;;AAGF,CAAA;AACE,SAAA;;AAKA,CANF,UAME,CAAA;AACE,gBAAA,IAAA;AACA,SAAA,IAAA;;AAGF,CAXF,UAWE,CAAA;AACE,SAAA,IAAA;;",
+  "names": []
+}

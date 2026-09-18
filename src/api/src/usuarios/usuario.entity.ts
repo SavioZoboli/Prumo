@@ -59,4 +59,9 @@ export class Usuario {
   })
   @Column({ type: 'boolean', nullable: false, default: true })
   declare ativo: boolean;
+
+  @ApiHideProperty()
+  @Exclude()
+  @Column({ type: 'timestamptz', nullable: true })
+  declare tokens_invalidados_em: Date | null;
 }

@@ -101,4 +101,9 @@ async desativar(id: number): Promise<Usuario | null> {
 
   return this.findOne(id);
 }
+async invalidarTokens(id: number): Promise<void> {
+  await this.usuarioRepository.update(id, {
+    tokens_invalidados_em: new Date(),
+  });
+}
 }

@@ -4,12 +4,10 @@ import { Movimentacao } from './movimentacao.entity';
 import { ItemMovimento } from './item-movimento.entity';
 import { MovimentacaoService } from './movimentacao.service';
 import { MovimentacaoController } from './movimentacoes.controller';
-// import { Material } from '../materiais/material.entity';
+import { Material } from '../materiais/material.entity';
 
 @Module({
-    // Quando "Materiais" for mergeado, adicionar Material aqui:
-    // TypeOrmModule.forFeature([Movimentacao, ItemMovimento, Material])
-    imports: [TypeOrmModule.forFeature([Movimentacao, ItemMovimento])],
+    imports: [TypeOrmModule.forFeature([Movimentacao, ItemMovimento, Material])],
     controllers: [MovimentacaoController],
     providers: [MovimentacaoService],
 })

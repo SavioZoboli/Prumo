@@ -1,5 +1,5 @@
 import { Component, inject } from '@angular/core';
-import { RouterLink, RouterLinkActive } from '@angular/router';
+import { Router, RouterLink, RouterLinkActive } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
 import { BreakpointObserver, Breakpoints } from '@angular/cdk/layout';
 import { map, Observable, shareReplay } from 'rxjs';
@@ -8,6 +8,7 @@ import { MatSidenavModule } from '@angular/material/sidenav';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { AsyncPipe } from '@angular/common';
 import { MatButtonModule } from '@angular/material/button';
+import { AuthService } from '../../services/auth.service';
 
 interface NavItem {
   label: string;
@@ -33,6 +34,20 @@ interface NavItem {
 })
 export class SideNav {
   private readonly breakpointObserver = inject(BreakpointObserver);
+  private readonly authService = inject(AuthService);
+  private readonly router = inject(Router);
+
+  sair(): void {
+    this.authService.logout().subscribe({
+      next: () => this.finalizarSaida(),
+      error: () => this.finalizarSaida(),
+    });
+  }
+
+  private finalizarSaida(): void {
+    this.authService.limparToken();
+    this.router.navigate(['login']);
+  }
 
   protected readonly isHandset$: Observable<boolean> = this.breakpointObserver
     .observe(Breakpoints.Handset)

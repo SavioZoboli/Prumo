@@ -9,8 +9,7 @@ import {
 import { ApiProperty } from '@nestjs/swagger';
 
 import { Movimentacao } from './movimentacao.entity';
-// Quando a branch feature/cadastro-materiais-backend for mergeada:
-// import { Material } from '../materiais/material.entity';
+import { Material } from '../materiais/material.entity';
 
 /**
  * Capa/itens: uma Movimentacao (capa) pode envolver varios materiais de
@@ -47,14 +46,10 @@ export class ItemMovimento {
   })
   declare movimentacao: Movimentacao;
 
-  // Sem FK ainda: a tabela "Materiais" nao existe no codigo (PR em revisao).
-  // Descomentar junto com o entity do Material quando o PR mergear. A
-  // migration que criar essa FK deve usar ON DELETE RESTRICT ON UPDATE
-  // CASCADE, convencao ja usada em todas as FKs do diagrama.
-  // @ManyToOne(() => Material)
-  // @JoinColumn({
-  //   name: 'material_id',
-  //   foreignKeyConstraintName: 'fk_material_id',
-  // })
-  // declare material: Material;
+  @ManyToOne(() => Material)
+  @JoinColumn({
+    name: 'material_id',
+    foreignKeyConstraintName: 'fk_material_id',
+  })
+  declare material: Material;
 }
