@@ -16,17 +16,14 @@
     </div>
   </header>
 
-
-  <!-- TABELA -->
   <section class="materiais-page__table-container">
 
     <table
       mat-table
-      [dataSource]="materiais"
+      [dataSource]="materiais()"
       class="materiais-page__table"
     >
 
-      <!-- CÓDIGO -->
       <ng-container matColumnDef="codigo">
         <th mat-header-cell *matHeaderCellDef>
           Código
@@ -38,7 +35,6 @@
       </ng-container>
 
 
-      <!-- MATERIAL -->
       <ng-container matColumnDef="nome">
         <th mat-header-cell *matHeaderCellDef>
           Material
@@ -50,7 +46,6 @@
       </ng-container>
 
 
-      <!-- EQUIPAMENTO -->
       <ng-container matColumnDef="equipamento">
         <th mat-header-cell *matHeaderCellDef>
           Equipamento
@@ -62,7 +57,6 @@
       </ng-container>
 
 
-      <!-- FABRICANTE -->
       <ng-container matColumnDef="fabricante">
         <th mat-header-cell *matHeaderCellDef>
           Fabricante
@@ -74,7 +68,6 @@
       </ng-container>
 
 
-      <!-- ESTOQUE -->
       <ng-container matColumnDef="estoque">
         <th mat-header-cell *matHeaderCellDef>
           Estoque
@@ -100,7 +93,6 @@
       </ng-container>
 
 
-      <!-- ÚLTIMO VALOR -->
       <ng-container matColumnDef="ultimoValor">
         <th mat-header-cell *matHeaderCellDef>
           Último valor
@@ -130,7 +122,6 @@
       </ng-container>
 
 
-      <!-- AÇÕES -->
       <ng-container matColumnDef="acoes">
         <th mat-header-cell *matHeaderCellDef>
           Ações
@@ -165,10 +156,9 @@
   </section>
 
 
-  <!-- DRAWER CADASTRO / EDIÇÃO -->
   <aside
     class="materiais-page__drawer"
-    [class.materiais-page__drawer--open]="painelAberto"
+    [class.materiais-page__drawer--open]="painelAberto()"
   >
 
     <div class="materiais-page__drawer-header">
@@ -203,14 +193,12 @@
     </div>
 
 
-    <!-- FORMULÁRIO -->
     <form
       [formGroup]="materialForm"
       (ngSubmit)="salvarMaterial()"
       class="materiais-page__form"
     >
 
-      <!-- NOME -->
       <app-input
         label="Nome"
         placeholder="Ex: Inserto de torneamento"
@@ -221,7 +209,6 @@
       ></app-input>
 
 
-      <!-- CÓDIGO -->
       <app-input
         label="Código"
         placeholder="Ex: CNMG120408"
@@ -232,7 +219,6 @@
       ></app-input>
 
 
-      <!-- EQUIPAMENTO -->
       <app-input
         label="Equipamento"
         placeholder="Ex: Torno CNC"
@@ -243,14 +229,13 @@
       ></app-input>
 
 
-      <!-- FABRICANTE -->
       <mat-form-field appearance="outline">
         <mat-label>Fabricante</mat-label>
 
-        <mat-select formControlName="fabricante">
+        <mat-select formControlName="fabricanteId">
 
-          @for (fabricante of fabricantes; track fabricante.id) {
-            <mat-option [value]="fabricante.nome">
+          @for (fabricante of fabricantes(); track fabricante.id) {
+            <mat-option [value]="fabricante.id">
               {{ fabricante.nome }}
             </mat-option>
           }
@@ -258,8 +243,58 @@
         </mat-select>
       </mat-form-field>
 
+      @if (cadastrandoFabricante()) {
+        <div class="materiais-page__novo-fabricante">
 
-      <!-- UNIDADE DE MEDIDA -->
+          <app-input
+            label="Nome do novo fabricante"
+            placeholder="Ex: Mitsubishi"
+            [ngModel]="novoFabricante()" (ngModelChange)="novoFabricante.set($event)"
+            [ngModelOptions]="{ standalone: true }"
+          ></app-input>
+
+          <div class="materiais-page__novo-fabricante-acoes">
+            <app-button
+              label="CANCELAR"
+              type="button"
+              variant="secondary"
+              [fullWidth]="false"
+              (click)="cancelarNovoFabricante()"
+            ></app-button>
+
+            <app-button
+              label="ADICIONAR"
+              type="button"
+              [loading]="salvandoFabricante()"
+              [fullWidth]="false"
+              (click)="salvarNovoFabricante()"
+            ></app-button>
+          </div>
+
+        </div>
+      } @else {
+        <div class="materiais-page__fabricante-acoes">
+          <button
+            mat-button
+            type="button"
+            (click)="abrirNovoFabricante()"
+          >
+            <mat-icon>add</mat-icon>
+            <span>Cadastrar novo</span>
+          </button>
+
+          <button
+            mat-button
+            type="button"
+            (click)="abrirGerenciarFabricantes()"
+          >
+            <mat-icon>settings</mat-icon>
+            <span>Gerenciar fabricantes</span>
+          </button>
+        </div>
+      }
+
+
       <mat-form-field appearance="outline">
         <mat-label>Unidade de medida</mat-label>
 
@@ -275,7 +310,6 @@
       </mat-form-field>
 
 
-      <!-- LOCALIZAÇÃO -->
       <app-input
         label="Localização"
         placeholder="Ex: A-01"
@@ -283,7 +317,6 @@
       ></app-input>
 
 
-      <!-- ESTOQUE MÍNIMO -->
       <app-input
         label="Estoque mínimo"
         placeholder="Ex: 10"
@@ -293,7 +326,6 @@
         errorMessage="Informe um estoque mínimo válido"
       ></app-input>
 
-      <!-- ÚLTIMO VALOR -->
       <app-input
         label="Último valor"
         placeholder="Ex: 25,90"
@@ -301,13 +333,11 @@
       ></app-input>
 
 
-      <!-- ATIVO -->
       <mat-slide-toggle formControlName="ativo">
         Material ativo
       </mat-slide-toggle>
 
 
-      <!-- BOTÕES -->
       <div class="materiais-page__form-actions">
 
         <app-button
@@ -321,7 +351,7 @@
         <app-button
           [label]="materialEmEdicao ? 'ATUALIZAR' : 'SALVAR'"
           type="submit"
-          [loading]="salvando"
+          [loading]="salvando()"
           [fullWidth]="false"
         ></app-button>
 
@@ -332,8 +362,7 @@
   </aside>
 
 
-  <!-- FUNDO ESCURO DO DRAWER -->
-  @if (painelAberto) {
+  @if (painelAberto()) {
     <div
       class="materiais-page__backdrop"
       (click)="fecharCadastro()"

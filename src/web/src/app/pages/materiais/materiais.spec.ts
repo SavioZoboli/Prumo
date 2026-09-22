@@ -3,6 +3,7 @@ import { of } from 'rxjs';
 
 import { Materiais } from './materiais';
 import { MaterialService } from '../../services/material.service';
+import { FabricanteService } from '../../services/fabricante.service';
 
 describe('Materiais', () => {
   let component: Materiais;
@@ -57,12 +58,27 @@ describe('Materiais', () => {
     ),
   };
 
+  const fabricantesMock = [
+    { id: 1, nome: 'Sandvik', ativo: true },
+    { id: 2, nome: 'Seco', ativo: true },
+  ];
+
+  const fabricanteServiceMock = {
+    listAll: vi.fn(() => of(fabricantesMock)),
+    create: vi.fn(() =>
+      of({ id: 6, nome: 'Mitsubishi', ativo: true })
+    ),
+  };
+
   beforeEach(async () => {
     materialServiceMock.listAll.mockClear();
     materialServiceMock.create.mockClear();
     materialServiceMock.update.mockClear();
+    fabricanteServiceMock.listAll.mockClear();
+    fabricanteServiceMock.create.mockClear();
 
     materialServiceMock.listAll.mockReturnValue(of([]));
+    fabricanteServiceMock.listAll.mockReturnValue(of(fabricantesMock));
 
     await TestBed.configureTestingModule({
       imports: [Materiais],
@@ -70,6 +86,10 @@ describe('Materiais', () => {
         {
           provide: MaterialService,
           useValue: materialServiceMock,
+        },
+        {
+          provide: FabricanteService,
+          useValue: fabricanteServiceMock,
         },
       ],
     }).compileComponents();
@@ -85,22 +105,22 @@ describe('Materiais', () => {
   });
 
   it('deve iniciar com o painel fechado', () => {
-    expect(component.painelAberto).toBe(false);
+    expect(component.painelAberto()).toBe(false);
   });
 
   it('deve abrir o painel de cadastro', () => {
     component.abrirCadastro();
 
-    expect(component.painelAberto).toBe(true);
+    expect(component.painelAberto()).toBe(true);
     expect(component.materialEmEdicao).toBeNull();
   });
 
   it('deve fechar o painel de cadastro', () => {
-    component.painelAberto = true;
+    component.painelAberto.set(true);
 
     component.fecharCadastro();
 
-    expect(component.painelAberto).toBe(false);
+    expect(component.painelAberto()).toBe(false);
   });
 
   it('não deve possuir estoque atual como campo editável', () => {
@@ -123,7 +143,7 @@ describe('Materiais', () => {
       nome: 'Inserto de torneamento',
       codigo: 'CNMG120408',
       equipamento: 'Torno CNC',
-      fabricante: 'Sandvik',
+      fabricanteId: 1,
       unidadeMedida: 'UN',
       localizacao: 'A-01',
       estoqueMinimo: 10,
@@ -145,13 +165,13 @@ describe('Materiais', () => {
       ativo: true,
     });
 
-    expect(component.painelAberto).toBe(false);
+    expect(component.painelAberto()).toBe(false);
   });
 
   it('deve abrir a edição com os dados do material', () => {
     component.abrirEdicao(materialTeste);
 
-    expect(component.painelAberto).toBe(true);
+    expect(component.painelAberto()).toBe(true);
     expect(component.materialEmEdicao).toBe(materialTeste);
 
     expect(component.materialForm.value.nome).toBe(
@@ -190,7 +210,43 @@ describe('Materiais', () => {
       }
     );
 
-    expect(component.painelAberto).toBe(false);
+    expect(component.painelAberto()).toBe(false);
+  });
+
+  it('deve carregar os fabricantes a partir da API', () => {
+    expect(fabricanteServiceMock.listAll).toHaveBeenCalled();
+    expect(component.fabricantes()).toEqual(fabricantesMock);
+  });
+
+  it('deve traduzir o id do fabricante para o nome', () => {
+    expect(component.nomeFabricante(2)).toBe('Seco');
+    expect(component.nomeFabricante(999)).toBe('-');
+  });
+
+  it('deve cadastrar um fabricante novo e já deixá-lo selecionado', () => {
+    component.abrirCadastro();
+    component.abrirNovoFabricante();
+
+    component.novoFabricante.set('Mitsubishi');
+    component.salvarNovoFabricante();
+
+    expect(fabricanteServiceMock.create).toHaveBeenCalledWith('Mitsubishi');
+
+    expect(
+      component.fabricantes().some((f) => f.nome === 'Mitsubishi')
+    ).toBe(true);
+
+    expect(component.materialForm.value.fabricanteId).toBe(6);
+    expect(component.cadastrandoFabricante()).toBe(false);
+  });
+
+  it('não deve cadastrar fabricante com nome vazio', () => {
+    component.abrirNovoFabricante();
+
+    component.novoFabricante.set('   ');
+    component.salvarNovoFabricante();
+
+    expect(fabricanteServiceMock.create).not.toHaveBeenCalled();
   });
 
   it('deve converter e formatar o último valor corretamente', () => {
