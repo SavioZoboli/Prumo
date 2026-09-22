@@ -1,0 +1,19 @@
+<h2 mat-dialog-title>Estornar movimentação #{{ data.movimentacaoId }}</h2>
+
+<mat-dialog-content>
+  <p>O estorno reverte esta movimentação e devolve a quantidade ao estoque. Informe o motivo:</p>
+
+  <app-input
+    label="Motivo do estorno"
+    placeholder="Ex: Lançamento feito por engano"
+    [required]="true"
+    [formControl]="motivo"
+    [hasError]="!!motivo.invalid && !!motivo.touched"
+    [errorMessage]="motivo.hasError('maxlength') ? 'Máximo de 100 caracteres' : 'Motivo é obrigatório'"
+  ></app-input>
+</mat-dialog-content>
+
+<mat-dialog-actions>
+  <button mat-button (click)="cancelar()">Cancelar</button>
+  <button mat-flat-button color="primary" (click)="confirmar()">Confirmar estorno</button>
+</mat-dialog-actions>
