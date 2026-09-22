@@ -128,7 +128,9 @@ export class CadastroMovimentacao implements OnChanges {
       motivo: dados.motivo.trim(),
       itens: dados.itens.map((item: { material: Material; quantidade: number }) => ({
         materialId: item.material.id,
-        quantidade: item.quantidade,
+        // O app-input sempre emite string, mesmo com type="number" (mesmo padrão
+        // de conversão usado em materiais.ts para estoqueMinimo/ultimoValor).
+        quantidade: Number(item.quantidade),
       })),
     };
 
