@@ -1,12 +1,25 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
-import { CadastroMovimentacao, Material } from './cadastro-movimentacao';
+import { CadastroMovimentacao } from './cadastro-movimentacao';
+import { Material } from '../../../services/material.service';
 
 describe('CadastroMovimentacao', () => {
   let component: CadastroMovimentacao;
   let fixture: ComponentFixture<CadastroMovimentacao>;
 
-  const material: Material = { id: 1, nome: 'Pastilha A1', estoqueAtual: 120 };
+  const material: Material = {
+    id: 1,
+    nome: 'Pastilha A1',
+    codigo: 'PA1',
+    equipamento: 'Torno',
+    estoqueMinimo: 10,
+    estoqueAtual: 120,
+    fabricanteId: 1,
+    ativo: true,
+    ultimoValor: null,
+    unidadeMedida: 'un',
+    localizacao: null,
+  };
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
@@ -31,7 +44,6 @@ describe('CadastroMovimentacao', () => {
     });
 
     expect(component.itens.length).toBe(1);
-    expect(component.movimentacaoEmEdicao).toBeNull();
   });
 
   it('não deve salvar com formulário inválido', () => {
@@ -82,7 +94,6 @@ describe('CadastroMovimentacao', () => {
     component.movimentacaoForm.setValue({
       operacao: 'E',
       motivo: 'Recebimento de fornecedor',
-      ordemCompra: null,
       itens: [{ material, quantidade: 10 }],
     });
 
@@ -94,7 +105,6 @@ describe('CadastroMovimentacao', () => {
     expect(payloadRecebido).toEqual({
       operacao: 'E',
       motivo: 'Recebimento de fornecedor',
-      ordemCompraNumero: null,
       itens: [{ materialId: 1, quantidade: 10 }],
     });
   });

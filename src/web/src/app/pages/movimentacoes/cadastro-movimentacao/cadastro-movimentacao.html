@@ -12,17 +12,8 @@
     <div class="movimentacao-form__drawer-header">
 
       <div>
-        <h2>
-          {{ movimentacaoEmEdicao ? 'Editar Movimentação' : 'Cadastro de Movimentação' }}
-        </h2>
-
-        <p>
-          {{
-            movimentacaoEmEdicao
-              ? 'Altere os dados da movimentação.'
-              : 'Informe o tipo de operação e os materiais movimentados.'
-          }}
-        </p>
+        <h2>Cadastro de Movimentação</h2>
+        <p>Informe o tipo de operação e os materiais movimentados.</p>
       </div>
 
       <button
@@ -56,23 +47,13 @@
         }
       </mat-form-field>
 
-      <mat-form-field appearance="outline">
-        <mat-label>Ordem de compra vinculada (opcional)</mat-label>
-
-        <mat-select formControlName="ordemCompra">
-          <mat-option [value]="null">Nenhuma</mat-option>
-          @for (ordem of ordensCompraDisponiveis; track ordem.numero) {
-            <mat-option [value]="ordem">
-              OC #{{ ordem.numero }}
-            </mat-option>
-          }
-        </mat-select>
-      </mat-form-field>
-
       <app-input
-        label="Motivo (opcional)"
+        label="Motivo"
         placeholder="Ex: Ajuste de inventário, uso em produção..."
+        [required]="true"
         formControlName="motivo"
+        [hasError]="!!motivo?.invalid && !!motivo?.touched"
+        errorMessage="Motivo é obrigatório"
       ></app-input>
 
 
@@ -143,7 +124,7 @@
         ></app-button>
 
         <app-button
-          [label]="movimentacaoEmEdicao ? 'ATUALIZAR' : 'SALVAR'"
+          label="SALVAR"
           type="submit"
           [loading]="salvando"
           [fullWidth]="false"
