@@ -19,6 +19,7 @@ export const routes: Routes = [
       { path: 'dashboard', component: Dashboard },
       { path: 'usuarios', component: Usuarios },
       { path: 'materiais', component: Materiais },
+      { path: 'materiais/relatorio-estoque-minimo', component: ConsultaEstoque },
       { path: 'movimentacoes', component: ListaMovimentacoes },
       { path: 'ordens-compra', component: ListaOrdemCompra },
     ],

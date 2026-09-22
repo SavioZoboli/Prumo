@@ -9,6 +9,13 @@
 
     <div class="action-area">
       <app-button
+        label="RELATÓRIO DE ESTOQUE MÍNIMO"
+        variant="secondary"
+        [fullWidth]="false"
+        (click)="abrirRelatorioEstoqueMinimo()"
+      ></app-button>
+
+      <app-button
         label="+ NOVO MATERIAL"
         [fullWidth]="false"
         (click)="abrirCadastro()"

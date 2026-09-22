@@ -1,5 +1,6 @@
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { Router } from '@angular/router';
 import {
   FormBuilder,
   FormGroup,
@@ -86,7 +87,8 @@ export class Materiais {
 
   constructor(
     private fb: FormBuilder,
-    private snackBar: MatSnackBar
+    private snackBar: MatSnackBar,
+    private router: Router
   ) {
     this.materialForm = this.fb.group({
       nome: ['', Validators.required],
@@ -99,6 +101,10 @@ export class Materiais {
       ultimoValor: [null],
       ativo: [true],
     });
+  }
+
+  abrirRelatorioEstoqueMinimo(): void {
+    this.router.navigate(['/materiais/relatorio-estoque-minimo']);
   }
 
   abrirCadastro(): void {
