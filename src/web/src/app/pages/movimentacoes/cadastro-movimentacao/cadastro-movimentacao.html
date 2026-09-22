@@ -88,7 +88,7 @@
               <mat-label>Material</mat-label>
 
               <mat-select formControlName="material">
-                @for (material of materiaisDisponiveis; track material.codigo) {
+                @for (material of materiaisDisponiveis; track material.id) {
                   <mat-option [value]="material">
                     {{ material.nome }} ({{ material.estoqueAtual }} un. em estoque)
                   </mat-option>

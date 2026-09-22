@@ -41,7 +41,7 @@ async create(
   type: [Usuario],
 })
 @Get()
-@UseGuards(JwtAuthGuard)
+//@UseGuards(JwtAuthGuard)
 findAll() {
   return this.usuarioService.findAll();
 }
@@ -83,7 +83,7 @@ findOne(@Param('id', ParseIntPipe) id: number) {
   description: 'Usuário não encontrado.',
 })
 @Patch(':id')
-@UseGuards(JwtAuthGuard)
+//@UseGuards(JwtAuthGuard)
 update(
   @Param('id', ParseIntPipe) id: number,
   @Body() updateUsuarioDto: UpdateUsuarioDto,
@@ -141,7 +141,6 @@ remove(@Param('id', ParseIntPipe) id: number, @Req() req: Request) {
       'Você só pode desativar o seu próprio cadastro.',
     );
   }
-
   return this.usuarioService.desativar(id);
 }
 }

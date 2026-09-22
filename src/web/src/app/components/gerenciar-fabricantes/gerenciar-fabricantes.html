@@ -1,0 +1,90 @@
+<div mat-dialog-title class="gerenciar-fabricantes__titulo">
+  <h2>Gerenciar fabricantes</h2>
+
+  <button
+    mat-icon-button
+    type="button"
+    aria-label="Fechar"
+    (click)="fechar()"
+  >
+    <mat-icon>close</mat-icon>
+  </button>
+</div>
+
+<mat-dialog-content>
+
+  @if (carregando()) {
+    <p class="gerenciar-fabricantes__aviso">Carregando...</p>
+  } @else if (fabricantes().length === 0) {
+    <p class="gerenciar-fabricantes__aviso">
+      Nenhum fabricante cadastrado.
+    </p>
+  } @else {
+    <ul class="gerenciar-fabricantes__lista">
+
+      @for (fabricante of fabricantes(); track fabricante.id) {
+        <li class="gerenciar-fabricantes__item">
+
+          @if (editandoId() === fabricante.id) {
+
+            <app-input
+              label="Nome"
+              [ngModel]="nomeEditado()"
+              (ngModelChange)="nomeEditado.set($event)"
+              [ngModelOptions]="{ standalone: true }"
+            ></app-input>
+
+            <div class="gerenciar-fabricantes__acoes">
+              <app-button
+                label="CANCELAR"
+                type="button"
+                variant="secondary"
+                [fullWidth]="false"
+                (click)="cancelarEdicao()"
+              ></app-button>
+
+              <app-button
+                label="SALVAR"
+                type="button"
+                [loading]="salvando()"
+                [fullWidth]="false"
+                (click)="salvarEdicao()"
+              ></app-button>
+            </div>
+
+          } @else {
+
+            <span class="gerenciar-fabricantes__nome">
+              {{ fabricante.nome }}
+            </span>
+
+            <div class="gerenciar-fabricantes__acoes">
+              <button
+                mat-icon-button
+                type="button"
+                [attr.aria-label]="'Editar fabricante ' + fabricante.nome"
+                (click)="iniciarEdicao(fabricante)"
+              >
+                <mat-icon>edit</mat-icon>
+              </button>
+
+              <button
+                mat-icon-button
+                type="button"
+                class="gerenciar-fabricantes__inativar"
+                [attr.aria-label]="'Inativar fabricante ' + fabricante.nome"
+                (click)="inativar(fabricante)"
+              >
+                <mat-icon>block</mat-icon>
+              </button>
+            </div>
+
+          }
+
+        </li>
+      }
+
+    </ul>
+  }
+
+</mat-dialog-content>

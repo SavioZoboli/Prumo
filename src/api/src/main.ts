@@ -20,6 +20,7 @@ async function bootstrap() {
     .setTitle('Prumo API')
     .setDescription('Documentação da API do sistema Prumo')
     .setVersion('1.0')
+    .addBearerAuth()
     .build();
 
   const document = SwaggerModule.createDocument(app, config);

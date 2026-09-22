@@ -1,4 +1,5 @@
 import { AbstractControl, ValidationErrors, ValidatorFn } from '@angular/forms';
+import { validarCNPJ } from './validarCnpj.utils';
 
 /**
  * Valida se a data informada não é anterior à data de hoje.
@@ -25,5 +26,12 @@ export function dataNaoAnteriorAHojeValidator(): ValidatorFn {
     data.setHours(0, 0, 0, 0);
 
     return data.getTime() < hoje.getTime() ? { dataAnterior: true } : null;
+  };
+}
+
+export function cnpjValidator(): ValidatorFn {
+  return (control: AbstractControl): ValidationErrors | null => {
+    if (!control.value) return null;
+    return validarCNPJ(control.value) ? null : { cnpjInvalido: true };
   };
 }

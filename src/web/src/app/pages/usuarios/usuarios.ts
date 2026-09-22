@@ -1,6 +1,11 @@
 import { Component, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import {
+  FormBuilder,
+  FormGroup,
+  ReactiveFormsModule,
+  Validators,
+} from '@angular/forms';
 
 import { MatIconModule } from '@angular/material/icon';
 import { MatTableModule } from '@angular/material/table';
@@ -8,7 +13,10 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatButtonModule } from '@angular/material/button';
-import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
+import {
+  MatSnackBar,
+  MatSnackBarModule,
+} from '@angular/material/snack-bar';
 
 import { InputComponent } from '../../components/input-component/input-component';
 import { ButtonComponent } from '../../components/button-component/button-component';
@@ -76,13 +84,13 @@ export class Usuarios {
     this.listarUsuarios();
   }
 
-  private listarUsuarios() {
+  private listarUsuarios(): void {
     this.usuarioService.listAll().subscribe({
       next: (res) => {
         this.usuarios.set(res);
         console.log(res);
       },
-      error: (err) => {
+      error: () => {
         this.snackBar.open('Erro ao listar', '', {
           duration: 5000,
           horizontalPosition: 'right',
@@ -98,11 +106,12 @@ export class Usuarios {
 
     const senhaControl = this.usuarioForm.get('senha');
 
+    senhaControl?.enable();
     senhaControl?.setValidators(Validators.required);
     senhaControl?.updateValueAndValidity();
 
     this.usuarioForm.reset({
-      perfil: 'USUER',
+      perfil: 'USUARIO',
       ativo: true,
       id: null,
     });
@@ -128,7 +137,7 @@ export class Usuarios {
       ativo: usuario.ativo,
     });
 
-    this.usuarioForm.get('senha')?.disable();
+    senhaControl?.disable();
 
     this.painelAberto = true;
   }
@@ -144,14 +153,20 @@ export class Usuarios {
     }
 
     const du = this.usuarioForm.getRawValue();
-
     const editando = this.usuarioEmEdicao !== null;
 
     if (this.usuarioEmEdicao) {
       this.usuarioService
-        .update(du.id, du.nome, du.sobrenome, du.email, du.ativo, du.perfil)
+        .update(
+          du.id,
+          du.nome,
+          du.sobrenome,
+          du.email,
+          du.ativo,
+          du.perfil,
+        )
         .subscribe({
-          next: (res) => {
+          next: () => {
             this.listarUsuarios();
             this.resetAndCloseForm();
           },
@@ -166,9 +181,15 @@ export class Usuarios {
         });
     } else {
       this.usuarioService
-        .create(du.nome, du.sobrenome, du.email, du.senha, du.perfil)
+        .create(
+          du.nome,
+          du.sobrenome,
+          du.email,
+          du.senha,
+          du.perfil,
+        )
         .subscribe({
-          next: (res) => {
+          next: () => {
             this.resetAndCloseForm();
             this.listarUsuarios();
           },
@@ -184,7 +205,9 @@ export class Usuarios {
     }
 
     this.snackBar.open(
-      editando ? 'Usuário atualizado com sucesso.' : 'Usuário cadastrado com sucesso.',
+      editando
+        ? 'Usuário atualizado com sucesso.'
+        : 'Usuário cadastrado com sucesso.',
       'Fechar',
       {
         duration: 3000,
@@ -195,7 +218,7 @@ export class Usuarios {
     );
   }
 
-  desativar(usuario: UsuarioLista) {
+  desativar(usuario: UsuarioLista): void {
     const dialogRef = this.dialog.open(Dialog, {
       data: {
         title: 'Exclusão de usuário',
@@ -206,29 +229,38 @@ export class Usuarios {
     dialogRef.afterClosed().subscribe((excluir) => {
       if (excluir) {
         this.usuarioService.desativar(usuario.id).subscribe({
-          next: (res) => {
-            this.snackBar.open('Usuário desativado com sucesso!', '', {
-              duration: 5000,
-              horizontalPosition: 'right',
-              verticalPosition: 'top',
-              panelClass: ['success-snackbar'],
-            });
+          next: () => {
+            this.snackBar.open(
+              'Usuário desativado com sucesso!',
+              '',
+              {
+                duration: 5000,
+                horizontalPosition: 'right',
+                verticalPosition: 'top',
+                panelClass: ['success-snackbar'],
+              },
+            );
+
             this.listarUsuarios();
           },
-          error: (err) => {
-            this.snackBar.open('Erro ao desativar o usuário!', '', {
-              duration: 5000,
-              horizontalPosition: 'right',
-              verticalPosition: 'top',
-              panelClass: ['error-snackbar'],
-            });
+          error: () => {
+            this.snackBar.open(
+              'Erro ao desativar o usuário!',
+              '',
+              {
+                duration: 5000,
+                horizontalPosition: 'right',
+                verticalPosition: 'top',
+                panelClass: ['error-snackbar'],
+              },
+            );
           },
         });
       }
     });
   }
 
-  private resetAndCloseForm() {
+  private resetAndCloseForm(): void {
     this.usuarioForm.reset({
       perfil: 'USUARIO',
       ativo: true,

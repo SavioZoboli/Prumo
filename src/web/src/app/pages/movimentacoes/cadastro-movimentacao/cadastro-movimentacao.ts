@@ -20,7 +20,7 @@ import { ButtonComponent } from '../../../components/button-component/button-com
 export type TipoOperacao = 'E' | 'S';
 
 export interface Material {
-  codigo: number;
+  id: number;
   nome: string;
   estoqueAtual: number;
 }
@@ -50,7 +50,7 @@ export interface MovimentacaoPayload {
   motivo: string | null;
   ordemCompraNumero: number | null;
   itens: {
-    materialCodigo: number;
+    materialId: number;
     quantidade: number;
   }[];
 }
@@ -162,7 +162,7 @@ export class CadastroMovimentacao implements OnChanges {
       motivo: dados.motivo?.trim() ? dados.motivo.trim() : null,
       ordemCompraNumero: dados.ordemCompra?.numero ?? null,
       itens: dados.itens.map((item: { material: Material; quantidade: number }) => ({
-        materialCodigo: item.material.codigo,
+        materialId: item.material.id,
         quantidade: item.quantidade,
       })),
     };
