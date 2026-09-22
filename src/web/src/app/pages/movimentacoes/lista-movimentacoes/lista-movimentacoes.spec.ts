@@ -89,8 +89,8 @@ describe('ListaMovimentacoes', () => {
   it('deve carregar os materiais e as movimentações ao iniciar', () => {
     expect(materialServiceMock.listAll).toHaveBeenCalled();
     expect(movimentacaoServiceMock.listAll).toHaveBeenCalled();
-    expect(component.materiaisDisponiveis).toEqual(materiaisMock);
-    expect(component.movimentacoes).toEqual(movimentacoesMock);
+    expect(component.materiaisDisponiveis()).toEqual(materiaisMock);
+    expect(component.movimentacoes()).toEqual(movimentacoesMock);
   });
 
   it('deve resolver o material a partir do id', () => {
@@ -100,10 +100,10 @@ describe('ListaMovimentacoes', () => {
 
   it('deve abrir e fechar o painel de cadastro', () => {
     component.abrirCadastro();
-    expect(component.painelAberto).toBe(true);
+    expect(component.painelAberto()).toBe(true);
 
     component.fecharCadastro();
-    expect(component.painelAberto).toBe(false);
+    expect(component.painelAberto()).toBe(false);
   });
 
   it('deve cadastrar uma nova movimentação e recarregar a listagem', () => {
@@ -121,7 +121,7 @@ describe('ListaMovimentacoes', () => {
       motivo: 'Compra emergencial',
       itens: [{ material_id: 1, quantidade: 5 }],
     });
-    expect(component.painelAberto).toBe(false);
+    expect(component.painelAberto()).toBe(false);
     expect(movimentacaoServiceMock.listAll).toHaveBeenCalledTimes(2);
   });
 
@@ -137,7 +137,7 @@ describe('ListaMovimentacoes', () => {
       itens: [{ materialId: 1, quantidade: 999 }],
     });
 
-    expect(component.painelAberto).toBe(true);
+    expect(component.painelAberto()).toBe(true);
   });
 
   it('deve estornar uma movimentação confirmada no dialog', () => {

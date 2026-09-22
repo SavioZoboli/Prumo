@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTableModule } from '@angular/material/table';
@@ -31,12 +31,12 @@ import { CadastroMovimentacao, MovimentacaoPayload } from '../cadastro-movimenta
   styleUrl: './lista-movimentacoes.scss',
 })
 export class ListaMovimentacoes {
-  painelAberto = false;
+  painelAberto = signal(false);
 
   colunasExibidas = ['id', 'data', 'operacao', 'itens', 'motivo', 'acoes'];
 
-  materiaisDisponiveis: Material[] = [];
-  movimentacoes: MovimentacaoResponse[] = [];
+  materiaisDisponiveis = signal<Material[]>([]);
+  movimentacoes = signal<MovimentacaoResponse[]>([]);
 
   private dialog = inject(MatDialog);
   private snackBar = inject(MatSnackBar);
@@ -51,7 +51,7 @@ export class ListaMovimentacoes {
   private listarMateriais(): void {
     this.materialService.listAll().subscribe({
       next: (materiais) => {
-        this.materiaisDisponiveis = materiais;
+        this.materiaisDisponiveis.set(materiais);
       },
       error: () => {
         this.snackBar.open('Erro ao carregar materiais.', 'Fechar', {
@@ -67,7 +67,7 @@ export class ListaMovimentacoes {
   private listarMovimentacoes(): void {
     this.movimentacaoService.listAll().subscribe({
       next: (movimentacoes) => {
-        this.movimentacoes = movimentacoes;
+        this.movimentacoes.set(movimentacoes);
       },
       error: () => {
         this.snackBar.open('Erro ao carregar movimentações.', 'Fechar', {
@@ -81,15 +81,15 @@ export class ListaMovimentacoes {
   }
 
   resolverMaterial(materialId: number): Material | undefined {
-    return this.materiaisDisponiveis.find((material) => material.id === materialId);
+    return this.materiaisDisponiveis().find((material) => material.id === materialId);
   }
 
   abrirCadastro(): void {
-    this.painelAberto = true;
+    this.painelAberto.set(true);
   }
 
   fecharCadastro(): void {
-    this.painelAberto = false;
+    this.painelAberto.set(false);
   }
 
   salvarMovimentacao(payload: MovimentacaoPayload): void {

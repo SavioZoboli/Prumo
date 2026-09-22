@@ -22,7 +22,7 @@
 
     <table
       mat-table
-      [dataSource]="movimentacoes"
+      [dataSource]="movimentacoes()"
       class="movimentacoes-page__table"
     >
 
@@ -125,8 +125,8 @@
   </section>
 
   <app-cadastro-movimentacao
-    [aberto]="painelAberto"
-    [materiaisDisponiveis]="materiaisDisponiveis"
+    [aberto]="painelAberto()"
+    [materiaisDisponiveis]="materiaisDisponiveis()"
     (fechar)="fecharCadastro()"
     (salvar)="salvarMovimentacao($event)"
   ></app-cadastro-movimentacao>
