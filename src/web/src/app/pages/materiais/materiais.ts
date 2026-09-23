@@ -191,8 +191,8 @@ export class Materiais {
     });
   }
 
-  abrirRelatorioEstoqueMinimo(): void {
-    this.router.navigate(['/materiais/relatorio-estoque-minimo']);
+  abrirConsultaEstoque(): void {
+    this.router.navigate(['/materiais/consulta-estoque']);
   }
 
   abrirCadastro(): void {

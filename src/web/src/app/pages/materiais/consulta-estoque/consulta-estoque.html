@@ -156,7 +156,12 @@
 
     </table>
 
-    @if (materiaisFiltrados().length === 0) {
+    @if (carregando()) {
+      <div class="estoque-page__empty">
+        <mat-icon>hourglass_empty</mat-icon>
+        Carregando materiais...
+      </div>
+    } @else if (materiaisFiltrados().length === 0) {
       <div class="estoque-page__empty">
         <mat-icon>search_off</mat-icon>
         Nenhum material encontrado para os filtros aplicados.

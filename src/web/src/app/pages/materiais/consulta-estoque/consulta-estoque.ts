@@ -1,4 +1,4 @@
-import { Component, computed, signal } from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
@@ -9,12 +9,18 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatPaginatorIntl, MatPaginatorModule, PageEvent } from '@angular/material/paginator';
 
+import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
+
 import { InputComponent } from '../../../components/input-component/input-component';
 import { ButtonComponent } from '../../../components/button-component/button-component';
 import { criarPaginatorIntlPtBr } from '../../../shared/paginator-intl-pt-br';
+import { MaterialService } from '../../../services/material.service';
+import { FabricanteService } from '../../../services/fabricante.service';
 
 
-export interface Material {
+// Modelo da tela: o fabricante chega da API como id e aqui já vira nome, que é
+// o que a busca e a exportação usam.
+export interface MaterialEstoque {
   id: number;
   codigo: string;
   nome: string;
@@ -24,7 +30,6 @@ export interface Material {
   localizacao: string;
   estoqueAtual: number;
   estoqueMinimo: number;
-  ultimoValor: number;
   ativo: boolean;
 }
 
@@ -43,6 +48,7 @@ type FiltroStatus = 'TODOS' | StatusEstoque;
     MatButtonModule,
     MatFormFieldModule,
     MatPaginatorModule,
+    MatSnackBarModule,
     InputComponent,
     ButtonComponent,
   ],
@@ -69,87 +75,71 @@ export class ConsultaEstoque {
   pageIndex = signal(0);
   pageSize = signal(10);
 
-  // Mock — no lugar entrará a chamada ao service/API (GET /materiais).
-  private readonly materiais = signal<Material[]>([
-    {
-      id: 1,
-      codigo: 'PST-001',
-      nome: 'Pastilha CNMG 120408',
-      equipamento: 'Torno CNC 01',
-      fabricante: 'Sandvik',
-      unidadeMedida: 'UN',
-      localizacao: 'A1-03',
-      estoqueAtual: 42,
-      estoqueMinimo: 10,
-      ultimoValor: 38.9,
-      ativo: true,
-    },
-    {
-      id: 2,
-      codigo: 'PST-014',
-      nome: 'Pastilha DCMT 070204',
-      equipamento: 'Torno CNC 02',
-      fabricante: 'Mitsubishi',
-      unidadeMedida: 'UN',
-      localizacao: 'A1-07',
-      estoqueAtual: 10,
-      estoqueMinimo: 10,
-      ultimoValor: 29.5,
-      ativo: true,
-    },
-    {
-      id: 3,
-      codigo: 'PST-022',
-      nome: 'Pastilha TNMG 160408',
-      equipamento: 'Torno CNC 03',
-      fabricante: 'Kennametal',
-      unidadeMedida: 'UN',
-      localizacao: 'A2-01',
-      estoqueAtual: 6,
-      estoqueMinimo: 15,
-      ultimoValor: 41.2,
-      ativo: true,
-    },
-    {
-      id: 4,
-      codigo: 'FRZ-005',
-      nome: 'Fresa de topo 10mm',
-      equipamento: 'Centro de usinagem 01',
-      fabricante: 'Seco Tools',
-      unidadeMedida: 'UN',
-      localizacao: 'B1-02',
-      estoqueAtual: 25,
-      estoqueMinimo: 8,
-      ultimoValor: 112.0,
-      ativo: true,
-    },
-    {
-      id: 5,
-      codigo: 'BRC-011',
-      nome: 'Broca de metal duro 8mm',
-      equipamento: 'Centro de usinagem 02',
-      fabricante: 'Sandvik',
-      unidadeMedida: 'UN',
-      localizacao: 'B1-05',
-      estoqueAtual: 0,
-      estoqueMinimo: 5,
-      ultimoValor: 54.3,
-      ativo: true,
-    },
-    {
-      id: 6,
-      codigo: 'PST-030',
-      nome: 'Pastilha WNMG 080408 (descontinuada)',
-      equipamento: 'Torno CNC 01',
-      fabricante: 'Iscar',
-      unidadeMedida: 'UN',
-      localizacao: 'A2-09',
-      estoqueAtual: 3,
-      estoqueMinimo: 5,
-      ultimoValor: 33.0,
-      ativo: false,
-    },
-  ]);
+  private readonly materiais = signal<MaterialEstoque[]>([]);
+
+  carregando = signal(false);
+
+  private readonly fabricanteService = inject(FabricanteService);
+  private readonly materialService = inject(MaterialService);
+  private readonly snackBar = inject(MatSnackBar);
+
+  constructor() {
+    this.carregarFabricantes();
+  }
+
+  // Os materiais vêm com fabricanteId; os fabricantes precisam chegar antes
+  // para a coluna exibir o nome. No erro, segue mesmo assim: melhor a lista
+  // aparecer com o fabricante em branco do que a tela ficar vazia.
+  private carregarFabricantes(): void {
+    this.fabricanteService.listAll().subscribe({
+      next: (fabricantes) => {
+        const nomePorId = new Map(fabricantes.map((f) => [f.id, f.nome]));
+        this.carregarMateriais(nomePorId);
+      },
+      error: () => {
+        this.carregarMateriais(new Map());
+        this.avisar('Erro ao carregar fabricantes.');
+      },
+    });
+  }
+
+  private carregarMateriais(nomePorId: Map<number, string>): void {
+    this.carregando.set(true);
+
+    this.materialService.listAll().subscribe({
+      next: (materiais) => {
+        this.materiais.set(
+          materiais.map((material) => ({
+            id: material.id,
+            codigo: material.codigo,
+            nome: material.nome,
+            equipamento: material.equipamento,
+            fabricante: nomePorId.get(material.fabricanteId) ?? '-',
+            unidadeMedida: material.unidadeMedida ?? '',
+            localizacao: material.localizacao ?? '',
+            estoqueAtual: material.estoqueAtual,
+            estoqueMinimo: material.estoqueMinimo,
+            ativo: material.ativo,
+          })),
+        );
+
+        this.carregando.set(false);
+      },
+      error: () => {
+        this.carregando.set(false);
+        this.avisar('Erro ao carregar materiais.');
+      },
+    });
+  }
+
+  private avisar(mensagem: string): void {
+    this.snackBar.open(mensagem, 'Fechar', {
+      duration: 3000,
+      horizontalPosition: 'right',
+      verticalPosition: 'top',
+    });
+  }
+
 
   private readonly materiaisAtivos = computed(() =>
     this.materiais().filter((material) => material.ativo),
@@ -187,7 +177,7 @@ export class ConsultaEstoque {
     return this.materiaisFiltrados().slice(inicio, inicio + this.pageSize());
   });
 
-  statusDe(material: Material): StatusEstoque {
+  statusDe(material: MaterialEstoque): StatusEstoque {
     if (material.estoqueAtual < material.estoqueMinimo) return 'ABAIXO';
     if (material.estoqueAtual === material.estoqueMinimo) return 'LIMITE';
     return 'NORMAL';

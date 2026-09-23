@@ -21,7 +21,7 @@ export const routes: Routes = [
       { path: 'dashboard', component: Dashboard },
       { path: 'usuarios', component: Usuarios },
       { path: 'materiais', component: Materiais },
-      { path: 'materiais/relatorio-estoque-minimo', component: ConsultaEstoque },
+      { path: 'materiais/consulta-estoque', component: ConsultaEstoque },
       { path: 'relatorio-materiais-minimo', component: RelatorioMateriaisMinimo },
       { path: 'movimentacoes', component: ListaMovimentacoes },
       { path: 'ordens-compra', component: ListaOrdemCompra },
