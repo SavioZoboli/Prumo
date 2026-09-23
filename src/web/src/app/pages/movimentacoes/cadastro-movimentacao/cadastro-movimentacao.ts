@@ -16,39 +16,15 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 
 import { InputComponent } from '../../../components/input-component/input-component';
 import { ButtonComponent } from '../../../components/button-component/button-component';
+import { Material } from '../../../services/material.service';
 
 export type TipoOperacao = 'E' | 'S';
 
-export interface Material {
-  id: number;
-  nome: string;
-  estoqueAtual: number;
-}
-
-export interface OrdemCompraResumo {
-  numero: number;
-}
-
-export interface MovimentacaoItem {
-  material: Material;
-  quantidade: number;
-}
-
-export interface MovimentacaoLista {
-  id: number;
-  data: Date;
-  operacao: TipoOperacao;
-  motivo: string | null;
-  ordemCompra: OrdemCompraResumo | null;
-  itens: MovimentacaoItem[];
-}
-
-// Payload esperado pela API: operação, motivo, id da OC (opcional) e a lista
-// de itens com código do material e quantidade.
+// Payload emitido para o componente pai montar a chamada real à API
+// (ver CreateMovimentacaoRequest em movimentacao.service.ts).
 export interface MovimentacaoPayload {
   operacao: TipoOperacao;
-  motivo: string | null;
-  ordemCompraNumero: number | null;
+  motivo: string;
   itens: {
     materialId: number;
     quantidade: number;
@@ -74,9 +50,7 @@ export interface MovimentacaoPayload {
 })
 export class CadastroMovimentacao implements OnChanges {
   @Input() aberto = false;
-  @Input() movimentacaoEmEdicao: MovimentacaoLista | null = null;
   @Input() materiaisDisponiveis: Material[] = [];
-  @Input() ordensCompraDisponiveis: OrdemCompraResumo[] = [];
 
   @Output() fechar = new EventEmitter<void>();
   @Output() salvar = new EventEmitter<MovimentacaoPayload>();
@@ -85,8 +59,7 @@ export class CadastroMovimentacao implements OnChanges {
 
   movimentacaoForm: FormGroup = new FormGroup({
     operacao: new FormControl<TipoOperacao | null>(null, Validators.required),
-    motivo: new FormControl(''),
-    ordemCompra: new FormControl<OrdemCompraResumo | null>(null),
+    motivo: new FormControl('', Validators.required),
     itens: new FormArray([]),
   });
 
@@ -104,6 +77,10 @@ export class CadastroMovimentacao implements OnChanges {
     return this.movimentacaoForm.get('operacao');
   }
 
+  get motivo() {
+    return this.movimentacaoForm.get('motivo');
+  }
+
   quantidadeInvalida(index: number): boolean {
     const controle = this.itens.at(index).get('quantidade');
     return !!controle?.invalid && !!controle?.touched;
@@ -111,30 +88,19 @@ export class CadastroMovimentacao implements OnChanges {
 
   private inicializarForm(): void {
     this.itens.clear();
-
-    if (this.movimentacaoEmEdicao) {
-      this.movimentacaoForm.patchValue({
-        operacao: this.movimentacaoEmEdicao.operacao,
-        motivo: this.movimentacaoEmEdicao.motivo ?? '',
-        ordemCompra: this.movimentacaoEmEdicao.ordemCompra,
-      });
-
-      this.movimentacaoEmEdicao.itens.forEach((item) => this.adicionarItem(item));
-    } else {
-      this.movimentacaoForm.reset();
-      this.adicionarItem();
-    }
+    this.movimentacaoForm.reset();
+    this.adicionarItem();
   }
 
-  private criarItemForm(item?: MovimentacaoItem): FormGroup {
+  private criarItemForm(): FormGroup {
     return new FormGroup({
-      material: new FormControl(item?.material ?? null, Validators.required),
-      quantidade: new FormControl(item?.quantidade ?? 1, [Validators.required, Validators.min(1)]),
+      material: new FormControl<Material | null>(null, Validators.required),
+      quantidade: new FormControl(1, [Validators.required, Validators.min(1)]),
     });
   }
 
-  adicionarItem(item?: MovimentacaoItem): void {
-    this.itens.push(this.criarItemForm(item));
+  adicionarItem(): void {
+    this.itens.push(this.criarItemForm());
   }
 
   removerItem(index: number): void {
@@ -159,11 +125,12 @@ export class CadastroMovimentacao implements OnChanges {
 
     const payload: MovimentacaoPayload = {
       operacao: dados.operacao,
-      motivo: dados.motivo?.trim() ? dados.motivo.trim() : null,
-      ordemCompraNumero: dados.ordemCompra?.numero ?? null,
+      motivo: dados.motivo.trim(),
       itens: dados.itens.map((item: { material: Material; quantidade: number }) => ({
         materialId: item.material.id,
-        quantidade: item.quantidade,
+        // O app-input sempre emite string, mesmo com type="number" (mesmo padrão
+        // de conversão usado em materiais.ts para estoqueMinimo/ultimoValor).
+        quantidade: Number(item.quantidade),
       })),
     };
 

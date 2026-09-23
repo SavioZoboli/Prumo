@@ -22,7 +22,7 @@
 
     <table
       mat-table
-      [dataSource]="movimentacoes"
+      [dataSource]="movimentacoes()"
       class="movimentacoes-page__table"
     >
 
@@ -61,6 +61,10 @@
             {{ formatarOperacao(item.operacao) }}
           </span>
 
+          @if (item.is_estornado) {
+            <span class="movimentacoes-page__status danger">Estornada</span>
+          }
+
         </td>
       </ng-container>
 
@@ -94,10 +98,12 @@
           <button
             mat-icon-button
             type="button"
-            aria-label="Editar movimentação"
-            (click)="abrirEdicao(item)"
+            aria-label="Estornar movimentação"
+            [disabled]="item.is_estornado"
+            [matTooltip]="item.is_estornado ? 'Movimentação já estornada' : 'Estornar movimentação'"
+            (click)="abrirEstorno(item)"
           >
-            <mat-icon>edit</mat-icon>
+            <mat-icon>undo</mat-icon>
           </button>
 
         </td>
@@ -119,10 +125,8 @@
   </section>
 
   <app-cadastro-movimentacao
-    [aberto]="painelAberto"
-    [movimentacaoEmEdicao]="movimentacaoEmEdicao"
-    [materiaisDisponiveis]="materiaisDisponiveis"
-    [ordensCompraDisponiveis]="ordensCompraDisponiveis"
+    [aberto]="painelAberto()"
+    [materiaisDisponiveis]="materiaisDisponiveis()"
     (fechar)="fecharCadastro()"
     (salvar)="salvarMovimentacao($event)"
   ></app-cadastro-movimentacao>

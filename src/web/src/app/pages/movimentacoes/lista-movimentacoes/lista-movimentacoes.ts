@@ -1,19 +1,19 @@
-import { Component } from '@angular/core';
+import { Component, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTableModule } from '@angular/material/table';
+import { MatTooltipModule } from '@angular/material/tooltip';
+import { MatDialog } from '@angular/material/dialog';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 
 import { ButtonComponent } from '../../../components/button-component/button-component';
-import { MaterialService } from '../../../services/material.service';
+import { MaterialService, Material } from '../../../services/material.service';
 import {
-  CadastroMovimentacao,
-  Material,
-  MovimentacaoItem,
-  MovimentacaoLista,
-  MovimentacaoPayload,
-  OrdemCompraResumo,
-} from '../cadastro-movimentacao/cadastro-movimentacao';
+  MovimentacaoService,
+  MovimentacaoResponse,
+} from '../../../services/movimentacao.service';
+import { EstornoDialog } from '../../../components/estorno-dialog/estorno-dialog';
+import { CadastroMovimentacao, MovimentacaoPayload } from '../cadastro-movimentacao/cadastro-movimentacao';
 
 @Component({
   selector: 'app-movimentacoes',
@@ -22,6 +22,7 @@ import {
     CommonModule,
     MatIconModule,
     MatTableModule,
+    MatTooltipModule,
     MatSnackBarModule,
     ButtonComponent,
     CadastroMovimentacao,
@@ -30,37 +31,30 @@ import {
   styleUrl: './lista-movimentacoes.scss',
 })
 export class ListaMovimentacoes {
-  painelAberto = false;
-  movimentacaoEmEdicao: MovimentacaoLista | null = null;
+  painelAberto = signal(false);
 
   colunasExibidas = ['id', 'data', 'operacao', 'itens', 'motivo', 'acoes'];
 
-  materiaisDisponiveis: Material[] = [];
+  materiaisDisponiveis = signal<Material[]>([]);
+  movimentacoes = signal<MovimentacaoResponse[]>([]);
 
-  // Mock — no lugar entrará a chamada ao service/API.
-  ordensCompraDisponiveis: OrdemCompraResumo[] = [
-    { numero: 1001 },
-    { numero: 1002 },
-  ];
+  private dialog = inject(MatDialog);
+  private snackBar = inject(MatSnackBar);
+  private materialService = inject(MaterialService);
+  private movimentacaoService = inject(MovimentacaoService);
 
-
-  movimentacoes: MovimentacaoLista[] = [];
-
-  constructor(
-    private snackBar: MatSnackBar,
-    private materialService: MaterialService,
-  ) {
+  constructor() {
     this.listarMateriais();
+    this.listarMovimentacoes();
   }
 
   private listarMateriais(): void {
     this.materialService.listAll().subscribe({
       next: (materiais) => {
-        this.materiaisDisponiveis = materiais;
-        this.movimentacoes = this.montarMovimentacoesMock(materiais);
+        this.materiaisDisponiveis.set(materiais);
       },
       error: () => {
-        this.snackBar.open('Erro ao carregar materiais', '', {
+        this.snackBar.open('Erro ao carregar materiais.', 'Fechar', {
           duration: 5000,
           horizontalPosition: 'right',
           verticalPosition: 'top',
@@ -70,98 +64,111 @@ export class ListaMovimentacoes {
     });
   }
 
-  private montarMovimentacoesMock(materiais: Material[]): MovimentacaoLista[] {
-    if (materiais.length < 2) {
-      return [];
-    }
+  private listarMovimentacoes(): void {
+    this.movimentacaoService.listAll().subscribe({
+      next: (movimentacoes) => {
+        this.movimentacoes.set(movimentacoes);
+      },
+      error: () => {
+        this.snackBar.open('Erro ao carregar movimentações.', 'Fechar', {
+          duration: 5000,
+          horizontalPosition: 'right',
+          verticalPosition: 'top',
+          panelClass: ['error-snackbar'],
+        });
+      },
+    });
+  }
 
-    return [
-      {
-        id: 1,
-        data: new Date(2026, 7, 28, 9, 15),
-        operacao: 'E',
-        motivo: 'Recebimento de fornecedor',
-        ordemCompra: this.ordensCompraDisponiveis[0],
-        itens: [{ material: materiais[0], quantidade: 50 }],
-      },
-      {
-        id: 2,
-        data: new Date(2026, 7, 29, 14, 30),
-        operacao: 'S',
-        motivo: 'Uso em produção',
-        ordemCompra: null,
-        itens: [{ material: materiais[1], quantidade: 10 }],
-      },
-    ];
+  resolverMaterial(materialId: number): Material | undefined {
+    return this.materiaisDisponiveis().find((material) => material.id === materialId);
   }
 
   abrirCadastro(): void {
-    this.movimentacaoEmEdicao = null;
-    this.painelAberto = true;
-  }
-
-  abrirEdicao(movimentacao: MovimentacaoLista): void {
-    this.movimentacaoEmEdicao = movimentacao;
-    this.painelAberto = true;
+    this.painelAberto.set(true);
   }
 
   fecharCadastro(): void {
-    this.painelAberto = false;
+    this.painelAberto.set(false);
   }
 
   salvarMovimentacao(payload: MovimentacaoPayload): void {
-    const itens: MovimentacaoItem[] = payload.itens.map((item) => ({
-      material: this.materiaisDisponiveis.find((m) => m.id === item.materialId)!,
-      quantidade: item.quantidade,
-    }));
+    this.movimentacaoService
+      .create({
+        operacao: payload.operacao,
+        motivo: payload.motivo,
+        itens: payload.itens.map((item) => ({
+          material_id: item.materialId,
+          quantidade: item.quantidade,
+        })),
+      })
+      .subscribe({
+        next: () => {
+          this.fecharCadastro();
+          this.listarMovimentacoes();
+          this.listarMateriais();
 
-    const ordemCompra = payload.ordemCompraNumero
-      ? this.ordensCompraDisponiveis.find((oc) => oc.numero === payload.ordemCompraNumero) ?? null
-      : null;
-
-    const editando = this.movimentacaoEmEdicao !== null;
-
-    if (this.movimentacaoEmEdicao) {
-      this.movimentacoes = this.movimentacoes.map((movimentacao) =>
-        movimentacao === this.movimentacaoEmEdicao
-          ? { ...movimentacao, operacao: payload.operacao, motivo: payload.motivo, ordemCompra, itens }
-          : movimentacao,
-      );
-    } else {
-      this.movimentacoes = [
-        ...this.movimentacoes,
-        {
-          id: this.proximoId(),
-          data: new Date(),
-          operacao: payload.operacao,
-          motivo: payload.motivo,
-          ordemCompra,
-          itens,
+          this.snackBar.open('Movimentação cadastrada com sucesso.', 'Fechar', {
+            duration: 3000,
+            horizontalPosition: 'right',
+            verticalPosition: 'top',
+            panelClass: ['success-snackbar'],
+          });
         },
-      ];
-    }
+        error: (erro) => {
+          this.snackBar.open(
+            erro.error?.message ?? 'Erro ao cadastrar movimentação.',
+            'Fechar',
+            {
+              duration: 5000,
+              horizontalPosition: 'right',
+              verticalPosition: 'top',
+              panelClass: ['error-snackbar'],
+            },
+          );
+        },
+      });
+  }
 
-    this.fecharCadastro();
+  abrirEstorno(movimentacao: MovimentacaoResponse): void {
+    const dialogRef = this.dialog.open(EstornoDialog, {
+      data: { movimentacaoId: movimentacao.id },
+    });
 
-    this.snackBar.open(
-      editando
-        ? 'Movimentação atualizada com sucesso.'
-        : 'Movimentação cadastrada com sucesso.',
-      'Fechar',
-      {
-        duration: 3000,
-        horizontalPosition: 'right',
-        verticalPosition: 'top',
-        panelClass: ['success-snackbar'],
-      },
-    );
+    dialogRef.afterClosed().subscribe((motivoEstorno: string | null) => {
+      if (!motivoEstorno) {
+        return;
+      }
+
+      this.movimentacaoService.estornar(movimentacao.id, motivoEstorno).subscribe({
+        next: () => {
+          this.listarMovimentacoes();
+          this.listarMateriais();
+
+          this.snackBar.open('Movimentação estornada com sucesso.', 'Fechar', {
+            duration: 3000,
+            horizontalPosition: 'right',
+            verticalPosition: 'top',
+            panelClass: ['success-snackbar'],
+          });
+        },
+        error: (erro) => {
+          this.snackBar.open(
+            erro.error?.message ?? 'Erro ao estornar movimentação.',
+            'Fechar',
+            {
+              duration: 5000,
+              horizontalPosition: 'right',
+              verticalPosition: 'top',
+              panelClass: ['error-snackbar'],
+            },
+          );
+        },
+      });
+    });
   }
 
   formatarOperacao(operacao: 'E' | 'S'): string {
     return operacao === 'E' ? 'Entrada' : 'Saída';
-  }
-
-  private proximoId(): number {
-    return this.movimentacoes.length ? Math.max(...this.movimentacoes.map((m) => m.id)) + 1 : 1;
   }
 }
