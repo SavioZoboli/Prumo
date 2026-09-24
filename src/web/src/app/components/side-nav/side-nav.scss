@@ -71,6 +71,27 @@
     border-top-left-radius: 0;
     border-bottom-left-radius: 0;
   }
+
+  // O cabeçalho do grupo é um <button> (ele abre/fecha, não navega), então
+  // precisa zerar a aparência padrão de botão e ocupar a linha inteira.
+  &--grupo {
+    width: 100%;
+    background: none;
+    border: none;
+    border-left: 3px solid transparent;
+    font-family: inherit;
+    text-align: left;
+    cursor: pointer;
+  }
+
+  &__seta {
+    margin-left: auto;
+  }
+
+  &--filho {
+    padding-left: calc(var(--app-space-md) * 2.5);
+    font-size: 0.9rem;
+  }
 }
 
 .sidenav-footer {
