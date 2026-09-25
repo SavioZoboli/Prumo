@@ -9,6 +9,7 @@ import { AuthModule } from './auth/auth.module';
 import { FornecedorModule } from './fornecedores/fornecedor.module';
 import { MaterialModule } from './materiais/material.module';
 import { MovimentacaoModule } from './movimentacoes/movimentacao.module';
+import { OrdemCompraModule } from './ordem-compra/ordem-compras.module';
 
 @Module({
   imports: [
@@ -23,6 +24,7 @@ import { MovimentacaoModule } from './movimentacoes/movimentacao.module';
     FornecedorModule,
     MaterialModule,
     MovimentacaoModule,
+    OrdemCompraModule
   ],
   controllers: [AppController],
   providers: [AppService],

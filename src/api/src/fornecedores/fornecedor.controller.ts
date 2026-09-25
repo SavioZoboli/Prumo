@@ -23,7 +23,7 @@ export class FornecedorController {
   type: Fornecedor,
 })
 @Post()
-@UseGuards(JwtAuthGuard)
+//@UseGuards(JwtAuthGuard)
 async create(
   @Body() createFornecedorDto: CreateFornecedorDto,
 ): Promise<Fornecedor> {
@@ -37,7 +37,7 @@ async create(
   type: [Fornecedor],
 })
 @Get()
-@UseGuards(JwtAuthGuard)
+//@UseGuards(JwtAuthGuard)
 findAll() {
   return this.fornecedorService.findAll();
 }
@@ -58,7 +58,7 @@ findAll() {
   description: 'Fornecedor não encontrado.',
 })
 @Get(':id')
-@UseGuards(JwtAuthGuard)
+//@UseGuards(JwtAuthGuard)
 findOne(@Param('id', ParseIntPipe) id: number) {
   return this.fornecedorService.findOne(id);
 }
@@ -79,7 +79,7 @@ findOne(@Param('id', ParseIntPipe) id: number) {
   description: 'Fornecedor não encontrado.',
 })
 @Patch(':id')
-@UseGuards(JwtAuthGuard)
+//@UseGuards(JwtAuthGuard)
 update(
   @Param('id', ParseIntPipe) id: number,
   @Body() updateFornecedorDto: UpdateFornecedorDto,
@@ -109,7 +109,7 @@ update(
   },
 })
 @Delete(':id')
-@UseGuards(JwtAuthGuard)
+//@UseGuards(JwtAuthGuard)
 remove(@Param('id', ParseIntPipe) id: number) {
   return this.fornecedorService.desativar(id);
 }
