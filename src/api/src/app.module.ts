@@ -10,6 +10,7 @@ import { FornecedorModule } from './fornecedores/fornecedor.module';
 import { MaterialModule } from './materiais/material.module';
 import { FabricanteModule } from './fabricantes/fabricante.module';
 import { MovimentacaoModule } from './movimentacoes/movimentacao.module';
+import { OrdemCompraModule } from './ordem-compra/ordem-compras.module';
 
 @Module({
   imports: [
@@ -25,6 +26,7 @@ import { MovimentacaoModule } from './movimentacoes/movimentacao.module';
     MaterialModule,
     FabricanteModule,
     MovimentacaoModule,
+    OrdemCompraModule
   ],
   controllers: [AppController],
   providers: [AppService],
