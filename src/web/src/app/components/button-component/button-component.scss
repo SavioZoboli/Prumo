@@ -5,25 +5,42 @@
   width: 100%;
 }
 
-// Cor/tipografia/estado disabled já vêm do tema M3 via mat-flat-button /
-// mat-stroked-button / mat-button + color="primary". Só cobrimos aqui o
-// que o Material não resolve: largura total e alinhamento do spinner.
 .app-button {
-  @extend %btn;
-  
+  padding: 0 var(--app-space-lg);
+  height: 44px;
+  border-radius: var(--app-radius-md);
+  font-weight: 500;
+
   &--full {
     width: 100%;
+  }
+
+  &__label {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--app-space-xs);
+    line-height: 1;
+
+    mat-icon {
+      flex-shrink: 0;
+    }
+  }
+}
+
+// A cor de fundo fica só na variante primária: se for aplicada em .app-button,
+// o mat-stroked-button (secundário) herda fundo escuro e o Material mantém o
+// texto na cor primária — texto escuro sobre fundo escuro, ou seja, invisível.
+button[mat-flat-button].app-button {
+  background-color: var(--mat-sys-primary);
+  color: var(--mat-sys-on-primary);
+
+  &:hover {
+    filter: brightness(0.92);
   }
 }
 
 .app-button--secondary {
   @extend %btn-discrete;
-}
-
-ng-content{
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
 }
 
 .app-button__spinner {

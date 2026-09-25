@@ -22,6 +22,8 @@
 
     .action-area {
       flex-shrink: 0;
+      display: flex;
+      gap: var(--app-space-sm);
 
       app-button {
         width: auto;

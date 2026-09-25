@@ -1,0 +1,149 @@
+@use '../../../../assets/scss/shared-patterns' as *;
+
+:host {
+  display: block;
+  min-height: 100vh;
+  background-color: var(--mat-sys-surface);
+  color: var(--mat-sys-on-surface);
+}
+
+.estoque-page {
+  @extend %report-container;
+
+  min-height: 100vh;
+  box-sizing: border-box;
+
+  &__header {
+    @extend %report-header;
+
+    .title-area {
+      gap: var(--app-space-xs);
+    }
+
+    .title-area h2 {
+      margin-top: var(--app-space-xs);
+    }
+
+    .title-area p {
+      margin: var(--app-space-sm) 0 0;
+      color: var(--mat-sys-on-surface-variant);
+      max-width: 60ch;
+    }
+
+    .action-area {
+      flex-shrink: 0;
+
+      app-button {
+        width: auto;
+      }
+    }
+  }
+
+  &__cards {
+    @extend %card-grid;
+
+    margin-bottom: var(--app-space-lg);
+  }
+
+  &__card {
+    @extend %status-card;
+
+    align-items: center;
+    gap: var(--app-space-md);
+    padding: var(--app-space-lg) !important;
+    background-color: var(--mat-sys-surface-container-low);
+    border: 1px solid var(--mat-sys-outline-variant);
+    border-radius: var(--app-radius-lg);
+
+    &-icon {
+      color: var(--mat-sys-primary);
+    }
+
+    &-value {
+      display: block;
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--mat-sys-on-surface);
+    }
+
+    &-label {
+      display: block;
+      font-size: 0.85rem;
+      color: var(--mat-sys-on-surface-variant);
+    }
+
+    &--warning &-icon {
+      color: var(--app-warning-soft-on);
+    }
+
+    &--danger &-icon {
+      color: var(--app-danger-soft-on);
+    }
+  }
+
+  &__filtros {
+    @extend %filtros-container;
+
+    mat-form-field {
+      min-width: 220px;
+    }
+  }
+
+  &__table-container {
+    @extend %table-container;
+  }
+
+  &__table {
+    @extend %custom-table;
+  }
+
+  &__paginator {
+    @extend %custom-paginator;
+  }
+
+  &__empty {
+    @extend %empty-state;
+
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--app-space-sm);
+  }
+
+  &__status {
+    @extend %status-chip;
+
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+
+    mat-icon {
+      font-size: 1rem;
+      width: 1rem;
+      height: 1rem;
+    }
+  }
+
+  &__row--danger {
+    background-color: color-mix(in srgb, var(--app-danger) 6%, transparent);
+  }
+}
+
+@media (max-width: 768px) {
+  .estoque-page {
+    &__header.with-actions {
+      align-items: stretch;
+      flex-direction: column;
+      gap: var(--app-space-lg);
+    }
+
+    &__filtros {
+      flex-direction: column;
+      align-items: stretch;
+    }
+
+    &__table-container {
+      overflow-x: auto;
+    }
+  }
+}

@@ -248,7 +248,10 @@
 
   .btn-limpar {
     height: 56px;
+    padding: 0 var(--app-space-lg);
+    white-space: nowrap;
     color: var(--mat-sys-on-surface-variant);
+    border-color: var(--mat-sys-outline);
 
     mat-icon {
       margin-right: var(--app-space-xs);

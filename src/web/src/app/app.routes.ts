@@ -7,6 +7,7 @@ import { RelatorioMateriaisMinimo } from './pages/relatorio-materiais-minimo/rel
 import { ListaMovimentacoes } from './pages/movimentacoes/lista-movimentacoes/lista-movimentacoes';
 import { MainLayout } from './components/main-layout/main-layout';
 import { ListaOrdemCompra } from './pages/ordem-compra/lista-ordem-compra/lista-ordem-compra';
+import { ConsultaEstoque } from './pages/materiais/consulta-estoque/consulta-estoque';
 import { authGuard } from './guards/auth.guard';
 
 export const routes: Routes = [
@@ -14,12 +15,13 @@ export const routes: Routes = [
   { path: 'login', component: LoginPageComponent },
   {
     path: '',
-    component:MainLayout,
+    component: MainLayout,
     canActivate: [authGuard],
     children: [
       { path: 'dashboard', component: Dashboard },
       { path: 'usuarios', component: Usuarios },
       { path: 'materiais', component: Materiais },
+      { path: 'materiais/consulta-estoque', component: ConsultaEstoque },
       { path: 'relatorio-materiais-minimo', component: RelatorioMateriaisMinimo },
       { path: 'movimentacoes', component: ListaMovimentacoes },
       { path: 'ordens-compra', component: ListaOrdemCompra },

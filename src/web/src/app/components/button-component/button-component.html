@@ -2,6 +2,7 @@
   @case ('secondary') {
     <button
       mat-stroked-button
+      color="primary"
       [type]="type"
       [disabled]="disabled || loading"
       class="app-button app-button--secondary"
@@ -13,6 +14,7 @@
   @case ('text') {
     <button
       mat-button
+      color="primary"
       [type]="type"
       [disabled]="disabled || loading"
       class="app-button"
@@ -42,10 +44,10 @@
     mode="indeterminate"
     class="app-button__spinner"
   ></mat-progress-spinner>
-  <span *ngIf="!loading">
+  <span *ngIf="!loading" class="app-button__label">
     @if (icon != '') {
       <mat-icon>{{ icon }}</mat-icon>
     }
-    {{ label }}</span
-  >
+    <span>{{ label }}</span>
+  </span>
 </ng-template>
