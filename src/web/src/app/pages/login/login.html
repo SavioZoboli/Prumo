@@ -9,13 +9,13 @@
 
       <form [formGroup]="loginForm" (ngSubmit)="onSubmit()" class="login-page__form">
         <app-input
-          label="Usuário"
-          placeholder="Ex: John Doe"
+          label="E-mail"
+          placeholder="Ex: nome@empresa.com"
           icon="user"
           [required]="true"
-          formControlName="username"
-          [hasError]="!!username?.invalid && !!username?.touched"
-          errorMessage="Usuário é obrigatório"
+          formControlName="email"
+          [hasError]="!!email?.invalid && !!email?.touched"
+          errorMessage="Informe um e-mail válido"
         ></app-input>
 
         <app-input
@@ -28,7 +28,11 @@
           errorMessage="Senha é obrigatória"
         ></app-input>
 
-        <app-button label="ENTRAR" type="submit" [loading]="loading"></app-button>
+        @if (erroLogin()) {
+          <p class="login-page__erro">E-mail ou senha inválidos.</p>
+        }
+
+        <app-button label="ENTRAR" type="submit" [loading]="loading()"></app-button>
         <app-theme-toggler></app-theme-toggler>
       </form>
 

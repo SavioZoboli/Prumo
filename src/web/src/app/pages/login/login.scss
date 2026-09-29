@@ -108,6 +108,12 @@
     color: var(--app-danger);
   }
 
+  &__erro {
+    font-size: 0.875rem;
+    color: var(--app-danger);
+    margin: 0;
+  }
+
   &__forgot-link {
     font-size: 0.8125rem;
     font-weight: 600;

@@ -1,0 +1,6 @@
+mat-dialog-content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--app-space-md);
+  min-width: 320px;
+}

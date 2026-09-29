@@ -9,8 +9,17 @@ src/api/.vscode
 # Environments
 src/web/src/environments
 src/api/.env
+.env
 
 # Pasta temporária do Angular
 src/web/.angular
 
+# Environment da raiz (usado pelo docker-compose)
+.env
+
+# macOS
+.DS_Store
+
 src/api/dist
+
+

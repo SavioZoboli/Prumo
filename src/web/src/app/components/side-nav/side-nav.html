@@ -1,0 +1,72 @@
+<mat-sidenav-container class="layout-container">
+  <mat-sidenav
+    #drawer
+    class="sidenav"
+    [mode]="(isHandset$ | async) ? 'over' : 'side'"
+    [opened]="(isHandset$ | async) === false"
+  >
+    <div class="sidenav-header">
+      <img src="/logo/logo.svg">
+    </div>
+
+    <nav class="sidenav-menu">
+      @for (item of navItems; track item.label) {
+
+        @if (item.children) {
+          <button
+            type="button"
+            class="menu-item menu-item--grupo"
+            [attr.aria-expanded]="estaAberto(item)"
+            (click)="alternarGrupo(item)"
+          >
+            <mat-icon>{{ item.icon }}</mat-icon>
+            <span>{{ item.label }}</span>
+            <mat-icon class="menu-item__seta">
+              {{ estaAberto(item) ? 'expand_less' : 'expand_more' }}
+            </mat-icon>
+          </button>
+
+          @if (estaAberto(item)) {
+            @for (filho of item.children; track filho.route) {
+              <a
+                class="menu-item menu-item--filho"
+                [routerLink]="filho.route"
+                routerLinkActive="active"
+                [routerLinkActiveOptions]="{ exact: true }"
+              >
+                <mat-icon>{{ filho.icon }}</mat-icon>
+                <span>{{ filho.label }}</span>
+              </a>
+            }
+          }
+        } @else {
+          <a class="menu-item" [routerLink]="item.route" routerLinkActive="active">
+            <mat-icon>{{ item.icon }}</mat-icon>
+            <span>{{ item.label }}</span>
+          </a>
+        }
+
+      }
+    </nav>
+
+    <div class="sidenav-footer">
+      <app-theme-toggler />
+      <a class="logout-link" (click)="sair()">
+        <mat-icon>logout</mat-icon>
+        <span>Sair</span>
+      </a>
+    </div>
+  </mat-sidenav>
+
+  <mat-sidenav-content class="content">
+    @if (isHandset$ | async) {
+      <mat-toolbar class="mobile-toolbar">
+        <button mat-icon-button type="button" (click)="drawer.toggle()">
+          <mat-icon>menu</mat-icon>
+        </button>
+      </mat-toolbar>
+    }
+
+    <ng-content />
+  </mat-sidenav-content>
+</mat-sidenav-container>

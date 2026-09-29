@@ -1,0 +1,11 @@
+<form class="form-row fornecedor" [formGroup]="formFornecedor">
+  <mat-form-field appearance="outline">
+    <mat-label>Nome</mat-label>
+    <input matInput  [formControl]="formNome"/>
+  </mat-form-field>
+  <mat-form-field appearance="outline">
+    <mat-label>CNPJ</mat-label>
+    <input matInput mask="00.000.000/0000-00"  [formControl]="formCNPJ"/>
+  </mat-form-field>
+  <button mat-flat-button color="primary" [disabled]="formFornecedor.invalid" (click)="salvarFornecedor()">Salvar</button>
+</form>

@@ -4,14 +4,15 @@ import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatIconModule } from '@angular/material/icon';
+import { MatAutocomplete, MatAutocompleteModule } from '@angular/material/autocomplete';
 
 export type InputIcon = 'user' | 'lock' | null;
-export type InputType = 'text' | 'password' | 'email';
+export type InputType = 'text' | 'password' | 'email' | 'number';
 
 @Component({
   selector: 'app-input',
   standalone: true,
-  imports: [CommonModule, MatFormFieldModule, MatInputModule, MatIconModule],
+  imports: [CommonModule, MatFormFieldModule, MatInputModule, MatIconModule, MatAutocompleteModule],
   templateUrl: './input-component.html',
   styleUrl: './input-component.scss',
   providers: [
@@ -30,6 +31,14 @@ export class InputComponent implements ControlValueAccessor {
   @Input() icon: InputIcon = null;
   @Input() errorMessage = '';
   @Input() hasError = false;
+  @Input() min: number | null = null;
+
+  // Painel de um <mat-autocomplete> declarado pelo componente pai (sibling do app-input).
+  @Input() autocompletePanel: MatAutocomplete | null = null;
+
+  // Necessário quando o valor do control é um objeto (ex: material selecionado no
+  // autocomplete): formata o objeto para texto exibido no input.
+  @Input() displayWith: ((value: any) => string) | null = null;
 
   value = '';
   disabled = false;
@@ -42,8 +51,8 @@ export class InputComponent implements ControlValueAccessor {
   private onChange: (value: string) => void = () => {};
   private onTouched: () => void = () => {};
 
-  writeValue(value: string): void {
-    this.value = value ?? '';
+  writeValue(value: unknown): void {
+    this.value = this.displayWith ? this.displayWith(value) : ((value as string) ?? '');
   }
 
   registerOnChange(fn: (value: string) => void): void {
@@ -61,7 +70,7 @@ export class InputComponent implements ControlValueAccessor {
   handleInput(event: Event): void {
     const target = event.target as HTMLInputElement;
     this.value = target.value;
-    this.onChange(this.value);
+    this.onChange(target.value);
   }
 
   handleBlur(): void {
