@@ -24,8 +24,8 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     }
 
     if (usuario.tokens_invalidados_em) {
-      const emitidoEm = payload.iat * 1000;
-      if (emitidoEm <= usuario.tokens_invalidados_em.getTime()) {
+      const invalidadoEm = Math.floor(usuario.tokens_invalidados_em.getTime() / 1000);
+      if (payload.iat < invalidadoEm) {
         throw new UnauthorizedException('Sessão expirada, faça login novamente.');
       }
     }
