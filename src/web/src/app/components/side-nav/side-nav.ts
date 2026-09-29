@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, signal } from '@angular/core';
 import { Router, RouterLink, RouterLinkActive } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
 import { BreakpointObserver, Breakpoints } from '@angular/cdk/layout';
@@ -13,7 +13,8 @@ import { AuthService } from '../../services/auth.service';
 interface NavItem {
   label: string;
   icon: string;
-  route: string;
+  route?: string;
+  children?: NavItem[];
 }
 
 @Component({
@@ -58,10 +59,31 @@ export class SideNav {
 
   protected readonly navItems: NavItem[] = [
     { label: 'Dashboard', icon: 'dashboard', route: '/dashboard' },
-    { label: 'Usuários', icon: 'group', route: '/usuarios' },
-    { label: 'Materiais', icon: 'inventory_2', route: '/materiais' },
-    { label: 'Materiais abaixo do mínimo', icon: 'warning', route: '/relatorio-materiais-minimo' },
-    { label: 'Movimentações', icon: 'swap_horiz', route: '/movimentacoes' },
+    {
+      label: 'Estoque',
+      icon: 'inventory_2',
+      children: [
+        { label: 'Materiais', icon: 'category', route: '/materiais' },
+        { label: 'Consulta de estoque', icon: 'search', route: '/materiais/consulta-estoque' },
+        { label: 'Abaixo do mínimo', icon: 'warning', route: '/relatorio-materiais-minimo' },
+        { label: 'Movimentações', icon: 'swap_horiz', route: '/movimentacoes' },
+      ],
+    },
     { label: 'Ordens de Compra', icon: 'shopping_cart', route: '/ordens-compra' },
+    { label: 'Usuários', icon: 'group', route: '/usuarios' },
   ];
+
+  private readonly gruposFechados = signal<ReadonlySet<string>>(new Set());
+
+  protected estaAberto(grupo: NavItem): boolean {
+    return !this.gruposFechados().has(grupo.label);
+  }
+
+  protected alternarGrupo(grupo: NavItem): void {
+    this.gruposFechados.update((fechados) => {
+      const novo = new Set(fechados);
+      novo.has(grupo.label) ? novo.delete(grupo.label) : novo.add(grupo.label);
+      return novo;
+    });
+  }
 }

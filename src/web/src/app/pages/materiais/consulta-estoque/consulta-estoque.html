@@ -1,0 +1,182 @@
+<div class="estoque-page">
+
+  <header class="estoque-page__header with-actions">
+    <div class="title-area">
+      <span class="breadcrumb">Materiais</span>
+
+      <h2>Consulta de Estoque</h2>
+
+      <p>Acompanhe a quantidade disponível de cada material e identifique o que precisa de reposição.</p>
+    </div>
+
+    <div class="action-area">
+      <app-button
+        label="EXPORTAR EXCEL"
+        icon="download"
+        variant="secondary"
+        [fullWidth]="false"
+        (click)="exportarExcel()"
+      ></app-button>
+    </div>
+  </header>
+
+  <section class="estoque-page__cards">
+
+    <article class="estoque-page__card">
+      <mat-icon class="estoque-page__card-icon">inventory_2</mat-icon>
+      <div>
+        <span class="estoque-page__card-value">{{ totalAtivos() }}</span>
+        <span class="estoque-page__card-label">Materiais ativos</span>
+      </div>
+    </article>
+
+    <article class="estoque-page__card estoque-page__card--warning">
+      <mat-icon class="estoque-page__card-icon">warning</mat-icon>
+      <div>
+        <span class="estoque-page__card-value">{{ totalNoLimite() }}</span>
+        <span class="estoque-page__card-label">No limite do mínimo</span>
+      </div>
+    </article>
+
+    <article class="estoque-page__card estoque-page__card--danger">
+      <mat-icon class="estoque-page__card-icon">error</mat-icon>
+      <div>
+        <span class="estoque-page__card-value">{{ totalAbaixoDoMinimo() }}</span>
+        <span class="estoque-page__card-label">Abaixo do mínimo</span>
+      </div>
+    </article>
+
+  </section>
+
+  <section class="estoque-page__filtros">
+
+    <app-input
+      label="Buscar"
+      placeholder="Nome, código ou equipamento"
+      [formControl]="busca"
+      (input)="onBuscaChange()"
+    ></app-input>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Situação do estoque</mat-label>
+
+      <mat-select
+        [value]="filtroStatus()"
+        (selectionChange)="onFiltroStatusChange($event.value)"
+      >
+        <mat-option value="TODOS">Todos</mat-option>
+        <mat-option value="NORMAL">Normal</mat-option>
+        <mat-option value="LIMITE">No limite</mat-option>
+        <mat-option value="ABAIXO">Abaixo do mínimo</mat-option>
+      </mat-select>
+    </mat-form-field>
+
+    <button
+      mat-stroked-button
+      color="primary"
+      type="button"
+      class="btn-limpar"
+      (click)="limparFiltros()"
+    >
+      <mat-icon>filter_alt_off</mat-icon>
+      Limpar filtros
+    </button>
+
+  </section>
+
+  <section class="estoque-page__table-container">
+
+    <table
+      mat-table
+      [dataSource]="materiaisPaginados()"
+      class="estoque-page__table"
+    >
+
+      <ng-container matColumnDef="codigo">
+        <th mat-header-cell *matHeaderCellDef>Código</th>
+        <td mat-cell *matCellDef="let item">{{ item.codigo }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="nome">
+        <th mat-header-cell *matHeaderCellDef>Nome</th>
+        <td mat-cell *matCellDef="let item">{{ item.nome }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="equipamento">
+        <th mat-header-cell *matHeaderCellDef>Equipamento</th>
+        <td mat-cell *matCellDef="let item">{{ item.equipamento }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="fabricante">
+        <th mat-header-cell *matHeaderCellDef>Fabricante</th>
+        <td mat-cell *matCellDef="let item">{{ item.fabricante }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="estoqueAtual">
+        <th mat-header-cell *matHeaderCellDef>Estoque atual</th>
+        <td mat-cell *matCellDef="let item">{{ item.estoqueAtual }} {{ item.unidadeMedida }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="estoqueMinimo">
+        <th mat-header-cell *matHeaderCellDef>Estoque mínimo</th>
+        <td mat-cell *matCellDef="let item">{{ item.estoqueMinimo }} {{ item.unidadeMedida }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="status">
+        <th mat-header-cell *matHeaderCellDef>Status</th>
+
+        <td mat-cell *matCellDef="let item">
+          <span
+            class="estoque-page__status"
+            [class.warning]="statusDe(item) === 'LIMITE'"
+            [class.danger]="statusDe(item) === 'ABAIXO'"
+            [class.success]="statusDe(item) === 'NORMAL'"
+          >
+            <mat-icon>{{
+              statusDe(item) === 'ABAIXO'
+                ? 'error'
+                : statusDe(item) === 'LIMITE'
+                  ? 'warning'
+                  : 'check_circle'
+            }}</mat-icon>
+
+            {{ rotuloStatus(statusDe(item)) }}
+          </span>
+        </td>
+      </ng-container>
+
+      <tr mat-header-row *matHeaderRowDef="colunasExibidas"></tr>
+
+      <tr
+        mat-row
+        *matRowDef="let row; columns: colunasExibidas"
+        class="custom-row"
+        [class.estoque-page__row--danger]="statusDe(row) === 'ABAIXO'"
+      ></tr>
+
+    </table>
+
+    @if (carregando()) {
+      <div class="estoque-page__empty">
+        <mat-icon>hourglass_empty</mat-icon>
+        Carregando materiais...
+      </div>
+    } @else if (materiaisFiltrados().length === 0) {
+      <div class="estoque-page__empty">
+        <mat-icon>search_off</mat-icon>
+        Nenhum material encontrado para os filtros aplicados.
+      </div>
+    }
+
+    <mat-paginator
+      class="estoque-page__paginator"
+      [length]="materiaisFiltrados().length"
+      [pageIndex]="pageIndex()"
+      [pageSize]="pageSize()"
+      [pageSizeOptions]="[5, 10, 25, 50]"
+      (page)="onPageChange($event)"
+    ></mat-paginator>
+
+  </section>
+
+</div>

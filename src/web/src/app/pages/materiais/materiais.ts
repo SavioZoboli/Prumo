@@ -1,5 +1,6 @@
 import { Component, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { Router } from '@angular/router';
 import {
   FormBuilder,
   FormGroup,
@@ -96,6 +97,7 @@ export class Materiais {
   constructor(
     private fb: FormBuilder,
     private snackBar: MatSnackBar,
+    private router: Router,
     private dialog: MatDialog,
     private materialService: MaterialService,
     private fabricanteService: FabricanteService
@@ -187,6 +189,10 @@ export class Materiais {
         );
       },
     });
+  }
+
+  abrirConsultaEstoque(): void {
+    this.router.navigate(['/materiais/consulta-estoque']);
   }
 
   abrirCadastro(): void {

@@ -9,6 +9,13 @@
 
     <div class="action-area">
       <app-button
+        label="CONSULTA DE ESTOQUE"
+        variant="secondary"
+        [fullWidth]="false"
+        (click)="abrirConsultaEstoque()"
+      ></app-button>
+
+      <app-button
         label="+ NOVO MATERIAL"
         [fullWidth]="false"
         (click)="abrirCadastro()"
