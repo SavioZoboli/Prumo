@@ -4,12 +4,15 @@ import { Repository } from 'typeorm';
 import { Material } from './material.entity';
 import { CreateMaterialDto } from './dto/create-material.dto';
 import { UpdateMaterialDto } from './dto/update-material.dto';
+import { AlertaEstoqueService } from '../alertas/alerta-estoque.service';
 
 @Injectable()
 export class MaterialService {
   constructor(
     @InjectRepository(Material)
     private materialRepository: Repository<Material>,
+
+    private readonly alertaEstoqueService: AlertaEstoqueService,
   ) {}
 
   async create(createMaterialDto: CreateMaterialDto): Promise<Material> {
@@ -40,6 +43,11 @@ export class MaterialService {
     updateMaterialDto: UpdateMaterialDto,
   ): Promise<Material | null> {
     await this.materialRepository.update(id, updateMaterialDto);
+
+    // Mudar o estoque mínimo (ou reativar o material) pode colocá-lo na
+    // situação crítica sem nenhuma movimentação.
+    void this.alertaEstoqueService.verificarMateriais([id]);
+
     return this.findOne(id);
   }
 

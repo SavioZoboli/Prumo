@@ -123,3 +123,19 @@ node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
 
 Copie o resultado para `JWT_SECRET` no seu `src/api/.env`. Em ambientes compartilhados (HML/produção), o segredo é configurado direto no
 servidor, fora do repositório.
+5. E-mail (alerta de estoque mínimo):
+
+A API envia e-mail quando um material atinge o estoque mínimo. Em desenvolvimento, o `docker compose up -d` também sobe o **Mailpit**, um SMTP falso que captura tudo o que é enviado — nenhum e-mail sai de verdade. A caixa de entrada fica em http://localhost:8025.
+
+Adicione ao `src/api/.env`:
+
+MAIL_HOST=localhost
+MAIL_PORT=1025
+MAIL_SECURE=false
+MAIL_USER=
+MAIL_PASS=
+MAIL_FROM="Prumo <nao-responda@prumo.local>"
+
+Se as portas 1025/8025 já estiverem em uso na sua máquina, defina `MAILPIT_SMTP_PORT` e `MAILPIT_UI_PORT` no `.env` da raiz e use o mesmo valor de `MAILPIT_SMTP_PORT` em `MAIL_PORT`. Em HML/produção, as variáveis `MAIL_*` apontam para o SMTP real.
+
+Os destinatários do alerta são os usuários ativos com perfil ADMIN ou LIDER.

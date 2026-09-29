@@ -10,6 +10,7 @@ import { ItemMovimento } from './item-movimento.entity';
 import { CreateMovimentacaoDto } from './dto/create-movimentacao.dto';
 import { FiltrarMovimentacaoDto } from './dto/filtrar-movimentacao.dto';
 import { Material } from '../materiais/material.entity';
+import { AlertaEstoqueService } from '../alertas/alerta-estoque.service';
 
 @Injectable()
 export class MovimentacaoService {
@@ -19,6 +20,8 @@ export class MovimentacaoService {
 
     @InjectRepository(Material)
     private materialRepository: Repository<Material>,
+
+    private readonly alertaEstoqueService: AlertaEstoqueService,
   ) {}
 
   async create(
@@ -42,7 +45,7 @@ export class MovimentacaoService {
       }
     }
 
-    return this.movimentacaoRepository.manager.transaction(async (manager) => {
+    const movimentacaoSalva = await this.movimentacaoRepository.manager.transaction(async (manager) => {
       const materialRepository = manager.getRepository(Material);
       const materiaisPorId = new Map<number, Material>();
 
@@ -108,16 +111,16 @@ export class MovimentacaoService {
 
       movimentacaoSalva.itens = itensSalvos;
 
-      for (const material of materiaisEnvolvidos) {
-        if (material.estoqueAtual <= material.estoqueMinimo) {
-          // TODO: chamar o servico de envio de e-mail aos usuarios ADMIN/LIDER.
-          // Ainda nao existe um servico de e-mail no projeto (sem nodemailer/
-          // mailer module) — precisa ser criado antes de implementar isto.
-        }
-      }
-
       return movimentacaoSalva;
     });
+
+    // Fora da transação e sem await: o alerta só olha estoque já commitado e
+    // nem a demora nem a falha do e-mail chegam a quem fez a movimentação.
+    void this.alertaEstoqueService.verificarMateriais(
+      itens.map((item) => item.material_id),
+    );
+
+    return movimentacaoSalva;
   }
 
   async findAll(filtros: FiltrarMovimentacaoDto = {}): Promise<Movimentacao[]> {
@@ -204,6 +207,12 @@ export class MovimentacaoService {
         motivo_estorno: motivoEstorno,
       });
     });
+
+    // Estornar muda o estoque: pode levar ao mínimo (estorno de entrada) ou
+    // tirar da situação crítica (estorno de saída).
+    void this.alertaEstoqueService.verificarMateriais(
+      movimentacao.itens.map((item) => item.material_id),
+    );
 
     return (await this.findOne(id))!;
   }
