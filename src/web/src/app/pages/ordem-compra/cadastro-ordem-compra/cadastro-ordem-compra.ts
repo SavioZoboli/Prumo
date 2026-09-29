@@ -222,7 +222,7 @@ export class CadastroOrdemCompra implements OnChanges {
     const dados = this.ordemForm.getRawValue();
 
     const payload: OrdemCompraPayload = {
-      fornecedorCodigo: dados.fornecedor.codigo,
+      fornecedorCodigo: dados.fornecedor.id,
       dataEntrega: dados.dataEntrega,
       status: 'ABERTO',
       itens: dados.itens.map((item: { material: Material; quantidade: number; valor: number }) => ({

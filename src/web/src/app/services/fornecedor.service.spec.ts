@@ -75,4 +75,69 @@ describe('FornecedorService', () => {
 
     requisicao.flush(null);
   });
+
+  it('deve buscar um fornecedor por ID', () => {
+    const fornecedor: Fornecedor = {
+      id: 1,
+      nome: 'Fornecedor Teste',
+      cnpj: '33000167000101',
+      ativo: true,
+    };
+
+    service.findOne(1).subscribe((resultado) => {
+      expect(resultado).toEqual(fornecedor);
+    });
+
+    const requisicao = httpTesting.expectOne(`${url}/1`);
+
+    expect(requisicao.request.method).toBe('GET');
+
+    requisicao.flush(fornecedor);
+  });
+
+  it('deve atualizar um fornecedor', () => {
+    const fornecedorAtualizado: Fornecedor = {
+      id: 1,
+      nome: 'Fornecedor Atualizado',
+      cnpj: '33000167000101',
+      ativo: true,
+    };
+
+    service
+      .update(1, {
+        nome: 'Fornecedor Atualizado',
+      })
+      .subscribe((resultado) => {
+        expect(resultado).toEqual(fornecedorAtualizado);
+      });
+
+    const requisicao = httpTesting.expectOne(`${url}/1`);
+
+    expect(requisicao.request.method).toBe('PATCH');
+
+    expect(requisicao.request.body).toEqual({
+      nome: 'Fornecedor Atualizado',
+    });
+
+    requisicao.flush(fornecedorAtualizado);
+  });
+
+  it('deve desativar um fornecedor', () => {
+    const fornecedorDesativado: Fornecedor = {
+      id: 1,
+      nome: 'Fornecedor Teste',
+      cnpj: '33000167000101',
+      ativo: false,
+    };
+
+    service.desativar(1).subscribe((resultado) => {
+      expect(resultado).toEqual(fornecedorDesativado);
+    });
+
+    const requisicao = httpTesting.expectOne(`${url}/1`);
+
+    expect(requisicao.request.method).toBe('DELETE');
+
+    requisicao.flush(fornecedorDesativado);
+  });
 });
