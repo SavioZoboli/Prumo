@@ -40,7 +40,9 @@ export class AuthService {
   }
 
   public estaAutenticado(): boolean {
-    return !!localStorage.getItem('access_token');
+    const payload = this.decodePayload();
+    if (!payload?.exp) return false;
+    return payload.exp * 1000 > Date.now();
   }
 
   public getPerfil(): string | null {
