@@ -4,6 +4,7 @@ import { Repository } from 'typeorm';
 import { Material } from './material.entity';
 import { CreateMaterialDto } from './dto/create-material.dto';
 import { UpdateMaterialDto } from './dto/update-material.dto';
+import { MaterialRelatorioDto } from './dto/material-relatorio.dto';
 
 @Injectable()
 export class MaterialService {
@@ -27,6 +28,26 @@ export class MaterialService {
     return this.materialRepository.find({
       where: { ativo: true },
     });
+  }
+
+    async getRelatorioMinimo(): Promise<MaterialRelatorioDto[]> {
+    const materiaisCriticos = await this.materialRepository
+      .createQueryBuilder('material')
+      .leftJoinAndSelect('material.fabricante', 'fabricante')
+      .where('material.ativo = :ativo', { ativo: true })
+      .andWhere('material.estoqueAtual <= material.estoqueMinimo')
+      .getMany();
+
+    return materiaisCriticos.map((material) => ({
+      codigo: material.codigo,
+      nome: material.nome,
+      equipamento: material.equipamento,
+      fabricante: material.fabricante?.nome ?? 'Fabricante não encontrado',
+      unidadeMedida: material.unidadeMedida,
+      estoqueAtual: material.estoqueAtual,
+      estoqueMinimo: material.estoqueMinimo,
+      ativo: material.ativo,
+    }));
   }
 
   async findOne(id: number): Promise<Material | null> {
