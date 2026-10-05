@@ -118,7 +118,6 @@ describe('AlertaEstoqueService', () => {
   });
 
   it('entrada que não tira da situação crítica não gera alerta', async () => {
-    // Alertado com 5, entrou material e foi para 8: continua crítico, mas melhorou.
     materiais = [
       material({
         estoqueAtual: 8,
@@ -133,7 +132,6 @@ describe('AlertaEstoqueService', () => {
   });
 
   it('reenvia quando o material já alertado cai ainda mais', async () => {
-    // Caso real: BROCA08 alertado com 20/20 e depois saiu para 19.
     materiais = [
       material({
         estoqueAtual: 19,

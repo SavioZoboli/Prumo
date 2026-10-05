@@ -49,8 +49,6 @@ export class AlertaEstoqueService {
     }
   }
 
-  // Estoque voltou a ficar acima do mínimo: limpa a marca para que uma nova
-  // entrada na situação crítica gere um novo alerta.
   private async liberarRecuperados(materiais: Material[]): Promise<void> {
     const ids = materiais
       .filter(
@@ -66,13 +64,6 @@ export class AlertaEstoqueService {
     );
   }
 
-  // Alerta quem está no mínimo ou abaixo e ainda não foi alertado, ou quem já
-  // foi alertado mas caiu abaixo da quantidade daquele alerta (piorou). Uma
-  // entrada que não tira o material da situação crítica não gera e-mail.
-  //
-  // A marcação é uma única instrução condicional: duas movimentações
-  // simultâneas do mesmo material disputam a linha e só uma leva o material —
-  // é isso que evita e-mail em duplicidade.
   private async reservarCriticos(materiais: Material[]): Promise<Material[]> {
     const candidatos = materiais.filter(
       (m) =>
@@ -143,8 +134,6 @@ export class AlertaEstoqueService {
     }
   }
 
-  // Sem o envio confirmado, a marca volta ao que era antes da reserva (nula,
-  // ou o alerta anterior): senão esta queda nunca seria avisada.
   private async desfazerReserva(materiais: Material[]): Promise<void> {
     for (const m of materiais) {
       await this.materialRepository.update(m.id, {
@@ -161,8 +150,6 @@ export class AlertaEstoqueService {
     return `[Prumo] Estoque mínimo atingido em ${criticos.length} materiais`;
   }
 
-  // HTML de e-mail: tabelas e estilos inline, porque Gmail/Outlook ignoram
-  // <style> e CSS moderno.
   private montarHtml(criticos: Material[]): string {
     const umSo = criticos.length === 1;
     const celula = 'padding:10px 12px;border-bottom:1px solid #e5e7eb';
