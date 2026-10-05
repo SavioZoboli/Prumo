@@ -57,7 +57,6 @@ describe('AlertaEstoqueService', () => {
 
     materiais = [];
     idsReservados = [];
-    // Simula o UPDATE condicional: reserva só o que está em idsReservados.
     execute.mockImplementation(async () => ({
       raw: idsReservados.map((id) => ({ id })),
     }));

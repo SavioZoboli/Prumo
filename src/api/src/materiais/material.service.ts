@@ -43,9 +43,6 @@ export class MaterialService {
     updateMaterialDto: UpdateMaterialDto,
   ): Promise<Material | null> {
     await this.materialRepository.update(id, updateMaterialDto);
-
-    // Mudar o estoque mínimo (ou reativar o material) pode colocá-lo na
-    // situação crítica sem nenhuma movimentação.
     void this.alertaEstoqueService.verificarMateriais([id]);
 
     return this.findOne(id);

@@ -114,8 +114,6 @@ export class MovimentacaoService {
       return movimentacaoSalva;
     });
 
-    // Fora da transação e sem await: o alerta só olha estoque já commitado e
-    // nem a demora nem a falha do e-mail chegam a quem fez a movimentação.
     void this.alertaEstoqueService.verificarMateriais(
       itens.map((item) => item.material_id),
     );
@@ -208,8 +206,6 @@ export class MovimentacaoService {
       });
     });
 
-    // Estornar muda o estoque: pode levar ao mínimo (estorno de entrada) ou
-    // tirar da situação crítica (estorno de saída).
     void this.alertaEstoqueService.verificarMateriais(
       movimentacao.itens.map((item) => item.material_id),
     );
