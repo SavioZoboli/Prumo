@@ -139,3 +139,5 @@ MAIL_FROM="Prumo <nao-responda@prumo.local>"
 Se as portas 1025/8025 já estiverem em uso na sua máquina, defina `MAILPIT_SMTP_PORT` e `MAILPIT_UI_PORT` no `.env` da raiz e use o mesmo valor de `MAILPIT_SMTP_PORT` em `MAIL_PORT`. Em HML/produção, as variáveis `MAIL_*` apontam para o SMTP real.
 
 Os destinatários do alerta são os usuários ativos com perfil ADMIN ou LIDER.
+
+Passo a passo completo de teste — pelo Mailpit e com envio real pelo Gmail — em [docs/alerta-estoque-email.md](docs/alerta-estoque-email.md).

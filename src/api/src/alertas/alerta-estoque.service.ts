@@ -50,7 +50,7 @@ export class AlertaEstoqueService {
   }
 
   // Estoque voltou a ficar acima do mínimo: limpa a marca para que uma nova
-  // queda gere um novo alerta.
+  // entrada na situação crítica gere um novo alerta.
   private async liberarRecuperados(materiais: Material[]): Promise<void> {
     const ids = materiais
       .filter(
@@ -62,20 +62,25 @@ export class AlertaEstoqueService {
 
     await this.materialRepository.update(
       { id: In(ids) },
-      { alertaEstoqueEnviadoEm: null },
+      { alertaEstoqueEnviadoEm: null, alertaEstoqueQuantidade: null },
     );
   }
 
-  // Marca como alertados, numa única instrução condicional, os materiais que
-  // estão no mínimo ou abaixo e ainda não foram alertados. Duas movimentações
-  // simultâneas do mesmo material disputam essa linha e só uma delas leva o
-  // material — é isso que evita e-mail em duplicidade.
+  // Alerta quem está no mínimo ou abaixo e ainda não foi alertado, ou quem já
+  // foi alertado mas caiu abaixo da quantidade daquele alerta (piorou). Uma
+  // entrada que não tira o material da situação crítica não gera e-mail.
+  //
+  // A marcação é uma única instrução condicional: duas movimentações
+  // simultâneas do mesmo material disputam a linha e só uma leva o material —
+  // é isso que evita e-mail em duplicidade.
   private async reservarCriticos(materiais: Material[]): Promise<Material[]> {
     const candidatos = materiais.filter(
       (m) =>
         m.ativo &&
         m.estoqueAtual <= m.estoqueMinimo &&
-        !m.alertaEstoqueEnviadoEm,
+        (!m.alertaEstoqueEnviadoEm ||
+          m.alertaEstoqueQuantidade === null ||
+          m.estoqueAtual < m.alertaEstoqueQuantidade),
     );
 
     if (candidatos.length === 0) return [];
@@ -83,9 +88,14 @@ export class AlertaEstoqueService {
     const resultado = await this.materialRepository
       .createQueryBuilder()
       .update(Material)
-      .set({ alertaEstoqueEnviadoEm: () => 'now()' })
+      .set({
+        alertaEstoqueEnviadoEm: () => 'now()',
+        alertaEstoqueQuantidade: () => 'estoque_atual',
+      })
       .where('id IN (:...ids)', { ids: candidatos.map((m) => m.id) })
-      .andWhere('alerta_estoque_enviado_em IS NULL')
+      .andWhere(
+        '(alerta_estoque_enviado_em IS NULL OR alerta_estoque_quantidade IS NULL OR estoque_atual < alerta_estoque_quantidade)',
+      )
       .andWhere('ativo = true')
       .andWhere('estoque_atual <= estoque_minimo')
       .returning('id')
@@ -133,13 +143,15 @@ export class AlertaEstoqueService {
     }
   }
 
-  // Sem o envio confirmado, a marca não pode ficar: senão o material nunca
-  // mais seria alertado enquanto continuar crítico.
+  // Sem o envio confirmado, a marca volta ao que era antes da reserva (nula,
+  // ou o alerta anterior): senão esta queda nunca seria avisada.
   private async desfazerReserva(materiais: Material[]): Promise<void> {
-    await this.materialRepository.update(
-      { id: In(materiais.map((m) => m.id)) },
-      { alertaEstoqueEnviadoEm: null },
-    );
+    for (const m of materiais) {
+      await this.materialRepository.update(m.id, {
+        alertaEstoqueEnviadoEm: m.alertaEstoqueEnviadoEm,
+        alertaEstoqueQuantidade: m.alertaEstoqueQuantidade,
+      });
+    }
   }
 
   private montarAssunto(criticos: Material[]): string {
@@ -149,33 +161,89 @@ export class AlertaEstoqueService {
     return `[Prumo] Estoque mínimo atingido em ${criticos.length} materiais`;
   }
 
+  // HTML de e-mail: tabelas e estilos inline, porque Gmail/Outlook ignoram
+  // <style> e CSS moderno.
   private montarHtml(criticos: Material[]): string {
+    const umSo = criticos.length === 1;
+    const celula = 'padding:10px 12px;border-bottom:1px solid #e5e7eb';
+
     const linhas = criticos
-      .map(
-        (m) => `
-        <tr>
-          <td style="padding:6px 12px;border:1px solid #ddd">${escaparHtml(m.codigo)}</td>
-          <td style="padding:6px 12px;border:1px solid #ddd">${escaparHtml(m.nome)}</td>
-          <td style="padding:6px 12px;border:1px solid #ddd;text-align:right">${m.estoqueAtual}</td>
-          <td style="padding:6px 12px;border:1px solid #ddd;text-align:right">${m.estoqueMinimo}</td>
-        </tr>`,
-      )
+      .map((m) => {
+        const unidade = m.unidadeMedida
+          ? ` ${escaparHtml(m.unidadeMedida)}`
+          : '';
+        const abaixo = m.estoqueAtual < m.estoqueMinimo;
+        const status = abaixo
+          ? '<span style="background:#fde2e2;color:#b42318;padding:2px 8px;border-radius:10px;font-size:12px;font-weight:bold">Abaixo do mínimo</span>'
+          : '<span style="background:#fef3c7;color:#92400e;padding:2px 8px;border-radius:10px;font-size:12px;font-weight:bold">No mínimo</span>';
+
+        return `
+          <tr>
+            <td style="${celula}">${escaparHtml(m.codigo)}</td>
+            <td style="${celula}">${escaparHtml(m.nome)}</td>
+            <td style="${celula};text-align:right;font-weight:bold">${m.estoqueAtual}${unidade}</td>
+            <td style="${celula};text-align:right">${m.estoqueMinimo}${unidade}</td>
+            <td style="${celula}">${status}</td>
+          </tr>`;
+      })
       .join('');
 
+    const verificadoEm = new Date().toLocaleString('pt-BR', {
+      timeZone: 'America/Sao_Paulo',
+      dateStyle: 'short',
+      timeStyle: 'short',
+    });
+
     return `
-      <p>Os materiais abaixo estão com o estoque igual ou inferior ao mínimo e precisam de reposição:</p>
-      <table style="border-collapse:collapse;font-family:sans-serif;font-size:14px">
-        <thead>
-          <tr style="background:#f3f3f3">
-            <th style="padding:6px 12px;border:1px solid #ddd;text-align:left">Código</th>
-            <th style="padding:6px 12px;border:1px solid #ddd;text-align:left">Material</th>
-            <th style="padding:6px 12px;border:1px solid #ddd">Estoque atual</th>
-            <th style="padding:6px 12px;border:1px solid #ddd">Estoque mínimo</th>
+      <div style="background:#f4f5f7;padding:24px 12px;font-family:Arial,Helvetica,sans-serif;color:#1f2937">
+        <table role="presentation" width="100%" style="max-width:640px;margin:0 auto;background:#ffffff;border-radius:8px;border-collapse:separate;overflow:hidden">
+          <tr>
+            <td style="background:#1f3a5f;color:#ffffff;padding:16px 24px;font-size:18px;font-weight:bold">
+              Prumo &middot; Alerta de estoque mínimo
+            </td>
           </tr>
-        </thead>
-        <tbody>${linhas}</tbody>
-      </table>
-      <p style="color:#777;font-size:12px">Alerta automático do Prumo. Um novo aviso só será enviado se o estoque for reabastecido e voltar a atingir o mínimo.</p>
+          <tr>
+            <td style="padding:24px">
+              <p style="margin:0 0 12px;font-size:15px">Olá,</p>
+              <p style="margin:0 0 12px;font-size:15px;line-height:1.5">
+                ${
+                  umSo
+                    ? 'Identificamos que um material atingiu o <strong>estoque mínimo</strong> após uma movimentação no Prumo.'
+                    : `Identificamos que <strong>${criticos.length} materiais</strong> atingiram o <strong>estoque mínimo</strong> após uma movimentação no Prumo.`
+                }
+                Para evitar a falta ${umSo ? 'desse item' : 'desses itens'} na produção, avalie a reposição o quanto antes.
+              </p>
+
+              <table style="width:100%;border-collapse:collapse;font-size:14px;margin:16px 0">
+                <thead>
+                  <tr style="background:#f3f4f6;text-align:left">
+                    <th style="padding:10px 12px">Código</th>
+                    <th style="padding:10px 12px">Material</th>
+                    <th style="padding:10px 12px;text-align:right">Estoque atual</th>
+                    <th style="padding:10px 12px;text-align:right">Estoque mínimo</th>
+                    <th style="padding:10px 12px">Situação</th>
+                  </tr>
+                </thead>
+                <tbody>${linhas}</tbody>
+              </table>
+
+              <p style="margin:0 0 6px;font-size:15px;font-weight:bold">Próximos passos</p>
+              <ul style="margin:0 0 16px;padding-left:20px;font-size:14px;line-height:1.6">
+                <li>Confira o saldo atualizado na <strong>Consulta de estoque</strong> do Prumo.</li>
+                <li>Se necessário, abra uma <strong>ordem de compra</strong> para repor ${umSo ? 'o material' : 'os materiais'}.</li>
+              </ul>
+
+              <p style="margin:0;font-size:12px;color:#6b7280">Situação verificada em ${verificadoEm}. Os valores podem ter mudado desde então.</p>
+            </td>
+          </tr>
+          <tr>
+            <td style="background:#f9fafb;padding:14px 24px;font-size:12px;color:#6b7280;line-height:1.5">
+              Este é um e-mail automático do Prumo, enviado aos responsáveis pelo acompanhamento do estoque. Não é necessário respondê-lo.<br>
+              Um novo aviso será enviado se o estoque cair ainda mais, ou se for reabastecido e voltar a atingir o mínimo.
+            </td>
+          </tr>
+        </table>
+      </div>
     `;
   }
 }

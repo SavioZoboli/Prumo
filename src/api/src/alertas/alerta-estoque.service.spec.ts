@@ -15,6 +15,7 @@ function material(dados: Partial<Material>): Material {
     estoqueMinimo: 10,
     ativo: true,
     alertaEstoqueEnviadoEm: null,
+    alertaEstoqueQuantidade: null,
     ...dados,
   } as Material;
 }
@@ -101,13 +102,70 @@ describe('AlertaEstoqueService', () => {
     expect(mailService.enviar.mock.calls[0][0].html).toContain('FRESA010');
   });
 
-  it('não reenvia enquanto o material continua na situação crítica', async () => {
-    materiais = [material({ alertaEstoqueEnviadoEm: new Date() })];
+  it('não reenvia se o estoque não caiu desde o último alerta', async () => {
+    materiais = [
+      material({
+        estoqueAtual: 5,
+        alertaEstoqueEnviadoEm: new Date(),
+        alertaEstoqueQuantidade: 5,
+      }),
+    ];
 
     await service.verificarMateriais([1]);
 
     expect(queryBuilder.execute).not.toHaveBeenCalled();
     expect(mailService.enviar).not.toHaveBeenCalled();
+  });
+
+  it('entrada que não tira da situação crítica não gera alerta', async () => {
+    // Alertado com 5, entrou material e foi para 8: continua crítico, mas melhorou.
+    materiais = [
+      material({
+        estoqueAtual: 8,
+        alertaEstoqueEnviadoEm: new Date(),
+        alertaEstoqueQuantidade: 5,
+      }),
+    ];
+
+    await service.verificarMateriais([1]);
+
+    expect(mailService.enviar).not.toHaveBeenCalled();
+  });
+
+  it('reenvia quando o material já alertado cai ainda mais', async () => {
+    // Caso real: BROCA08 alertado com 20/20 e depois saiu para 19.
+    materiais = [
+      material({
+        estoqueAtual: 19,
+        estoqueMinimo: 20,
+        alertaEstoqueEnviadoEm: new Date(),
+        alertaEstoqueQuantidade: 20,
+      }),
+    ];
+    idsReservados = [1];
+
+    await service.verificarMateriais([1]);
+
+    expect(mailService.enviar).toHaveBeenCalledTimes(1);
+    expect(queryBuilder.set).toHaveBeenCalledWith(
+      expect.objectContaining({
+        alertaEstoqueQuantidade: expect.any(Function),
+      }),
+    );
+  });
+
+  it('alerta material marcado antes de existir a quantidade de referência', async () => {
+    materiais = [
+      material({
+        alertaEstoqueEnviadoEm: new Date(),
+        alertaEstoqueQuantidade: null,
+      }),
+    ];
+    idsReservados = [1];
+
+    await service.verificarMateriais([1]);
+
+    expect(mailService.enviar).toHaveBeenCalledTimes(1);
   });
 
   it('não envia se outra verificação simultânea já reservou o material', async () => {
@@ -121,13 +179,18 @@ describe('AlertaEstoqueService', () => {
 
   it('libera novo alerta quando o estoque é reabastecido acima do mínimo', async () => {
     materiais = [
-      material({ estoqueAtual: 30, alertaEstoqueEnviadoEm: new Date() }),
+      material({
+        estoqueAtual: 30,
+        alertaEstoqueEnviadoEm: new Date(),
+        alertaEstoqueQuantidade: 5,
+      }),
     ];
 
     await service.verificarMateriais([1]);
 
     expect(materialRepository.update).toHaveBeenCalledWith(expect.anything(), {
       alertaEstoqueEnviadoEm: null,
+      alertaEstoqueQuantidade: null,
     });
     expect(mailService.enviar).not.toHaveBeenCalled();
   });
@@ -156,10 +219,31 @@ describe('AlertaEstoqueService', () => {
 
     await expect(service.verificarMateriais([1])).resolves.toBeUndefined();
 
-    expect(materialRepository.update).toHaveBeenCalledWith(expect.anything(), {
+    expect(materialRepository.update).toHaveBeenCalledWith(1, {
       alertaEstoqueEnviadoEm: null,
+      alertaEstoqueQuantidade: null,
     });
     expect(Logger.prototype.error).toHaveBeenCalled();
+  });
+
+  it('falha no reenvio devolve a marca do alerta anterior, não a apaga', async () => {
+    const alertaAnterior = new Date('2026-09-29T14:11:55Z');
+    materiais = [
+      material({
+        estoqueAtual: 3,
+        alertaEstoqueEnviadoEm: alertaAnterior,
+        alertaEstoqueQuantidade: 5,
+      }),
+    ];
+    idsReservados = [1];
+    mailService.enviar.mockRejectedValueOnce(new Error('SMTP fora do ar'));
+
+    await service.verificarMateriais([1]);
+
+    expect(materialRepository.update).toHaveBeenCalledWith(1, {
+      alertaEstoqueEnviadoEm: alertaAnterior,
+      alertaEstoqueQuantidade: 5,
+    });
   });
 
   it('sem destinatários, não envia e desfaz a marca', async () => {
@@ -170,8 +254,9 @@ describe('AlertaEstoqueService', () => {
     await service.verificarMateriais([1]);
 
     expect(mailService.enviar).not.toHaveBeenCalled();
-    expect(materialRepository.update).toHaveBeenCalledWith(expect.anything(), {
+    expect(materialRepository.update).toHaveBeenCalledWith(1, {
       alertaEstoqueEnviadoEm: null,
+      alertaEstoqueQuantidade: null,
     });
   });
 

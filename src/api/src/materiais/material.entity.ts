@@ -74,6 +74,15 @@ export class Material {
   declare alertaEstoqueEnviadoEm: Date | null;
 
   @ApiProperty({
+    example: null,
+    description:
+      'Estoque atual no momento do último alerta. Enquanto o material segue crítico, só uma quantidade menor que esta gera novo alerta.',
+    required: false,
+  })
+  @Column({ name: 'alerta_estoque_quantidade', type: 'integer', nullable: true })
+  declare alertaEstoqueQuantidade: number | null;
+
+  @ApiProperty({
     example: 45.9,
     description: 'Último valor pago pelo material',
     required: false,
