@@ -19,7 +19,7 @@
 
   <div
     class="estado-vazio"
-    *ngIf="materiaisAbaixoDoMinimo.length === 0"
+    *ngIf="materiaisAbaixoDoMinimo().length === 0"
   >
     <mat-icon>check_circle</mat-icon>
 
@@ -32,11 +32,11 @@
 
   <div
     class="tabela-container"
-    *ngIf="materiaisAbaixoDoMinimo.length > 0"
+    *ngIf="materiaisAbaixoDoMinimo().length > 0"
   >
     <table
       mat-table
-      [dataSource]="materiaisAbaixoDoMinimo"
+      [dataSource]="materiaisAbaixoDoMinimo()"
       class="materiais-table"
     >
       <ng-container matColumnDef="codigo">
