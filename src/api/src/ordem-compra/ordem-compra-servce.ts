@@ -10,6 +10,9 @@ import { CreateOrdemCompraDto } from './dto/create-ordem-compra.dto';
 import { ItemOrdemCompra } from './itens-ordem-compra.entity';
 import { FiltrarOrdemCompraDto } from './dto/filtrar-ordem-compra.dto';
 import { UpdateOrdemCompraDto } from './dto/update-ordem-compra.dto';
+import { Material } from '../materiais/material.entity';
+import { Movimentacao } from '../movimentacoes/movimentacao.entity';
+import { ItemMovimento } from '../movimentacoes/item-movimento.entity';
 // Quando a branch feature/cadastro-materiais-backend for mergeada, este
 // arquivo passa a existir em src/api/src/materiais/material.entity.ts.
 // import { Material } from '../materiais/material.entity';
@@ -219,28 +222,65 @@ export class OrdemCompraService {
     return (await this.findOne(id))!;
   }
 
-  // Recebimento da ordem de compra: marca a data de entrega efetiva.
-  async receber(id: number): Promise<OrdemCompra> {
-    const ordemCompra = await this.ordemCompraRepository.findOne({ where: { id } });
+  // Recebimento da ordem de compra: marca a data de entrega efetiva, soma as
+  // quantidades no estoque e registra uma movimentação de entrada (tudo em
+  // uma transação: se algo falhar, nada é gravado).
+  async receber(id: number, usuarioId: number): Promise<OrdemCompra> {
+    await this.ordemCompraRepository.manager.transaction(async (manager) => {
+      // Lock na linha: evita receber duas vezes em requisições simultâneas
+      // e competir com um "update".
+      const ordemCompra = await manager.findOne(OrdemCompra, {
+        where: { id },
+        lock: { mode: 'pessimistic_write' },
+      });
 
-    if (!ordemCompra) {
-      throw new NotFoundException('Ordem de compra não encontrada.');
-    }
+      if (!ordemCompra) {
+        throw new NotFoundException('Ordem de compra não encontrada.');
+      }
 
-    if (ordemCompra.dt_entrega) {
-      throw new BadRequestException('Esta ordem de compra já foi recebida.');
-    }
+      if (ordemCompra.dt_entrega) {
+        throw new BadRequestException('Esta ordem de compra já foi recebida.');
+      }
 
-    // ==== BLOQUEADO ATE "Materiais" SER MERGEADO ====
-    // Ao receber, dar baixa no estoque de cada material (RF06) e, se fizer
-    // sentido no fluxo, gerar automaticamente uma Movimentacao de entrada
-    // vinculada via ordem_compra_id (rel Movimentacoes_Ordens_Compra).
-    // ==== FIM DO BLOQUEIO ====
+      const itens = await manager.find(ItemOrdemCompra, {
+        where: { ordem_compra_id: id },
+      });
 
+      // Incremento atômico em SQL (estoque_atual = estoque_atual + n).
+      for (const item of itens) {
+        await manager.increment(
+          Material,
+          { id: item.material_id },
+          'estoqueAtual',
+          item.quantidade,
+        );
+      }
 
+      const movimentacao = await manager.save(
+        manager.create(Movimentacao, {
+          data: new Date(),
+          operacao: 'E',
+          motivo: `Baixado da OC ${id}`,
+          usuario_id: usuarioId,
+          ordem_producao: null,
+          ordem_compra_id: null,
+          is_estornado: false,
+          motivo_estorno: null,
+        }),
+      );
 
-    await this.ordemCompraRepository.update(id, {
-      dt_entrega: new Date(),
+      await manager.save(
+        ItemMovimento,
+        itens.map((item) =>
+          manager.create(ItemMovimento, {
+            movimento_id: movimentacao.id,
+            material_id: item.material_id,
+            quantidade: item.quantidade,
+          }),
+        ),
+      );
+
+      await manager.update(OrdemCompra, id, { dt_entrega: new Date() });
     });
 
     return (await this.findOne(id))!;

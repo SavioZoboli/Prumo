@@ -1,4 +1,4 @@
-import { Body, Controller, Get, NotFoundException, Param, ParseIntPipe, Patch, Post, Put, Query, UseGuards } from "@nestjs/common";
+import { Body, Controller, Get, NotFoundException, Param, ParseIntPipe, Patch, Post, Put, Query, Req, UseGuards } from "@nestjs/common";
 import {
   ApiTags,
   ApiOperation,
@@ -107,7 +107,8 @@ export class OrdemCompraController {
 
   @ApiOperation({
     summary: 'Registrar o recebimento de uma ordem de compra',
-    description: 'Marca a data de entrega efetiva. Ainda não dá baixa no estoque (depende de "Materiais").',
+    description:
+      'Marca a data de entrega efetiva e gera uma movimentação de entrada no estoque com as quantidades da ordem de compra.',
   })
   @ApiParam({
     name: 'id',
@@ -129,7 +130,10 @@ export class OrdemCompraController {
   })
   @Patch(':id/receber')
   @UseGuards(JwtAuthGuard)
-  receber(@Param('id', ParseIntPipe) id: number) {
-    return this.ordemCompraService.receber(id);
+  receber(
+    @Param('id', ParseIntPipe) id: number,
+    @Req() req: { user: { id: number } },
+  ) {
+    return this.ordemCompraService.receber(id, req.user.id);
   }
 }
