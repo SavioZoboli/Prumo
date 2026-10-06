@@ -1,4 +1,4 @@
-import { Body, Controller, Get, NotFoundException, Param, ParseIntPipe, Patch, Post, Query, UseGuards } from "@nestjs/common";
+import { Body, Controller, Get, NotFoundException, Param, ParseIntPipe, Patch, Post, Put, Query, UseGuards } from "@nestjs/common";
 import {
   ApiTags,
   ApiOperation,
@@ -10,6 +10,7 @@ import { OrdemCompra } from "./ordem-compra.entity";
 import { OrdemCompraService } from "./ordem-compra-servce";
 import { CreateOrdemCompraDto } from "./dto/create-ordem-compra.dto";
 import { FiltrarOrdemCompraDto } from "./dto/filtrar-ordem-compra.dto";
+import { UpdateOrdemCompraDto } from "./dto/update-ordem-compra.dto";
 
 @ApiTags('Ordens de Compra')
 @Controller('ordens-compra')
@@ -70,6 +71,38 @@ export class OrdemCompraController {
       throw new NotFoundException('Ordem de compra não encontrada.');
     }
     return ordemCompra;
+  }
+
+  @ApiOperation({
+    summary: 'Atualizar uma ordem de compra em aberto',
+    description:
+      'Substitui a data prevista de entrega e os itens. O fornecedor não pode ser alterado. Não permite editar ordens já recebidas.',
+  })
+  @ApiParam({
+    name: 'id',
+    example: 1,
+    description: 'ID da ordem de compra',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Ordem de compra atualizada com sucesso.',
+    type: OrdemCompra,
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Ordem de compra já recebida ou itens inválidos.',
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Ordem de compra não encontrada.',
+  })
+  @Put(':id')
+  @UseGuards(JwtAuthGuard)
+  update(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() updateOrdemCompraDto: UpdateOrdemCompraDto,
+  ) {
+    return this.ordemCompraService.update(id, updateOrdemCompraDto);
   }
 
   @ApiOperation({

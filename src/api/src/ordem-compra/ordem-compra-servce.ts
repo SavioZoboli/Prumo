@@ -9,6 +9,7 @@ import { OrdemCompra } from './ordem-compra.entity';
 import { CreateOrdemCompraDto } from './dto/create-ordem-compra.dto';
 import { ItemOrdemCompra } from './itens-ordem-compra.entity';
 import { FiltrarOrdemCompraDto } from './dto/filtrar-ordem-compra.dto';
+import { UpdateOrdemCompraDto } from './dto/update-ordem-compra.dto';
 // Quando a branch feature/cadastro-materiais-backend for mergeada, este
 // arquivo passa a existir em src/api/src/materiais/material.entity.ts.
 // import { Material } from '../materiais/material.entity';
@@ -26,8 +27,8 @@ export class OrdemCompraService {
     // private materialRepository: Repository<Material>,
   ) {}
 
-  async create(createOrdemCompraDto: CreateOrdemCompraDto): Promise<OrdemCompra> {
-    const { fornecedor_id, dt_entrega_prevista, itens } = createOrdemCompraDto;
+  private validarItens(itens: CreateOrdemCompraDto['itens']): void {
+    const materiais = new Set<number>();
 
     for (const item of itens) {
       if (item.quantidade <= 0) {
@@ -40,7 +41,25 @@ export class OrdemCompraService {
           'O valor de cada item deve ser maior que zero.',
         );
       }
+      // PK composta (ordem_compra_id, material_id): material repetido estouraria no insert.
+      if (materiais.has(item.material_id)) {
+        throw new BadRequestException('Material repetido na ordem de compra.');
+      }
+      materiais.add(item.material_id);
     }
+  }
+
+  private calcularTotal(itens: CreateOrdemCompraDto['itens']): number {
+    return itens.reduce(
+      (total, item) => total + item.quantidade * item.valor,
+      0,
+    );
+  }
+
+  async create(createOrdemCompraDto: CreateOrdemCompraDto): Promise<OrdemCompra> {
+    const { fornecedor_id, dt_entrega_prevista, itens } = createOrdemCompraDto;
+
+    this.validarItens(itens);
 
     // ==== BLOQUEADO ATE "Materiais" SER MERGEADO (branch feature/cadastro-materiais-backend) ====
     // Descomentar isto + o import do Material no topo do arquivo + o
@@ -63,10 +82,7 @@ export class OrdemCompraService {
     // }
     // ==== FIM DO BLOQUEIO ====
 
-    const valorTotal = itens.reduce(
-      (total, item) => total + item.quantidade * item.valor,
-      0,
-    );
+    const valorTotal = this.calcularTotal(itens);
 
     return this.ordemCompraRepository.manager.transaction(async (manager) => {
       const ordemCompra = manager.create(OrdemCompra, {
@@ -104,6 +120,7 @@ export class OrdemCompraService {
     const qb = this.ordemCompraRepository
       .createQueryBuilder('ordemCompra')
       .leftJoinAndSelect('ordemCompra.itens', 'item')
+      .leftJoinAndSelect('item.material','material')
       .leftJoinAndSelect('ordemCompra.fornecedor', 'fornecedor')
       .orderBy('ordemCompra.dt_emissao', 'DESC');
 
@@ -144,13 +161,62 @@ export class OrdemCompraService {
   }
 
   async findOne(id: number): Promise<OrdemCompra | null> {
-    return this.ordemCompraRepository.findOne({
-      where: { id },
-      relations: {
-        itens: true,
-        fornecedor: true,
-      },
+  return this.ordemCompraRepository.findOne({
+    where: { id },
+    relations: {
+      itens: { material: true },
+      fornecedor: true,
+    },
+  });
+}
+
+  // Altera apenas data prevista de entrega e itens (fornecedor é imutável).
+  async update(
+    id: number,
+    updateOrdemCompraDto: UpdateOrdemCompraDto,
+  ): Promise<OrdemCompra> {
+    const { dt_entrega_prevista, itens } = updateOrdemCompraDto;
+
+    this.validarItens(itens);
+
+    await this.ordemCompraRepository.manager.transaction(async (manager) => {
+      // Lock na linha para não competir com um "receber" simultâneo.
+      const ordemCompra = await manager.findOne(OrdemCompra, {
+        where: { id },
+        lock: { mode: 'pessimistic_write' },
+      });
+
+      if (!ordemCompra) {
+        throw new NotFoundException('Ordem de compra não encontrada.');
+      }
+
+      if (ordemCompra.dt_entrega) {
+        throw new BadRequestException(
+          'Não é possível alterar uma ordem de compra já recebida.',
+        );
+      }
+
+      await manager.update(OrdemCompra, id, {
+        dt_entrega_prevista: dt_entrega_prevista
+          ? new Date(dt_entrega_prevista)
+          : null,
+        valor_total: this.calcularTotal(itens),
+      });
+
+      // Itens têm PK composta (sem id próprio): remove todos e reinsere.
+      await manager.delete(ItemOrdemCompra, { ordem_compra_id: id });
+      await manager.insert(
+        ItemOrdemCompra,
+        itens.map((item) => ({
+          ordem_compra_id: id,
+          material_id: item.material_id,
+          quantidade: item.quantidade,
+          valor: item.valor,
+        })),
+      );
     });
+
+    return (await this.findOne(id))!;
   }
 
   // Recebimento da ordem de compra: marca a data de entrega efetiva.
@@ -170,6 +236,8 @@ export class OrdemCompraService {
     // sentido no fluxo, gerar automaticamente uma Movimentacao de entrada
     // vinculada via ordem_compra_id (rel Movimentacoes_Ordens_Compra).
     // ==== FIM DO BLOQUEIO ====
+
+
 
     await this.ordemCompraRepository.update(id, {
       dt_entrega: new Date(),
