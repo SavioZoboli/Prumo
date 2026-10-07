@@ -9,8 +9,15 @@ import {
   SimpleChanges,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormArray, FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { map, Observable, startWith } from 'rxjs';
+import {
+  AbstractControl,
+  FormArray,
+  FormControl,
+  FormGroup,
+  ReactiveFormsModule,
+  ValidationErrors,
+  Validators,
+} from '@angular/forms';
 
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
@@ -21,48 +28,61 @@ import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatNativeDateModule } from '@angular/material/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatSnackBar } from '@angular/material/snack-bar';
 import { InputComponent } from '../../../components/input-component/input-component';
 import { dataNaoAnteriorAHojeValidator } from '../../../../utils/validators.utils';
+import { formatarCNPJ } from '../../../../utils/formatarCnpj.utils';
 import { CadastroFornecedor } from '../cadastro-fornecedor/cadastro-fornecedor';
 import { Fornecedor, FornecedorService } from '../../../services/fornecedor.service';
-import { MatSnackBar } from '@angular/material/snack-bar';
-import { NgxMaskDirective } from 'ngx-mask';
-import { formatarCNPJ } from '../../../../utils/formatarCnpj.utils';
+import { Material, MaterialService } from '../../../services/material.service';
+import { IOrdemCompraItem } from '../../../services/ordem-compra.service';
 
-
-// Retorno esperado da API: código do material, nome, fabricante e último valor comprado.
-export interface Material {
-  codigo: number;
-  nome: string;
-  fabricante: string;
-  ultimoValor: number;
-}
-
-export interface OrdemCompraItem {
-  material: Material;
+// ---------- Formato cru da API ----------
+export interface ItemOrdemCompraApi {
+  ordem_compra_id: number;
+  material_id: number;
   quantidade: number;
-  valor: number;
+  valor: string; // numeric do Postgres chega como string
+  material: Material;
 }
+
+export interface OrdemCompraApi {
+  id: number;
+  fornecedor: Fornecedor;
+  dt_emissao: string;
+  dt_entrega_prevista: string | null;
+  dt_entrega: string | null;
+  valor_total: string | null;
+  itens: ItemOrdemCompraApi[];
+}
+
+// ---------- Formato usado na tela ----------
+// Item achatado: campos do Material + quantidade/valor do item.
+export type OrdemCompraItem = Material & { quantidade: number; valor: number };
 
 export interface OrdemCompraLista {
-  numero: number;
+  id: number;
   fornecedor: Fornecedor;
-  dataEntrega: Date;
-  status: 'ABERTO' | 'FECHADO' | 'CANCELADO';
+  dt_emissao: Date;
+  dt_entrega: Date | null;
+  dt_entrega_prevista: Date | null;
+  valor_total: number;
+  status: 'ABERTO' | 'FECHADO' | 'EM ATRASO';
   itens: OrdemCompraItem[];
 }
 
 // Payload esperado pela API: código do fornecedor, data de entrega e a lista
-// de materiais com id, quantidade e valor.
+// de materiais com id, quantidade e valor. O total é recalculado no backend.
 export interface OrdemCompraPayload {
   fornecedorCodigo: number;
   dataEntrega: Date;
-  status: 'ABERTO' | 'FECHADO' | 'CANCELADO';
-  itens: {
-    materialCodigo: number;
-    quantidade: number;
-    valor: number;
-  }[];
+  itens: IOrdemCompraItem[];
+}
+
+// Impede texto livre no autocomplete: o valor precisa ser um Material selecionado.
+function materialSelecionadoValidator(control: AbstractControl): ValidationErrors | null {
+  const v = control.value;
+  return v && typeof v === 'object' ? null : { materialInvalido: true };
 }
 
 @Component({
@@ -81,7 +101,7 @@ export interface OrdemCompraPayload {
     MatButtonModule,
     MatProgressSpinnerModule,
     InputComponent,
-    CadastroFornecedor
+    CadastroFornecedor,
   ],
   templateUrl: './cadastro-ordem-compra.html',
   styleUrl: './cadastro-ordem-compra.scss',
@@ -89,16 +109,15 @@ export interface OrdemCompraPayload {
 export class CadastroOrdemCompra implements OnChanges {
   @Input() aberto = false;
   @Input() ordemEmEdicao: OrdemCompraLista | null = null;
-  @Input() materiaisDisponiveis: Material[] = [];
+  @Input() salvando = false;
 
   @Output() fechar = new EventEmitter<void>();
   @Output() salvar = new EventEmitter<OrdemCompraPayload>();
 
-  fornecedores = signal<Fornecedor[]>([])
-
-  formatarCnpj = formatarCNPJ
-
-  salvando = false;
+  fornecedores = signal<Fornecedor[]>([]);
+  materiais = signal<Material[]>([]);
+  isAddingFornecedor = signal(false);
+  formatarCnpj = formatarCNPJ;
 
   ordemForm: FormGroup = new FormGroup({
     fornecedor: new FormControl(null, Validators.required),
@@ -106,17 +125,15 @@ export class CadastroOrdemCompra implements OnChanges {
     itens: new FormArray([]),
   });
 
-  itensFiltrados: Observable<Material[]>[] = [];
-
-  isAddingFornecedor = signal(false);
-  private fornecedorService = inject(FornecedorService)
-
+  private fornecedorService = inject(FornecedorService);
+  private materialService = inject(MaterialService);
   private snackBar = inject(MatSnackBar);
 
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['aberto'] && this.aberto) {
       this.inicializarForm();
       this.buscarFornecedores();
+      this.buscarMateriais();
     }
   }
 
@@ -130,39 +147,44 @@ export class CadastroOrdemCompra implements OnChanges {
 
   private inicializarForm(): void {
     this.itens.clear();
-    this.itensFiltrados = [];
+    this.isAddingFornecedor.set(false);
+    this.ordemForm.enable();
 
     if (this.ordemEmEdicao) {
       this.ordemForm.patchValue({
         fornecedor: this.ordemEmEdicao.fornecedor,
-        dataEntrega: this.ordemEmEdicao.dataEntrega,
+        dataEntrega: this.ordemEmEdicao.dt_entrega_prevista,
       });
 
       this.ordemEmEdicao.itens.forEach((item) => this.adicionarItem(item));
+
+      // Fornecedor não pode ser alterado em uma ordem existente.
+      this.ordemForm.get('fornecedor')?.disable();
     } else {
       this.ordemForm.reset();
       this.adicionarItem();
     }
   }
 
+  // Recebe o item achatado (Material + quantidade + valor) e separa de volta
+  // em Material para alimentar o autocomplete.
   private criarItemForm(item?: OrdemCompraItem): FormGroup {
+    let material: Material | null = null;
+
+    if (item) {
+      const { quantidade, valor, ...resto } = item;
+      material = resto;
+    }
+
     return new FormGroup({
-      material: new FormControl(item?.material ?? null, Validators.required),
+      material: new FormControl(material, [Validators.required, materialSelecionadoValidator]),
       quantidade: new FormControl(item?.quantidade ?? 1, [Validators.required, Validators.min(1)]),
       valor: new FormControl(item?.valor ?? 0, [Validators.required, Validators.min(0.01)]),
     });
   }
 
   adicionarItem(item?: OrdemCompraItem): void {
-    const grupo = this.criarItemForm(item);
-    this.itens.push(grupo);
-
-    this.itensFiltrados.push(
-      grupo.get('material')!.valueChanges.pipe(
-        startWith(item?.material ?? ''),
-        map((valor) => this.filtrarMateriais(valor)),
-      ),
-    );
+    this.itens.push(this.criarItemForm(item));
   }
 
   removerItem(index: number): void {
@@ -171,41 +193,45 @@ export class CadastroOrdemCompra implements OnChanges {
     }
 
     this.itens.removeAt(index);
-    this.itensFiltrados.splice(index, 1);
   }
 
-  private filtrarMateriais(valor: string | Material | null): Material[] {
-    const termo = (typeof valor === 'string' ? valor : (valor?.nome ?? '')).toLowerCase();
+  // Lista filtrada do autocomplete de UMA linha: filtra pelo texto digitado
+  // nela e esconde materiais já escolhidos nas outras linhas.
+  materiaisDoItem(index: number): Material[] {
+    const valor = this.itens.at(index)?.get('material')?.value as string | Material | null;
+    const termo = (typeof valor === 'string' ? valor : '').trim().toLowerCase();
 
-    let itens_na_lista = this.itens.value.filter((i: any) => i.material != null);
-    if (itens_na_lista.length > 0) {
-      itens_na_lista.forEach((i: any) => {
-        console.log(i.material.codigo);
-      });
-    }
+    const idsEmUso = new Set<number>(
+      this.itens.controls
+        .filter((_, i) => i !== index)
+        .map((g) => g.get('material')?.value?.id)
+        .filter((id) => id != null),
+    );
 
-    return this.materiaisDisponiveis.filter(
-      (material) =>
-        material.nome.toLowerCase().includes(termo) &&
-        !itens_na_lista.find((i: any) => i.material == material),
+    return this.materiais().filter(
+      (m) =>
+        !idsEmUso.has(m.id) &&
+        (m.nome.toLowerCase().includes(termo) || m.equipamento?.toLowerCase().includes(termo)),
     );
   }
 
+  compararFornecedores = (a: Fornecedor | null, b: Fornecedor | null) => a?.id === b?.id;
+
   displayMaterial(material: Material): string {
-    return material ? `${material.nome} (${material.fabricante})` : '';
+    return material ? `${material.nome} (${material.equipamento})` : '';
   }
 
   selecionarMaterial(index: number, material: Material): void {
     this.itens.at(index).patchValue({
       material,
-      valor: material.ultimoValor,
+      valor: Number(material.ultimoValor ?? 0),
     });
   }
 
   calcularTotal(): number {
     return this.itens.controls.reduce((total, grupo) => {
       const { quantidade, valor } = grupo.getRawValue();
-      return total + (quantidade || 0) * (valor || 0);
+      return total + (Number(quantidade) || 0) * (Number(valor) || 0);
     }, 0);
   }
 
@@ -224,33 +250,31 @@ export class CadastroOrdemCompra implements OnChanges {
     const payload: OrdemCompraPayload = {
       fornecedorCodigo: dados.fornecedor.id,
       dataEntrega: dados.dataEntrega,
-      status: 'ABERTO',
-      itens: dados.itens.map((item: { material: Material; quantidade: number; valor: number }) => ({
-        materialCodigo: item.material.codigo,
-        quantidade: item.quantidade,
-        valor: item.valor,
-      })),
+      itens: dados.itens.map(
+        (item: { material: Material; quantidade: string | number; valor: string | number }) => ({
+          material_id: item.material.id,
+          quantidade: Number(item.quantidade),
+          valor: Number(item.valor),
+        }),
+      ),
     };
 
     this.salvar.emit(payload);
   }
 
-  buscarFornecedores(){
+  buscarFornecedores() {
     this.fornecedorService.listAll().subscribe({
-      next:(res)=>{
-        console.log(res)
-        this.fornecedores.set(res);
-      },
-      error:(err)=>{
+      next: (res) => this.fornecedores.set(res),
+      error: (err) => {
         this.snackBar.open('Erro ao buscar fornecedores', '', {
           duration: 5000,
           horizontalPosition: 'right',
           verticalPosition: 'top',
           panelClass: ['error-snackbar'],
         });
-        console.error(err)
-      }
-    })
+        console.error(err);
+      },
+    });
   }
 
   toggleAdicionandoFornecedor() {
@@ -260,5 +284,20 @@ export class CadastroOrdemCompra implements OnChanges {
     } else {
       this.ordemForm.enable();
     }
+  }
+
+  buscarMateriais() {
+    this.materialService.listAll().subscribe({
+      next: (val) => this.materiais.set(val),
+      error: (err) => {
+        this.snackBar.open('Erro ao buscar materiais', '', {
+          duration: 5000,
+          horizontalPosition: 'right',
+          verticalPosition: 'top',
+          panelClass: ['error-snackbar'],
+        });
+        console.error(err);
+      },
+    });
   }
 }
