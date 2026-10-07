@@ -1,16 +1,17 @@
-import { Component } from '@angular/core';
+import { Component, inject, OnDestroy, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTableModule } from '@angular/material/table';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
+import { Observable, Subscription, finalize } from 'rxjs';
 import { ButtonComponent } from '../../../components/button-component/button-component';
 import {
   CadastroOrdemCompra,
-  Material,
-  OrdemCompraItem,
+  OrdemCompraApi,
   OrdemCompraLista,
   OrdemCompraPayload,
 } from '../cadastro-ordem-compra/cadastro-ordem-compra';
+import { OrdemCompraService } from '../../../services/ordem-compra.service';
 
 @Component({
   selector: 'app-ordens-compra',
@@ -26,31 +27,26 @@ import {
   templateUrl: './lista-ordem-compra.html',
   styleUrl: './lista-ordem-compra.scss',
 })
-export class ListaOrdemCompra {
+export class ListaOrdemCompra implements OnDestroy {
   painelAberto = false;
+  salvando = false;
   ordemEmEdicao: OrdemCompraLista | null = null;
 
   colunasExibidas = ['numero', 'fornecedor', 'dataEntrega', 'itens', 'total', 'status', 'acoes'];
 
-  // Mock do retorno da API: código, nome, fabricante e último valor comprado.
-  /*materiaisDisponiveis: Material[] = [
-    { codigo: 1, nome: 'Pastilha A1', fabricante: 'Metal Ltda', ultimoValor: 12.5 },
-    { codigo: 2, nome: 'Pastilha B2', fabricante: 'Ceras Brasil', ultimoValor: 8.9 },
-    { codigo: 3, nome: 'Pastilha C2', fabricante: 'Madeireira Bom Pinho', ultimoValor: 22.3 },
-    { codigo: 4, nome: 'Pastilha C4', fabricante: 'Aço Sul', ultimoValor: 45.0 },
-  ];
+  ordens = signal<OrdemCompraLista[]>([]);
 
-  ordens: OrdemCompraLista[] = [
-    {
-      numero: 1001,
-      fornecedor: {codigo:1,nome:'MOCK'},
-      dataEntrega: new Date(2026, 8, 10),
-      status:'ABERTO',
-      itens: [{ material: this.materiaisDisponiveis[0], quantidade: 50, valor: 12.5}],
-    },
-  ];*/
+  private ordemCompraService = inject(OrdemCompraService);
+  private snackBar = inject(MatSnackBar);
+  private observableHandler = new Subscription();
 
-  constructor(private snackBar: MatSnackBar) {}
+  constructor() {
+    this.buscarOrdens();
+  }
+
+  ngOnDestroy(): void {
+    this.observableHandler.unsubscribe();
+  }
 
   abrirCadastro(): void {
     this.ordemEmEdicao = null;
@@ -66,58 +62,98 @@ export class ListaOrdemCompra {
     this.painelAberto = false;
   }
 
-  salvarOrdem(payload: OrdemCompraPayload): void {
-    //const fornecedor = this.fornecedores.find((f) => f.codigo === payload.fornecedorCodigo)!;
-    /*const itens: OrdemCompraItem[] = payload.itens.map((item) => ({
-      material: this.materiaisDisponiveis.find((m) => m.codigo === item.materialCodigo)!,
-      quantidade: item.quantidade,
-      valor: item.valor,
-      status:payload.status
-    }));
+  buscarOrdens() {
+    this.observableHandler.add(
+      this.ordemCompraService.findAll().subscribe({
+        next: (res: OrdemCompraApi[]) => this.ordens.set(res.map((o) => this.mapearOrdem(o))),
+        error: (err) => {
+          console.log(err);
+          this.notificar('Erro ao buscar Ordens de Compras', 'error');
+        },
+      }),
+    );
+  }
 
+  // API -> formato da tela: converte datas/numerics, calcula status e achata os itens.
+  private mapearOrdem(o: OrdemCompraApi): OrdemCompraLista {
+    const agora = new Date();
+    const dt_entrega = o.dt_entrega ? new Date(o.dt_entrega) : null;
+    const dt_entrega_prevista = o.dt_entrega_prevista ? new Date(o.dt_entrega_prevista) : null;
+
+    return {
+      id: o.id,
+      fornecedor: o.fornecedor,
+      dt_emissao: new Date(o.dt_emissao),
+      dt_entrega,
+      dt_entrega_prevista,
+      valor_total: Number(o.valor_total ?? 0),
+      status: dt_entrega
+        ? 'FECHADO'
+        : dt_entrega_prevista && dt_entrega_prevista < agora
+          ? 'EM ATRASO'
+          : 'ABERTO',
+      itens: o.itens.map(({ quantidade, valor, material }) => ({
+        ...material,
+        ultimoValor: material.ultimoValor != null ? Number(material.ultimoValor) : null,
+        quantidade,
+        valor: Number(valor),
+      })),
+    };
+  }
+
+  salvarOrdem(payload: OrdemCompraPayload): void {
+    const { fornecedorCodigo, dataEntrega, itens } = payload;
     const editando = this.ordemEmEdicao !== null;
 
-    if (this.ordemEmEdicao) {
-      this.ordens = this.ordens.map((ordem) =>
-        ordem === this.ordemEmEdicao
-          ? { ...ordem, fornecedor, dataEntrega: payload.dataEntrega, itens }
-          : ordem,
-      );
-    } else {
-      this.ordens = [
-        ...this.ordens,
-        { numero: this.proximoNumero(), fornecedor, dataEntrega: payload.dataEntrega, itens,status:'ABERTO' },
-      ];
-    }
+    const request$:Observable<any> = this.ordemEmEdicao
+      ? this.ordemCompraService.atualizar(this.ordemEmEdicao.id, dataEntrega, itens)
+      : this.ordemCompraService.salvar(fornecedorCodigo, dataEntrega, itens);
 
-    this.fecharCadastro();
+    this.salvando = true;
 
-    this.snackBar.open(
-      editando
-        ? 'Ordem de compra atualizada com sucesso.'
-        : 'Ordem de compra cadastrada com sucesso.',
-      'Fechar',
-      {
-        duration: 3000,
-        horizontalPosition: 'right',
-        verticalPosition: 'top',
-        panelClass: ['success-snackbar'],
-      },
+    this.observableHandler.add(
+      request$.pipe(finalize(() => (this.salvando = false))).subscribe({
+        next: () => {
+          this.fecharCadastro();
+          this.buscarOrdens();
+          this.notificar(
+            editando
+              ? 'Ordem de compra atualizada com sucesso.'
+              : 'Ordem de compra cadastrada com sucesso.',
+            'success',
+          );
+        },
+        // Em erro o painel permanece aberto para o usuário não perder o que digitou.
+        error: (err) => {
+          console.log(err);
+          this.notificar('Erro ao salvar ordem de compra', 'error');
+        },
+      }),
     );
-    */
-  }
-  /*
-  calcularTotal(itens: OrdemCompraItem[]): number {
-    return itens.reduce((total, item) => total + item.quantidade * item.valor, 0);
   }
 
-  finalizarOC(item:OrdemCompraLista){
-    this.ordens.find(oc=>oc==item)!.status = 'FECHADO';
+  // Apenas marca a ordem como recebida (dt_entrega = agora); não movimenta estoque.
+  finalizar(ordem: OrdemCompraLista): void {
+    this.observableHandler.add(
+      this.ordemCompraService.receber(ordem.id).subscribe({
+        next: () => {
+          this.buscarOrdens();
+          this.notificar('Ordem de compra finalizada com sucesso.', 'success');
+        },
+        error: (err) => {
+          console.log(err);
+          this.notificar('Erro ao finalizar ordem de compra', 'error');
+        },
+      }),
+    );
   }
 
-  private proximoNumero(): number {
-    return this.ordens.length ? Math.max(...this.ordens.map((o) => o.numero)) + 1 : 1001;
+  private notificar(mensagem: string, tipo: 'success' | 'error'): void {
+    this.snackBar.open(mensagem, 'Fechar', {
+      duration: 3000,
+      horizontalPosition: 'right',
+      verticalPosition: 'top',
+      panelClass: [`${tipo}-snackbar`],
+    });
   }
-
-  */
 }

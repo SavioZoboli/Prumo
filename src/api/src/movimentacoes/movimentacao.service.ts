@@ -3,7 +3,7 @@ import {
   BadRequestException,
   NotFoundException,
 } from '@nestjs/common';
-import { Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Movimentacao } from './movimentacao.entity';
 import { ItemMovimento } from './item-movimento.entity';
@@ -170,9 +170,11 @@ export class MovimentacaoService {
   }
 
   async estornar(id: number, motivoEstorno: string): Promise<Movimentacao> {
-    const movimentacao = await this.movimentacaoRepository.findOne({
+  await this.movimentacaoRepository.manager.transaction(async (manager) => {
+    // Lock sem relations: FOR UPDATE não funciona com LEFT JOIN no Postgres
+    const movimentacao = await manager.findOne(Movimentacao, {
       where: { id },
-      relations: { itens: true },
+      lock: { mode: 'pessimistic_write' },
     });
 
     if (!movimentacao) {
@@ -183,28 +185,47 @@ export class MovimentacaoService {
       throw new BadRequestException('Esta movimentação já foi estornada.');
     }
 
-    await this.movimentacaoRepository.manager.transaction(async (manager) => {
-      const materialRepository = manager.getRepository(Material);
-
-
-      for (const item of movimentacao.itens) {
-        const material = await materialRepository.findOne({
-          where: { id: item.material_id },
-        });
-
-        if (material) {
-          material.estoqueAtual +=
-            movimentacao.operacao === 'E' ? -item.quantidade : item.quantidade;
-          await materialRepository.save(material);
-        }
-      }
-
-      await manager.update(Movimentacao, id, {
-        is_estornado: true,
-        motivo_estorno: motivoEstorno,
-      });
+    const itens = await manager.find(ItemMovimento, {
+      where: { movimento_id: id },
     });
 
-    return (await this.findOne(id))!;
-  }
+    const materiais = await manager.find(Material, {
+      where: { id: In(itens.map((i) => i.material_id)) },
+      order: { id: 'ASC' },
+      lock: { mode: 'pessimistic_write' },
+    });
+    const materiaisPorId = new Map(materiais.map((m) => [m.id, m]));
+
+    for (const item of itens) {
+      const material = materiaisPorId.get(item.material_id);
+
+      if (!material) {
+        throw new NotFoundException(
+          `Material ${item.material_id} não encontrado.`,
+        );
+      }
+
+      // Estorno de Entrada tira do estoque; estorno de Saída devolve
+      const delta =
+        movimentacao.operacao === 'E' ? -item.quantidade : item.quantidade;
+
+      if (material.estoqueAtual + delta < 0) {
+        throw new BadRequestException(
+          `Estorno inviável: o material ${item.material_id} não tem estoque suficiente para reverter a entrada.`,
+        );
+      }
+
+      material.estoqueAtual += delta;
+    }
+
+    await manager.save(materiais);
+
+    await manager.update(Movimentacao, id, {
+      is_estornado: true,
+      motivo_estorno: motivoEstorno,
+    });
+  });
+
+  return (await this.findOne(id))!;
+}
 }

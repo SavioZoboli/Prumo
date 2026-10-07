@@ -9,8 +9,7 @@ import {
 import { ApiProperty } from '@nestjs/swagger';
 
 import { OrdemCompra } from './ordem-compra.entity';
-// Quando a branch feature/cadastro-materiais-backend for mergeada:
-// import { Material } from '../materiais/material.entity';
+import { Material } from '../materiais/material.entity';
 
 /**
  * Capa/itens: uma OrdemCompra (capa) pode envolver varios materiais de
@@ -54,12 +53,10 @@ export class ItemOrdemCompra {
   })
   declare ordemCompra: OrdemCompra;
 
-  // Sem FK ainda: a tabela "Materiais" nao existe no codigo (PR em revisao).
-  // Descomentar junto com o entity do Material quando o PR mergear.
-  // @ManyToOne(() => Material)
-  // @JoinColumn({
-  //   name: 'material_id',
-  //   foreignKeyConstraintName: 'fk_material_oc',
-  // })
-  // declare material: Material;
+  @ManyToOne(() => Material)
+  @JoinColumn({
+    name: 'material_id',
+    foreignKeyConstraintName: 'fk_material_oc',
+  })
+  declare material: Material;
 }
