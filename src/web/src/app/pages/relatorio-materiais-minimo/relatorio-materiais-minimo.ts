@@ -1,5 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { Component, inject, signal } from '@angular/core';
+import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTableModule } from '@angular/material/table';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
@@ -14,6 +15,7 @@ import {
   standalone: true,
   imports: [
     CommonModule,
+    MatButtonModule,
     MatIconModule,
     MatTableModule,
     MatSnackBarModule,
@@ -33,6 +35,8 @@ export class RelatorioMateriaisMinimo {
   ];
 
   materiaisAbaixoDoMinimo = signal<MaterialRelatorio[]>([]);
+  carregando = signal(false);
+  erro = signal(false);
 
   private materialService = inject(MaterialService);
   private snackBar = inject(MatSnackBar);
@@ -41,12 +45,18 @@ export class RelatorioMateriaisMinimo {
     this.carregarRelatorio();
   }
 
-  private carregarRelatorio(): void {
+  carregarRelatorio(): void {
+    this.carregando.set(true);
+    this.erro.set(false);
+
     this.materialService.getRelatorioMinimo().subscribe({
       next: (materiais) => {
         this.materiaisAbaixoDoMinimo.set(materiais);
+        this.carregando.set(false);
       },
       error: () => {
+        this.carregando.set(false);
+        this.erro.set(true);
         this.snackBar.open(
           'Erro ao carregar o relatório de materiais.',
           '',
