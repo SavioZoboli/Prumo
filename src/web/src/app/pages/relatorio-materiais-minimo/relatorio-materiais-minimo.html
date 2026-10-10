@@ -12,14 +12,34 @@
 
       <div>
         <span class="resumo-label">Materiais críticos</span>
-        <strong>{{ totalCriticos }}</strong>
+        <strong>{{ carregando() || erro() ? '–' : totalCriticos }}</strong>
       </div>
     </div>
   </div>
 
+  <div class="estado-vazio" *ngIf="carregando()">
+    <mat-icon>hourglass_empty</mat-icon>
+
+    <h2>Carregando relatório...</h2>
+  </div>
+
+  <div class="estado-vazio" *ngIf="erro()">
+    <mat-icon>error</mat-icon>
+
+    <h2>Não foi possível carregar o relatório</h2>
+
+    <p>
+      Não conseguimos verificar o estoque agora. Tente novamente em instantes.
+    </p>
+
+    <button mat-button (click)="carregarRelatorio()">
+      Tentar novamente
+    </button>
+  </div>
+
   <div
     class="estado-vazio"
-    *ngIf="materiaisAbaixoDoMinimo.length === 0"
+    *ngIf="!carregando() && !erro() && materiaisAbaixoDoMinimo().length === 0"
   >
     <mat-icon>check_circle</mat-icon>
 
@@ -32,58 +52,35 @@
 
   <div
     class="tabela-container"
-    *ngIf="materiaisAbaixoDoMinimo.length > 0"
+    *ngIf="!carregando() && !erro() && materiaisAbaixoDoMinimo().length > 0"
   >
     <table
       mat-table
-      [dataSource]="materiaisAbaixoDoMinimo"
+      [dataSource]="materiaisAbaixoDoMinimo()"
       class="materiais-table"
     >
       <ng-container matColumnDef="codigo">
-        <th mat-header-cell *matHeaderCellDef>
-          Código
-        </th>
-
-        <td mat-cell *matCellDef="let material">
-          {{ material.codigo }}
-        </td>
+        <th mat-header-cell *matHeaderCellDef>Código</th>
+        <td mat-cell *matCellDef="let material">{{ material.codigo }}</td>
       </ng-container>
 
       <ng-container matColumnDef="nome">
-        <th mat-header-cell *matHeaderCellDef>
-          Material
-        </th>
-
-        <td mat-cell *matCellDef="let material">
-          {{ material.nome }}
-        </td>
+        <th mat-header-cell *matHeaderCellDef>Material</th>
+        <td mat-cell *matCellDef="let material">{{ material.nome }}</td>
       </ng-container>
 
       <ng-container matColumnDef="equipamento">
-        <th mat-header-cell *matHeaderCellDef>
-          Equipamento
-        </th>
-
-        <td mat-cell *matCellDef="let material">
-          {{ material.equipamento }}
-        </td>
+        <th mat-header-cell *matHeaderCellDef>Equipamento</th>
+        <td mat-cell *matCellDef="let material">{{ material.equipamento }}</td>
       </ng-container>
 
       <ng-container matColumnDef="fabricante">
-        <th mat-header-cell *matHeaderCellDef>
-          Fabricante
-        </th>
-
-        <td mat-cell *matCellDef="let material">
-          {{ material.fabricante }}
-        </td>
+        <th mat-header-cell *matHeaderCellDef>Fabricante</th>
+        <td mat-cell *matCellDef="let material">{{ material.fabricante }}</td>
       </ng-container>
 
       <ng-container matColumnDef="estoqueAtual">
-        <th mat-header-cell *matHeaderCellDef>
-          Estoque atual
-        </th>
-
+        <th mat-header-cell *matHeaderCellDef>Estoque atual</th>
         <td mat-cell *matCellDef="let material">
           {{ material.estoqueAtual }}
           {{ material.unidadeMedida }}
@@ -91,10 +88,7 @@
       </ng-container>
 
       <ng-container matColumnDef="estoqueMinimo">
-        <th mat-header-cell *matHeaderCellDef>
-          Estoque mínimo
-        </th>
-
+        <th mat-header-cell *matHeaderCellDef>Estoque mínimo</th>
         <td mat-cell *matCellDef="let material">
           {{ material.estoqueMinimo }}
           {{ material.unidadeMedida }}
@@ -102,10 +96,7 @@
       </ng-container>
 
       <ng-container matColumnDef="status">
-        <th mat-header-cell *matHeaderCellDef>
-          Status
-        </th>
-
+        <th mat-header-cell *matHeaderCellDef>Status</th>
         <td mat-cell *matCellDef="let material">
           <span class="status-critico">
             <mat-icon>warning</mat-icon>
@@ -114,18 +105,8 @@
         </td>
       </ng-container>
 
-      <tr
-        mat-header-row
-        *matHeaderRowDef="colunasExibidas"
-      ></tr>
-
-      <tr
-        mat-row
-        *matRowDef="
-          let row;
-          columns: colunasExibidas
-        "
-      ></tr>
+      <tr mat-header-row *matHeaderRowDef="colunasExibidas"></tr>
+      <tr mat-row *matRowDef="let row; columns: colunasExibidas"></tr>
     </table>
   </div>
 </div>

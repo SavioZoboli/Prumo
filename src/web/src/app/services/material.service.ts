@@ -30,6 +30,17 @@ export interface MaterialRequest {
   localizacao?: string;
 }
 
+export interface MaterialRelatorio {
+  codigo: string;
+  nome: string;
+  equipamento: string;
+  fabricante: string;
+  unidadeMedida: string | null;
+  estoqueAtual: number;
+  estoqueMinimo: number;
+  ativo: boolean;
+}
+
 @Injectable({
   providedIn: 'root',
 })
@@ -54,6 +65,10 @@ export class MaterialService {
 
   public listAll(): Observable<Material[]> {
     return this.http.get<Material[]>(this.url);
+  }
+
+  public getRelatorioMinimo(): Observable<MaterialRelatorio[]> {
+    return this.http.get<MaterialRelatorio[]>(`${this.url}/relatorio-minimo`);
   }
 
   public desativar(id: number): Observable<Material> {

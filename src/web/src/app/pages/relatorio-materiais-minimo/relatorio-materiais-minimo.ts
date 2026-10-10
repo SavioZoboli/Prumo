@@ -1,26 +1,24 @@
 import { CommonModule } from '@angular/common';
-import { Component } from '@angular/core';
+import { Component, inject, signal } from '@angular/core';
+import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTableModule } from '@angular/material/table';
+import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 
-interface MaterialRelatorio {
-  codigo: string;
-  nome: string;
-  equipamento: string;
-  fabricante: string;
-  unidadeMedida: string;
-  estoqueAtual: number;
-  estoqueMinimo: number;
-  ativo: boolean;
-}
+import {
+  MaterialService,
+  MaterialRelatorio,
+} from '../../services/material.service';
 
 @Component({
   selector: 'app-relatorio-materiais-minimo',
   standalone: true,
   imports: [
     CommonModule,
+    MatButtonModule,
     MatIconModule,
     MatTableModule,
+    MatSnackBarModule,
   ],
   templateUrl: './relatorio-materiais-minimo.html',
   styleUrl: './relatorio-materiais-minimo.scss',
@@ -36,59 +34,44 @@ export class RelatorioMateriaisMinimo {
     'status',
   ];
 
-  // Mock temporário enquanto a integração com o backend de materiais não está disponível.
-  materiais: MaterialRelatorio[] = [
-    {
-      codigo: 'CNMG120408',
-      nome: 'Inserto de torneamento',
-      equipamento: 'Torno CNC',
-      fabricante: 'Sandvik',
-      unidadeMedida: 'UN',
-      estoqueAtual: 5,
-      estoqueMinimo: 10,
-      ativo: true,
-    },
-    {
-      codigo: 'FRESA010',
-      nome: 'Fresa de topo',
-      equipamento: 'Centro de usinagem',
-      fabricante: 'Seco',
-      unidadeMedida: 'UN',
-      estoqueAtual: 10,
-      estoqueMinimo: 10,
-      ativo: true,
-    },
-    {
-      codigo: 'BROCA008',
-      nome: 'Broca 8 mm',
-      equipamento: 'Furadeira',
-      fabricante: 'Walter',
-      unidadeMedida: 'UN',
-      estoqueAtual: 18,
-      estoqueMinimo: 8,
-      ativo: true,
-    },
-    {
-      codigo: 'PAST004',
-      nome: 'Pastilha de corte',
-      equipamento: 'Torno CNC',
-      fabricante: 'Kennametal',
-      unidadeMedida: 'UN',
-      estoqueAtual: 2,
-      estoqueMinimo: 6,
-      ativo: true,
-    },
-  ];
+  materiaisAbaixoDoMinimo = signal<MaterialRelatorio[]>([]);
+  carregando = signal(false);
+  erro = signal(false);
 
-  get materiaisAbaixoDoMinimo(): MaterialRelatorio[] {
-    return this.materiais.filter(
-      (material) =>
-        material.ativo &&
-        material.estoqueAtual <= material.estoqueMinimo
-    );
+  private materialService = inject(MaterialService);
+  private snackBar = inject(MatSnackBar);
+
+  constructor() {
+    this.carregarRelatorio();
+  }
+
+  carregarRelatorio(): void {
+    this.carregando.set(true);
+    this.erro.set(false);
+
+    this.materialService.getRelatorioMinimo().subscribe({
+      next: (materiais) => {
+        this.materiaisAbaixoDoMinimo.set(materiais);
+        this.carregando.set(false);
+      },
+      error: () => {
+        this.carregando.set(false);
+        this.erro.set(true);
+        this.snackBar.open(
+          'Erro ao carregar o relatório de materiais.',
+          '',
+          {
+            duration: 5000,
+            horizontalPosition: 'right',
+            verticalPosition: 'top',
+            panelClass: ['error-snackbar'],
+          },
+        );
+      },
+    });
   }
 
   get totalCriticos(): number {
-    return this.materiaisAbaixoDoMinimo.length;
+    return this.materiaisAbaixoDoMinimo().length;
   }
 }
