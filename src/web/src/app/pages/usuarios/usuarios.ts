@@ -53,15 +53,24 @@ export class Usuarios {
 
   podeAdicionar = this.authService.getPerfil() == 'ADMIN'
 
+  private usuarioLogadoId = this.authService.getUsuarioId();
+
   dialog = inject(MatDialog);
 
   usuarioEmEdicao: UsuarioLista | null = null;
 
-  colunasExibidas = this.podeAdicionar
-    ? ['nome', 'email', 'perfil', 'status', 'acoes']
-    : ['nome', 'email', 'perfil', 'status'];
+  colunasExibidas = ['nome', 'email', 'perfil', 'status', 'acoes'];
 
   usuarios = signal<UsuarioLista[]>([]);
+
+  // ADMIN edita qualquer usuário; os demais perfis só o próprio cadastro.
+  podeEditar(usuario: UsuarioLista): boolean {
+    return this.podeAdicionar || this.ehProprioUsuario(usuario);
+  }
+
+  ehProprioUsuario(usuario: UsuarioLista | null): boolean {
+    return !!usuario && usuario.id === this.usuarioLogadoId;
+  }
 
   usuarioForm: FormGroup;
 
@@ -124,7 +133,6 @@ export class Usuarios {
     const senhaControl = this.usuarioForm.get('senha');
 
     senhaControl?.clearValidators();
-    senhaControl?.updateValueAndValidity();
 
     this.usuarioForm.reset({
       id: usuario.id,
@@ -136,7 +144,13 @@ export class Usuarios {
       ativo: usuario.ativo,
     });
 
-    senhaControl?.disable();
+    // O usuário só pode alterar a senha se estiver editando o seu próprio cadastro
+    if (this.ehProprioUsuario(usuario)) {
+      senhaControl?.enable();
+    } else {
+      senhaControl?.disable();
+    }
+    senhaControl?.updateValueAndValidity();
 
     this.painelAberto = true;
   }
@@ -155,8 +169,12 @@ export class Usuarios {
     const editando = this.usuarioEmEdicao !== null;
 
     if (this.usuarioEmEdicao) {
+      const ativo = this.podeAdicionar ? du.ativo : undefined;
+      const perfil = this.podeAdicionar ? du.perfil : undefined;
+      const senha = this.ehProprioUsuario(this.usuarioEmEdicao) && du.senha?.trim() ? du.senha.trim() : undefined;
+
       this.usuarioService
-        .update(du.id, du.nome, du.sobrenome, du.email, du.ativo, du.perfil)
+        .update(du.id, du.nome, du.sobrenome, du.email, ativo, perfil, senha)
         .subscribe({
           next: () => {
             this.msgSucesso(editando)
@@ -164,11 +182,12 @@ export class Usuarios {
             this.resetAndCloseForm();
           },
           error: (err) => {
-            this.snackBar.open(err.message, 'Ok', {
+            const mensagem = err.error?.message || err.message || 'Erro ao atualizar usuário.';
+            this.snackBar.open(mensagem, 'Ok', {
               duration: 5000,
               horizontalPosition: 'right',
               verticalPosition: 'top',
-              panelClass: ['success-snackbar'],
+              panelClass: ['error-snackbar'],
             });
             return;
           },

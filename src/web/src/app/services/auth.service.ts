@@ -49,6 +49,11 @@ export class AuthService {
     return this.decodePayload()?.perfil ?? null;
   }
 
+  public getUsuarioId(): number | null {
+    const sub = this.decodePayload()?.sub;
+    return sub === undefined || sub === null ? null : Number(sub);
+  }
+
   private decodePayload(): TokenPayload | null {
     const token = localStorage.getItem('access_token');
     if (!token) return null;

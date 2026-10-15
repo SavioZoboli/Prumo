@@ -62,7 +62,7 @@
         <th mat-header-cell *matHeaderCellDef>Ações</th>
 
         <td mat-cell *matCellDef="let item">
-          @if (podeAdicionar) {
+          @if (podeEditar(item)) {
             <button
               mat-icon-button
               type="button"
@@ -71,7 +71,9 @@
             >
               <mat-icon>edit</mat-icon>
             </button>
+          }
 
+          @if (podeAdicionar) {
             <button
               mat-icon-button
               type="button"
@@ -139,29 +141,33 @@
         errorMessage="Informe um e-mail válido"
       ></app-input>
 
-      <app-input
-        [label]="usuarioEmEdicao ? 'Nova senha' : 'Senha'"
-        type="password"
-        [placeholder]="usuarioEmEdicao ? 'Preencha somente se quiser alterar' : ''"
-        [required]="!usuarioEmEdicao"
-        formControlName="senha"
-        [hasError]="!!senha?.invalid && !!senha?.touched"
-        errorMessage="Senha é obrigatória"
-      ></app-input>
+      @if (!usuarioEmEdicao || ehProprioUsuario(usuarioEmEdicao)) {
+        <app-input
+          [label]="usuarioEmEdicao ? 'Nova senha' : 'Senha'"
+          type="password"
+          [placeholder]="usuarioEmEdicao ? 'Preencha somente se quiser alterar' : ''"
+          [required]="!usuarioEmEdicao"
+          formControlName="senha"
+          [hasError]="!!senha?.invalid && !!senha?.touched"
+          errorMessage="Senha é obrigatória"
+        ></app-input>
+      }
 
-      <mat-form-field appearance="outline">
-        <mat-label> Perfil </mat-label>
+      @if (podeAdicionar) {
+        <mat-form-field appearance="outline">
+          <mat-label> Perfil </mat-label>
 
-        <mat-select formControlName="perfil">
-          <mat-option value="ADMIN"> Administrador </mat-option>
+          <mat-select formControlName="perfil">
+            <mat-option value="ADMIN"> Administrador </mat-option>
 
-          <mat-option value="LIDER"> Líder </mat-option>
+            <mat-option value="LIDER"> Líder </mat-option>
 
-          <mat-option value="USUARIO"> Usuário </mat-option>
-        </mat-select>
-      </mat-form-field>
+            <mat-option value="USUARIO"> Usuário </mat-option>
+          </mat-select>
+        </mat-form-field>
 
-      <mat-slide-toggle formControlName="ativo"> Usuário ativo </mat-slide-toggle>
+        <mat-slide-toggle formControlName="ativo"> Usuário ativo </mat-slide-toggle>
+      }
 
       <div class="usuarios-page__form-actions">
         <app-button
