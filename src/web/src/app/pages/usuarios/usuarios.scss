@@ -48,7 +48,9 @@
     right: 0;
     z-index: 1001;
 
-    width: min(440px, 100vw);
+    // Descontamos a largura do side-nav (260px): em tablet ele fica fixo ao
+    // lado (modo "side") e o drawer não pode invadir a área do menu.
+    width: min(440px, calc(100vw - 260px));
     height: 100vh;
     box-sizing: border-box;
 
@@ -119,14 +121,18 @@
       gap: var(--app-space-lg);
     }
 
-    &__drawer {
-      width: 100vw;
-      padding: var(--app-space-lg);
-    }
-
     &__table-container {
       overflow-x: auto;
     }
+  }
+}
+
+// Só em celular o side-nav vira overlay (fechado) e o drawer pode ocupar
+// a tela toda. Em tablet o menu continua visível ao lado.
+@media (max-width: 599.98px) {
+  .usuarios-page__drawer {
+    width: 100vw;
+    padding: var(--app-space-lg);
   }
 }
 
