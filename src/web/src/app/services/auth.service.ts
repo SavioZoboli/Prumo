@@ -10,7 +10,7 @@ interface LoginResponse {
 interface TokenPayload {
   sub: number;
   email: string;
-  perfil: string;
+  perfil: 'ADMIN'|'LIDER'|'USUARIO';
   iat: number;
   exp: number;
 }
