@@ -1,0 +1,223 @@
+@use '../../../assets/scss/shared-patterns' as *;
+
+:host {
+  display: block;
+  min-height: 100vh;
+  background-color: var(--mat-sys-surface);
+  color: var(--mat-sys-on-surface);
+}
+
+.dashboard-page {
+  @extend %page-container;
+
+  box-sizing: border-box;
+
+  &__header {
+    @extend %page-header;
+  }
+
+  &__table {
+    @extend %custom-table;
+
+    background: transparent;
+  }
+
+  &__status {
+    @extend %status-chip;
+
+    margin-right: var(--app-space-xs);
+  }
+
+  &__paginator {
+    @extend %custom-paginator;
+  }
+}
+
+// -----------------------------------------------------------------------------
+// Bento grid: 12 colunas; cada tile define quantas ocupa.
+// -----------------------------------------------------------------------------
+.bento {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: var(--app-space-md);
+
+  &__tile {
+    background-color: var(--mat-sys-surface-container-low);
+    border-radius: var(--app-radius-xl);
+    border: 1px solid var(--mat-sys-outline-variant);
+    box-shadow: var(--app-shadow-sm);
+    overflow: hidden;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+
+    &--criticos {
+      grid-column: span 8;
+    }
+
+    &--consumidos {
+      grid-column: span 4;
+    }
+
+    &--semanas {
+      grid-column: span 5;
+    }
+
+    &--movimentacoes {
+      grid-column: span 7;
+    }
+  }
+
+  &__tile-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--app-space-md);
+    padding: var(--app-space-md) var(--app-space-lg);
+    border-bottom: 1px solid var(--mat-sys-outline-variant);
+
+    h3 {
+      margin: 0;
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--mat-sys-primary);
+    }
+  }
+
+  &__table-wrapper {
+    overflow-x: auto;
+  }
+
+  &__nav {
+    display: flex;
+    align-items: center;
+    gap: var(--app-space-xs);
+  }
+
+  &__nav-label {
+    min-width: 5rem;
+    text-align: center;
+    font-size: 0.85rem;
+    font-weight: 600;
+    text-transform: capitalize;
+    color: var(--mat-sys-on-surface-variant);
+  }
+
+  &__state {
+    @extend %state-message;
+  }
+
+  // KPIs
+  &__kpi {
+    grid-column: span 3;
+    padding: var(--app-space-lg);
+    gap: var(--app-space-xs);
+    font: inherit;
+    color: inherit;
+    text-align: left;
+    border-left: 6px solid var(--mat-sys-outline);
+    transition:
+      transform 0.2s,
+      box-shadow 0.2s;
+
+    &:is(button) {
+      cursor: pointer;
+
+      &:hover {
+        box-shadow: var(--app-shadow-md);
+        transform: translateY(-2px);
+      }
+    }
+
+    &--danger {
+      border-left-color: var(--app-danger);
+
+      mat-icon {
+        color: var(--app-danger);
+      }
+    }
+
+    &--warning {
+      border-left-color: var(--app-warning);
+
+      mat-icon {
+        color: var(--app-warning);
+      }
+    }
+
+    &--info {
+      border-left-color: var(--mat-sys-primary);
+
+      mat-icon {
+        color: var(--mat-sys-primary);
+      }
+    }
+  }
+
+  &__kpi-label {
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--mat-sys-on-surface-variant);
+  }
+
+  &__kpi-value {
+    font-size: 2rem;
+    line-height: 1.1;
+  }
+}
+
+// Barra proporcional dentro da tabela de "mais consumidos".
+.bar-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+
+  &__label {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 14rem;
+  }
+
+  &__track {
+    height: 6px;
+    border-radius: var(--app-radius-pill);
+    background-color: var(--mat-sys-surface-container-highest);
+  }
+
+  &__fill {
+    height: 100%;
+    border-radius: var(--app-radius-pill);
+    background-color: var(--mat-sys-primary);
+  }
+}
+
+.estornado {
+  text-decoration: line-through;
+  color: var(--mat-sys-on-surface-variant);
+}
+
+@media (max-width: 1200px) {
+  .bento {
+    &__tile--criticos,
+    &__tile--consumidos,
+    &__tile--semanas,
+    &__tile--movimentacoes {
+      grid-column: span 12;
+    }
+
+    &__kpi {
+      grid-column: span 6;
+    }
+  }
+}
+
+@media (max-width: 600px) {
+  .bento__kpi {
+    grid-column: span 12;
+  }
+}
+
