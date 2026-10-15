@@ -1,11 +1,6 @@
 import { Component, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import {
-  FormBuilder,
-  FormGroup,
-  ReactiveFormsModule,
-  Validators,
-} from '@angular/forms';
+import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 
 import { MatIconModule } from '@angular/material/icon';
 import { MatTableModule } from '@angular/material/table';
@@ -13,16 +8,14 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatButtonModule } from '@angular/material/button';
-import {
-  MatSnackBar,
-  MatSnackBarModule,
-} from '@angular/material/snack-bar';
+import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 
 import { InputComponent } from '../../components/input-component/input-component';
 import { ButtonComponent } from '../../components/button-component/button-component';
 import { UsuarioService } from '../../services/usuario.service';
 import { MatDialog } from '@angular/material/dialog';
 import { Dialog } from '../../components/dialog/dialog';
+import { AuthService } from '../../services/auth.service';
 
 interface UsuarioLista {
   id: number;
@@ -55,6 +48,10 @@ interface UsuarioLista {
 export class Usuarios {
   painelAberto = false;
   salvando = false;
+
+  private authService = inject(AuthService)
+
+  podeAdicionar = this.authService.getPerfil() == 'ADMIN'
 
   dialog = inject(MatDialog);
 
@@ -157,16 +154,10 @@ export class Usuarios {
 
     if (this.usuarioEmEdicao) {
       this.usuarioService
-        .update(
-          du.id,
-          du.nome,
-          du.sobrenome,
-          du.email,
-          du.ativo,
-          du.perfil,
-        )
+        .update(du.id, du.nome, du.sobrenome, du.email, du.ativo, du.perfil)
         .subscribe({
           next: () => {
+            this.msgSucesso(editando)
             this.listarUsuarios();
             this.resetAndCloseForm();
           },
@@ -177,37 +168,32 @@ export class Usuarios {
               verticalPosition: 'top',
               panelClass: ['success-snackbar'],
             });
+            return;
           },
         });
     } else {
-      this.usuarioService
-        .create(
-          du.nome,
-          du.sobrenome,
-          du.email,
-          du.senha,
-          du.perfil,
-        )
-        .subscribe({
-          next: () => {
-            this.resetAndCloseForm();
-            this.listarUsuarios();
-          },
-          error: (err) => {
-            this.snackBar.open(err.message, 'Ok', {
-              duration: 5000,
-              horizontalPosition: 'right',
-              verticalPosition: 'top',
-              panelClass: ['success-snackbar'],
-            });
-          },
-        });
+      this.usuarioService.create(du.nome, du.sobrenome, du.email, du.senha, du.perfil).subscribe({
+        next: () => {
+          this.msgSucesso(editando)
+          this.resetAndCloseForm();
+          this.listarUsuarios();
+        },
+        error: (err) => {
+          this.snackBar.open(err.message, 'Ok', {
+            duration: 5000,
+            horizontalPosition: 'right',
+            verticalPosition: 'top',
+            panelClass: ['success-snackbar'],
+          });
+          return;
+        },
+      });
     }
+  }
 
+  private msgSucesso(editando:boolean) {
     this.snackBar.open(
-      editando
-        ? 'Usuário atualizado com sucesso.'
-        : 'Usuário cadastrado com sucesso.',
+      editando ? 'Usuário atualizado com sucesso.' : 'Usuário cadastrado com sucesso.',
       'Fechar',
       {
         duration: 3000,
@@ -230,30 +216,22 @@ export class Usuarios {
       if (excluir) {
         this.usuarioService.desativar(usuario.id).subscribe({
           next: () => {
-            this.snackBar.open(
-              'Usuário desativado com sucesso!',
-              '',
-              {
-                duration: 5000,
-                horizontalPosition: 'right',
-                verticalPosition: 'top',
-                panelClass: ['success-snackbar'],
-              },
-            );
+            this.snackBar.open('Usuário desativado com sucesso!', '', {
+              duration: 5000,
+              horizontalPosition: 'right',
+              verticalPosition: 'top',
+              panelClass: ['success-snackbar'],
+            });
 
             this.listarUsuarios();
           },
           error: () => {
-            this.snackBar.open(
-              'Erro ao desativar o usuário!',
-              '',
-              {
-                duration: 5000,
-                horizontalPosition: 'right',
-                verticalPosition: 'top',
-                panelClass: ['error-snackbar'],
-              },
-            );
+            this.snackBar.open('Erro ao desativar o usuário!', '', {
+              duration: 5000,
+              horizontalPosition: 'right',
+              verticalPosition: 'top',
+              panelClass: ['error-snackbar'],
+            });
           },
         });
       }
