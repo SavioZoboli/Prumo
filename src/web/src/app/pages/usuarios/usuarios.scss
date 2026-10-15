@@ -48,9 +48,9 @@
     right: 0;
     z-index: 1001;
 
-    // Descontamos a largura do side-nav (260px): em tablet ele fica fixo ao
-    // lado (modo "side") e o drawer não pode invadir a área do menu.
-    width: min(440px, calc(100vw - 260px));
+    // O side-nav só fica fixo ao lado a partir de 900px (440 + 260 cabe);
+    // abaixo disso ele é overlay fechado, então o drawer pode usar a tela toda.
+    width: min(440px, 100vw);
     height: 100vh;
     box-sizing: border-box;
 
@@ -122,7 +122,77 @@
     }
 
     &__table-container {
-      overflow-x: auto;
+      overflow-x: visible;
+      background: transparent;
+      border: none;
+      box-shadow: none;
+    }
+
+    // Tabela -> lista de cards. O cabeçalho some e cada célula mostra o
+    // próprio rótulo (atributo data-label) antes do valor.
+    &__table {
+      display: block;
+      background: transparent;
+
+      tbody {
+        display: flex;
+        flex-direction: column;
+        gap: var(--app-space-md);
+      }
+
+      tr.mat-mdc-header-row {
+        display: none;
+      }
+
+      tr.mat-mdc-row {
+        display: flex;
+        flex-direction: column;
+        gap: var(--app-space-xs);
+        height: auto;
+        padding: var(--app-space-md);
+        background-color: var(--mat-sys-surface-container-low);
+        border: 1px solid var(--mat-sys-outline-variant);
+        border-top: 3px solid var(--mat-sys-primary);
+        border-radius: var(--app-radius-lg);
+        box-shadow: var(--app-shadow-sm);
+      }
+
+      td.mat-mdc-cell {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: var(--app-space-md);
+        min-height: 0;
+        padding: var(--app-space-xs) 0;
+        border-bottom: none;
+        overflow-wrap: anywhere;
+        text-align: right;
+
+        &[data-label]::before {
+          content: attr(data-label);
+          flex-shrink: 0;
+          font-size: 0.75rem;
+          font-weight: 600;
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
+          color: var(--mat-sys-on-surface-variant);
+        }
+
+        &.mat-column-nome {
+          justify-content: flex-start;
+          font-size: 1.05rem;
+          font-weight: 700;
+          text-align: left;
+          color: var(--mat-sys-primary);
+        }
+
+        &.mat-column-acoes {
+          justify-content: flex-end;
+          margin-top: var(--app-space-xs);
+          padding-top: var(--app-space-sm);
+          border-top: 1px solid var(--mat-sys-outline-variant);
+        }
+      }
     }
   }
 }

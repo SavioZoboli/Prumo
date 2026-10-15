@@ -57,7 +57,9 @@ export class Usuarios {
 
   usuarioEmEdicao: UsuarioLista | null = null;
 
-  colunasExibidas = ['nome', 'email', 'perfil', 'status', 'acoes'];
+  colunasExibidas = this.podeAdicionar
+    ? ['nome', 'email', 'perfil', 'status', 'acoes']
+    : ['nome', 'email', 'perfil', 'status'];
 
   usuarios = signal<UsuarioLista[]>([]);
 
