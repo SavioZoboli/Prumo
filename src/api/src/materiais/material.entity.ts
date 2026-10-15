@@ -65,6 +65,24 @@ export class Material {
   declare ativo: boolean;
 
   @ApiProperty({
+    example: null,
+    description:
+      'Quando o alerta de estoque mínimo foi enviado. Volta a null quando o estoque sobe acima do mínimo, liberando um novo alerta.',
+    required: false,
+  })
+  @Column({ name: 'alerta_estoque_enviado_em', type: 'timestamptz', nullable: true })
+  declare alertaEstoqueEnviadoEm: Date | null;
+
+  @ApiProperty({
+    example: null,
+    description:
+      'Estoque atual no momento do último alerta. Enquanto o material segue crítico, só uma quantidade menor que esta gera novo alerta.',
+    required: false,
+  })
+  @Column({ name: 'alerta_estoque_quantidade', type: 'integer', nullable: true })
+  declare alertaEstoqueQuantidade: number | null;
+
+  @ApiProperty({
     example: 45.9,
     description: 'Último valor pago pelo material',
     required: false,
