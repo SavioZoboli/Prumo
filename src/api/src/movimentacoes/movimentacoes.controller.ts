@@ -80,7 +80,8 @@ async findOne(@Param('id', ParseIntPipe) id: number) {
 
 @ApiOperation({
   summary: 'Estornar uma movimentação',
-  description: 'RF12: exige o motivo do estorno. Ainda não reverte o estoque (depende de "Materiais").',
+  description:
+    'RF12: exige o motivo do estorno. Reverte o estoque dos materiais e mantém a movimentação no histórico com is_estornado = true.',
 })
 @ApiParam({
   name: 'id',
@@ -94,7 +95,7 @@ async findOne(@Param('id', ParseIntPipe) id: number) {
 })
 @ApiResponse({
   status: 400,
-  description: 'Movimentação já estornada.',
+  description: 'Movimentação já estornada ou estoque insuficiente para reverter.',
 })
 @ApiResponse({
   status: 404,
