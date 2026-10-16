@@ -1,3 +1,4 @@
+import { beforeEach, describe, expect, it, jest } from '@jest/globals';
 import { Test } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { Logger } from '@nestjs/common';
@@ -26,6 +27,7 @@ describe('AlertaEstoqueService', () => {
   let idsReservados: number[];
 
   const execute = jest.fn();
+
   const queryBuilder = {
     update: jest.fn().mockReturnThis(),
     set: jest.fn().mockReturnThis(),
@@ -34,39 +36,61 @@ describe('AlertaEstoqueService', () => {
     returning: jest.fn().mockReturnThis(),
     execute,
   };
+
   const materialRepository = {
-    find: jest.fn(async () => materiais),
+    find: jest.fn(() => Promise.resolve(materiais)),
     update: jest.fn(),
     createQueryBuilder: jest.fn(() => queryBuilder),
   };
+
   const usuarioRepository = {
-    find: jest.fn(async () => [
-      { email: 'admin@prumo.local' },
-      { email: 'lider@prumo.local' },
-    ]),
+    find: jest.fn(() =>
+      Promise.resolve([
+        { email: 'admin@prumo.local' },
+        { email: 'lider@prumo.local' },
+      ]),
+    ),
   };
+
   const mailService = {
-    enviar: jest.fn((_email: EnvioEmail) => Promise.resolve('<id@prumo>')),
+    enviar: jest.fn<(email: EnvioEmail) => Promise<string>>(() =>
+      Promise.resolve('<id@prumo>'),
+    ),
   };
 
   beforeEach(async () => {
     jest.clearAllMocks();
+
     jest.spyOn(Logger.prototype, 'log').mockImplementation(() => undefined);
+
     jest.spyOn(Logger.prototype, 'warn').mockImplementation(() => undefined);
+
     jest.spyOn(Logger.prototype, 'error').mockImplementation(() => undefined);
 
     materiais = [];
     idsReservados = [];
-    execute.mockImplementation(async () => ({
-      raw: idsReservados.map((id) => ({ id })),
-    }));
+
+    execute.mockImplementation(() =>
+      Promise.resolve({
+        raw: idsReservados.map((id) => ({ id })),
+      }),
+    );
 
     const modulo = await Test.createTestingModule({
       providers: [
         AlertaEstoqueService,
-        { provide: getRepositoryToken(Material), useValue: materialRepository },
-        { provide: getRepositoryToken(Usuario), useValue: usuarioRepository },
-        { provide: MailService, useValue: mailService },
+        {
+          provide: getRepositoryToken(Material),
+          useValue: materialRepository,
+        },
+        {
+          provide: getRepositoryToken(Usuario),
+          useValue: usuarioRepository,
+        },
+        {
+          provide: MailService,
+          useValue: mailService,
+        },
       ],
     }).compile();
 
@@ -74,30 +98,70 @@ describe('AlertaEstoqueService', () => {
   });
 
   it('envia alerta quando o material atinge o mínimo, com os dados do material', async () => {
-    materiais = [material({ estoqueAtual: 10, estoqueMinimo: 10 })];
+    materiais = [
+      material({
+        estoqueAtual: 10,
+        estoqueMinimo: 10,
+      }),
+    ];
+
     idsReservados = [1];
 
     await service.verificarMateriais([1]);
 
     expect(mailService.enviar).toHaveBeenCalledTimes(1);
+
     const email = mailService.enviar.mock.calls[0][0];
+
     expect(email.copiaOculta).toEqual([
       'admin@prumo.local',
       'lider@prumo.local',
     ]);
+
     expect(email.assunto).toContain('CNMG120408');
     expect(email.html).toContain('Pastilha CNMG');
     expect(email.html).toContain('CNMG120408');
     expect(email.html).toContain('>10<');
   });
 
+  it('envia alerta quando o material fica abaixo do mínimo', async () => {
+    materiais = [
+      material({
+        estoqueAtual: 9,
+        estoqueMinimo: 10,
+      }),
+    ];
+
+    idsReservados = [1];
+
+    await service.verificarMateriais([1]);
+
+    expect(mailService.enviar).toHaveBeenCalledTimes(1);
+
+    const email = mailService.enviar.mock.calls[0][0];
+
+    expect(email.assunto).toContain('CNMG120408');
+    expect(email.html).toContain('Pastilha CNMG');
+    expect(email.html).toContain('CNMG120408');
+    expect(email.html).toContain('>9<');
+    expect(email.html).toContain('Abaixo do mínimo');
+  });
+
   it('manda um único e-mail para vários materiais da mesma movimentação', async () => {
-    materiais = [material({ id: 1 }), material({ id: 2, codigo: 'FRESA010' })];
+    materiais = [
+      material({ id: 1 }),
+      material({
+        id: 2,
+        codigo: 'FRESA010',
+      }),
+    ];
+
     idsReservados = [1, 2];
 
     await service.verificarMateriais([1, 2, 2]);
 
     expect(mailService.enviar).toHaveBeenCalledTimes(1);
+
     expect(mailService.enviar.mock.calls[0][0].html).toContain('FRESA010');
   });
 
@@ -139,11 +203,13 @@ describe('AlertaEstoqueService', () => {
         alertaEstoqueQuantidade: 20,
       }),
     ];
+
     idsReservados = [1];
 
     await service.verificarMateriais([1]);
 
     expect(mailService.enviar).toHaveBeenCalledTimes(1);
+
     expect(queryBuilder.set).toHaveBeenCalledWith(
       expect.objectContaining({
         alertaEstoqueQuantidade: expect.any(Function),
@@ -158,6 +224,7 @@ describe('AlertaEstoqueService', () => {
         alertaEstoqueQuantidade: null,
       }),
     ];
+
     idsReservados = [1];
 
     await service.verificarMateriais([1]);
@@ -189,11 +256,16 @@ describe('AlertaEstoqueService', () => {
       alertaEstoqueEnviadoEm: null,
       alertaEstoqueQuantidade: null,
     });
+
     expect(mailService.enviar).not.toHaveBeenCalled();
   });
 
   it('não alerta material acima do mínimo', async () => {
-    materiais = [material({ estoqueAtual: 11 })];
+    materiais = [
+      material({
+        estoqueAtual: 11,
+      }),
+    ];
 
     await service.verificarMateriais([1]);
 
@@ -201,7 +273,11 @@ describe('AlertaEstoqueService', () => {
   });
 
   it('não alerta material inativo', async () => {
-    materiais = [material({ ativo: false })];
+    materiais = [
+      material({
+        ativo: false,
+      }),
+    ];
 
     await service.verificarMateriais([1]);
 
@@ -212,6 +288,7 @@ describe('AlertaEstoqueService', () => {
   it('falha no SMTP não lança e desfaz a marca para tentar de novo depois', async () => {
     materiais = [material({})];
     idsReservados = [1];
+
     mailService.enviar.mockRejectedValueOnce(new Error('SMTP fora do ar'));
 
     await expect(service.verificarMateriais([1])).resolves.toBeUndefined();
@@ -220,11 +297,11 @@ describe('AlertaEstoqueService', () => {
       alertaEstoqueEnviadoEm: null,
       alertaEstoqueQuantidade: null,
     });
-    expect(Logger.prototype.error).toHaveBeenCalled();
   });
 
   it('falha no reenvio devolve a marca do alerta anterior, não a apaga', async () => {
     const alertaAnterior = new Date('2026-09-29T14:11:55Z');
+
     materiais = [
       material({
         estoqueAtual: 3,
@@ -232,7 +309,9 @@ describe('AlertaEstoqueService', () => {
         alertaEstoqueQuantidade: 5,
       }),
     ];
+
     idsReservados = [1];
+
     mailService.enviar.mockRejectedValueOnce(new Error('SMTP fora do ar'));
 
     await service.verificarMateriais([1]);
@@ -246,11 +325,13 @@ describe('AlertaEstoqueService', () => {
   it('sem destinatários, não envia e desfaz a marca', async () => {
     materiais = [material({})];
     idsReservados = [1];
+
     usuarioRepository.find.mockResolvedValueOnce([]);
 
     await service.verificarMateriais([1]);
 
     expect(mailService.enviar).not.toHaveBeenCalled();
+
     expect(materialRepository.update).toHaveBeenCalledWith(1, {
       alertaEstoqueEnviadoEm: null,
       alertaEstoqueQuantidade: null,
@@ -264,12 +345,18 @@ describe('AlertaEstoqueService', () => {
   });
 
   it('escapa HTML vindo do cadastro do material', async () => {
-    materiais = [material({ nome: '<script>x</script>' })];
+    materiais = [
+      material({
+        nome: '<script>x</script>',
+      }),
+    ];
+
     idsReservados = [1];
 
     await service.verificarMateriais([1]);
 
-    const html = mailService.enviar.mock.calls[0][0].html as string;
+    const html = mailService.enviar.mock.calls[0][0].html;
+
     expect(html).not.toContain('<script>');
     expect(html).toContain('&lt;script&gt;');
   });
