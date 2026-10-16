@@ -14,6 +14,7 @@ import { JwtAuthGuard } from "../auth/jwt-auth.guard";
 import { RolesGuard } from "../auth/roles.guard";
 import { Roles } from "../auth/roles.decorator";
 import { PerfilUsuario } from "../usuarios/perfil.enum";
+import { MaterialRelatorioDto } from "./dto/material-relatorio.dto";
 
 @ApiTags('Materiais')
 @ApiBearerAuth()
@@ -62,6 +63,18 @@ export class MaterialController {
     status: 404,
     description: 'Material não encontrado.',
   })
+
+    @ApiOperation({ summary: 'Relatório de materiais abaixo do estoque mínimo' })
+  @ApiResponse({
+    status: 200,
+    description: 'Lista de materiais ativos com estoque atual menor ou igual ao mínimo.',
+    type: [MaterialRelatorioDto],
+  })
+  @Get('relatorio-minimo')
+  getRelatorioMinimo() {
+    return this.materialService.getRelatorioMinimo();
+  }
+
   @Get(':id')
   findOne(@Param('id') id: number) {
     return this.materialService.findOne(id);
