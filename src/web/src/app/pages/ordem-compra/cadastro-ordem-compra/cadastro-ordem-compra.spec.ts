@@ -2,25 +2,35 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { provideNgxMask } from 'ngx-mask';
 import { of } from 'rxjs';
+import { vi } from 'vitest';
 
 import {
   CadastroOrdemCompra,
-  Material,
   OrdemCompraPayload,
 } from './cadastro-ordem-compra';
+
 import {
   Fornecedor,
   FornecedorService,
 } from '../../../services/fornecedor.service';
 
+import {
+  Material,
+  MaterialService,
+} from '../../../services/material.service';
+
 describe('CadastroOrdemCompra', () => {
   let component: CadastroOrdemCompra;
   let fixture: ComponentFixture<CadastroOrdemCompra>;
 
-  // Mock utilizado apenas nos testes para não acessar a API real.
+  // Mocks utilizados apenas nos testes para não acessar a API real.
   const fornecedorServiceMock = {
     listAll: vi.fn(() => of([] as Fornecedor[])),
     save: vi.fn(),
+  };
+
+  const materialServiceMock = {
+    listAll: vi.fn(() => of([] as Material[])),
   };
 
   const snackBarMock = {
@@ -30,7 +40,12 @@ describe('CadastroOrdemCompra', () => {
   beforeEach(async () => {
     fornecedorServiceMock.listAll.mockReset();
     fornecedorServiceMock.listAll.mockReturnValue(
-      of([] as Fornecedor[])
+      of([] as Fornecedor[]),
+    );
+
+    materialServiceMock.listAll.mockReset();
+    materialServiceMock.listAll.mockReturnValue(
+      of([] as Material[]),
     );
 
     snackBarMock.open.mockReset();
@@ -42,6 +57,10 @@ describe('CadastroOrdemCompra', () => {
         {
           provide: FornecedorService,
           useValue: fornecedorServiceMock,
+        },
+        {
+          provide: MaterialService,
+          useValue: materialServiceMock,
         },
         {
           provide: MatSnackBar,
@@ -70,10 +89,17 @@ describe('CadastroOrdemCompra', () => {
 
     // Dados simulados exclusivamente para validar a seleção na ordem de compra.
     const material: Material = {
-      codigo: 1,
+      id: 1,
       nome: 'Material Teste',
-      fabricante: 'Fabricante Teste',
+      codigo: 'MAT001',
+      equipamento: 'Equipamento Teste',
+      estoqueMinimo: 5,
+      estoqueAtual: 20,
+      fabricanteId: 1,
+      ativo: true,
       ultimoValor: 10,
+      unidadeMedida: 'un',
+      localizacao: null,
     };
 
     component.adicionarItem();
@@ -112,17 +138,17 @@ describe('CadastroOrdemCompra', () => {
     ];
 
     fornecedorServiceMock.listAll.mockReturnValue(
-      of(fornecedores)
+      of(fornecedores),
     );
 
     component.buscarFornecedores();
 
     expect(
-      fornecedorServiceMock.listAll
+      fornecedorServiceMock.listAll,
     ).toHaveBeenCalled();
 
     expect(component.fornecedores()).toEqual(
-      fornecedores
+      fornecedores,
     );
   });
 });
