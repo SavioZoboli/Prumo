@@ -12,6 +12,8 @@ import { UpdateFornecedorDto } from "../usuarios/dto/update-fornecedor.dto";
 import { JwtAuthGuard } from "../auth/jwt-auth.guard";
 
 @ApiTags('Fornecedores')
+// Qualquer usuário logado usa fornecedores (tela de Compras); sem login, nada.
+@UseGuards(JwtAuthGuard)
 @Controller('fornecedores')
 export class FornecedorController {
   constructor(private readonly fornecedorService: FornecedorService) {}
@@ -23,7 +25,6 @@ export class FornecedorController {
   type: Fornecedor,
 })
 @Post()
-//@UseGuards(JwtAuthGuard)
 async create(
   @Body() createFornecedorDto: CreateFornecedorDto,
 ): Promise<Fornecedor> {
@@ -37,7 +38,6 @@ async create(
   type: [Fornecedor],
 })
 @Get()
-//@UseGuards(JwtAuthGuard)
 findAll() {
   return this.fornecedorService.findAll();
 }
@@ -58,7 +58,6 @@ findAll() {
   description: 'Fornecedor não encontrado.',
 })
 @Get(':id')
-//@UseGuards(JwtAuthGuard)
 findOne(@Param('id', ParseIntPipe) id: number) {
   return this.fornecedorService.findOne(id);
 }
@@ -79,7 +78,6 @@ findOne(@Param('id', ParseIntPipe) id: number) {
   description: 'Fornecedor não encontrado.',
 })
 @Patch(':id')
-//@UseGuards(JwtAuthGuard)
 update(
   @Param('id', ParseIntPipe) id: number,
   @Body() updateFornecedorDto: UpdateFornecedorDto,
@@ -109,7 +107,6 @@ update(
   },
 })
 @Delete(':id')
-//@UseGuards(JwtAuthGuard)
 remove(@Param('id', ParseIntPipe) id: number) {
   return this.fornecedorService.desativar(id);
 }
