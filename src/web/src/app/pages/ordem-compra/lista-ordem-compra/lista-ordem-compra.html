@@ -13,90 +13,140 @@
     </div>
   </header>
 
+  <app-sugestao-compra [ordens]="ordens()" (gerarOrdem)="abrirComSugestao($event)"></app-sugestao-compra>
+
   <section class="ordens-compra-page__table-container">
-    <table mat-table [dataSource]="ordens()" class="ordens-compra-page__table">
-      <ng-container matColumnDef="numero">
-        <th mat-header-cell *matHeaderCellDef>Nº</th>
+    <!-- Só a tabela rola na horizontal; o paginador fica fixo embaixo. -->
+    <div class="ordens-compra-page__scroll">
+      <table mat-table [dataSource]="ordensPaginadas()" class="ordens-compra-page__table">
+        <ng-container matColumnDef="numero">
+          <th mat-header-cell *matHeaderCellDef>Nº</th>
 
-        <td mat-cell *matCellDef="let item">
-          {{ item.id }}
-        </td>
-      </ng-container>
+          <td mat-cell *matCellDef="let item">
+            {{ item.id }}
+          </td>
+        </ng-container>
 
-      <ng-container matColumnDef="fornecedor">
-        <th mat-header-cell *matHeaderCellDef>Fornecedor</th>
+        <!-- Código, produto e quantidade: uma linha por item, alinhadas entre as três colunas. -->
+        <ng-container matColumnDef="codigo">
+          <th mat-header-cell *matHeaderCellDef>Código</th>
 
-        <td mat-cell *matCellDef="let item">
-          {{ item.fornecedor.nome }}
-        </td>
-      </ng-container>
+          <td mat-cell *matCellDef="let item">
+            <ul class="ordens-compra-page__itens">
+              @for (i of item.itens; track i.id) {
+                <li>{{ i.codigo }}</li>
+              }
+            </ul>
+          </td>
+        </ng-container>
 
-      <ng-container matColumnDef="dataEntrega">
-        <th mat-header-cell *matHeaderCellDef>Data de entrega</th>
+        <ng-container matColumnDef="produto">
+          <th mat-header-cell *matHeaderCellDef>Produto</th>
 
-        <td mat-cell *matCellDef="let item">
-          {{ item.dt_entrega_prevista | date: 'dd/MM/yyyy' }}
-        </td>
-      </ng-container>
+          <td mat-cell *matCellDef="let item">
+            <ul class="ordens-compra-page__itens">
+              @for (i of item.itens; track i.id) {
+                <li>{{ i.nome }}</li>
+              }
+            </ul>
+          </td>
+        </ng-container>
 
-      <ng-container matColumnDef="itens">
-        <th mat-header-cell *matHeaderCellDef>Itens</th>
+        <ng-container matColumnDef="quantidade">
+          <th mat-header-cell *matHeaderCellDef>Quantidade</th>
 
-        <td mat-cell *matCellDef="let item">
-          {{ item.itens.length }}
-        </td>
-      </ng-container>
+          <td mat-cell *matCellDef="let item">
+            <ul class="ordens-compra-page__itens">
+              @for (i of item.itens; track i.id) {
+                <li>{{ i.quantidade }} {{ i.unidadeMedida }}</li>
+              }
+            </ul>
+          </td>
+        </ng-container>
 
-      <ng-container matColumnDef="total">
-        <th mat-header-cell *matHeaderCellDef>Valor total</th>
+        <ng-container matColumnDef="fornecedor">
+          <th mat-header-cell *matHeaderCellDef>Fornecedor</th>
 
-        <td mat-cell *matCellDef="let item">
-          {{ item.valor_total | currency: 'BRL' }}
-        </td>
-      </ng-container>
+          <td mat-cell *matCellDef="let item">
+            {{ item.fornecedor.nome }}
+          </td>
+        </ng-container>
 
-      <ng-container matColumnDef="status">
-        <th mat-header-cell *matHeaderCellDef>Status</th>
+        <ng-container matColumnDef="dataEntrega">
+          <th mat-header-cell *matHeaderCellDef>Data de entrega</th>
 
-        <td mat-cell *matCellDef="let item">
-          {{ item.status }}
-        </td>
-      </ng-container>
+          <td mat-cell *matCellDef="let item">
+            {{ item.dt_entrega_prevista | date: 'dd/MM/yyyy' }}
+          </td>
+        </ng-container>
 
-      <ng-container matColumnDef="acoes">
-        <th mat-header-cell *matHeaderCellDef>Ações</th>
+        <ng-container matColumnDef="total">
+          <th mat-header-cell *matHeaderCellDef>Valor total</th>
 
-        <td mat-cell class="cell-with-buttons" *matCellDef="let item">
-          @if (item.status == 'ABERTO') {
-            <button
-              mat-icon-button
-              type="button"
-              aria-label="Editar ordem de compra"
-              (click)="abrirEdicao(item)"
-            >
-              <mat-icon>edit</mat-icon>
-            </button>
-            <button
-              mat-icon-button
-              type="button"
-              aria-label="Finalizar ordem de compra"
-              (click)="finalizar(item)"
-            >
-              <mat-icon>check</mat-icon>
-            </button>
-          }
-        </td>
-      </ng-container>
+          <td mat-cell *matCellDef="let item">
+            {{ item.valor_total | currency: 'BRL' }}
+          </td>
+        </ng-container>
 
-      <tr mat-header-row *matHeaderRowDef="colunasExibidas"></tr>
+        <ng-container matColumnDef="status">
+          <th mat-header-cell *matHeaderCellDef>Status</th>
 
-      <tr mat-row *matRowDef="let row; columns: colunasExibidas" class="custom-row"></tr>
-    </table>
+          <td mat-cell *matCellDef="let item">
+            <span class="ordens-compra-page__status" [ngClass]="classeStatus(item.status)">
+              {{ rotuloStatus(item.status) }}
+            </span>
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="acoes">
+          <th mat-header-cell *matHeaderCellDef>Ações</th>
+
+          <td mat-cell class="cell-with-buttons" *matCellDef="let item">
+            @if (item.status == 'ABERTO') {
+              <button
+                mat-icon-button
+                type="button"
+                class="ordens-compra-page__acao"
+                aria-label="Editar ordem de compra"
+                matTooltip="Editar ordem de compra"
+                (click)="abrirEdicao(item)"
+              >
+                <mat-icon>edit</mat-icon>
+              </button>
+              <button
+                mat-icon-button
+                type="button"
+                class="ordens-compra-page__acao"
+                aria-label="Receber ordem de compra"
+                matTooltip="Marcar como recebida (dá entrada no estoque)"
+                (click)="finalizar(item)"
+              >
+                <mat-icon>check</mat-icon>
+              </button>
+            }
+          </td>
+        </ng-container>
+
+        <tr mat-header-row *matHeaderRowDef="colunasExibidas"></tr>
+
+        <tr mat-row *matRowDef="let row; columns: colunasExibidas" class="custom-row"></tr>
+      </table>
+    </div>
+
+    <mat-paginator
+      class="ordens-compra-page__paginator"
+      [length]="ordens().length"
+      [pageIndex]="pageIndex()"
+      [pageSize]="pageSize()"
+      [pageSizeOptions]="[5, 10, 25, 50]"
+      (page)="onPageChange($event)"
+    ></mat-paginator>
   </section>
 
   <app-cadastro-ordem-compra
     [aberto]="painelAberto"
     [ordemEmEdicao]="ordemEmEdicao"
+    [itensSugeridos]="itensSugeridos"
     [salvando]="salvando"
     (fechar)="fecharCadastro()"
     (salvar)="salvarOrdem($event)"

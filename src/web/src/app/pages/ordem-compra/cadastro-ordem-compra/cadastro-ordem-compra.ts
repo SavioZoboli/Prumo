@@ -109,6 +109,8 @@ function materialSelecionadoValidator(control: AbstractControl): ValidationError
 export class CadastroOrdemCompra implements OnChanges {
   @Input() aberto = false;
   @Input() ordemEmEdicao: OrdemCompraLista | null = null;
+  // Pré-preenche uma ordem nova com os itens escolhidos na sugestão de compra.
+  @Input() itensSugeridos: OrdemCompraItem[] | null = null;
   @Input() salvando = false;
 
   @Output() fechar = new EventEmitter<void>();
@@ -162,7 +164,12 @@ export class CadastroOrdemCompra implements OnChanges {
       this.ordemForm.get('fornecedor')?.disable();
     } else {
       this.ordemForm.reset();
-      this.adicionarItem();
+
+      if (this.itensSugeridos?.length) {
+        this.itensSugeridos.forEach((item) => this.adicionarItem(item));
+      } else {
+        this.adicionarItem();
+      }
     }
   }
 
