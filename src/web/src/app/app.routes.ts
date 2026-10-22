@@ -8,7 +8,9 @@ import { ListaMovimentacoes } from './pages/movimentacoes/lista-movimentacoes/li
 import { MainLayout } from './components/main-layout/main-layout';
 import { ListaOrdemCompra } from './pages/ordem-compra/lista-ordem-compra/lista-ordem-compra';
 import { ConsultaEstoque } from './pages/materiais/consulta-estoque/consulta-estoque';
+import { Fabricantes } from './pages/fabricantes/fabricantes';
 import { authGuard } from './guards/auth.guard';
+import { perfilGuard } from './guards/perfil.guard';
 
 export const routes: Routes = [
   { path: '', redirectTo: 'login', pathMatch: 'full' },
@@ -20,7 +22,13 @@ export const routes: Routes = [
     canActivateChild: [authGuard],
     children: [
       { path: 'dashboard', component: Dashboard },
-      { path: 'usuarios', component: Usuarios },
+      {
+        path: 'usuarios',
+        component: Usuarios,
+        canActivate: [perfilGuard],
+        data: { perfis: ['ADMIN'] },
+      },
+      { path: 'fabricantes', component: Fabricantes },
       { path: 'materiais', component: Materiais },
       { path: 'materiais/consulta-estoque', component: ConsultaEstoque },
       { path: 'relatorio-materiais-minimo', component: RelatorioMateriaisMinimo },

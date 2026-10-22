@@ -4,6 +4,8 @@ import { of } from 'rxjs';
 import { Materiais } from './materiais';
 import { MaterialService } from '../../services/material.service';
 import { FabricanteService } from '../../services/fabricante.service';
+import { AuthService } from '../../services/auth.service';
+import { provideRouter } from '@angular/router';
 
 describe('Materiais', () => {
   let component: Materiais;
@@ -70,7 +72,14 @@ describe('Materiais', () => {
     ),
   };
 
+  // Perfil do usuário logado nos testes; os de permissão trocam antes de criar o componente.
+  let perfilLogado = 'ADMIN';
+  const authServiceMock = {
+    temPerfil: (perfis?: string[]) => !perfis || perfis.includes(perfilLogado),
+  };
+
   beforeEach(async () => {
+    perfilLogado = 'ADMIN';
     materialServiceMock.listAll.mockClear();
     materialServiceMock.create.mockClear();
     materialServiceMock.update.mockClear();
@@ -91,6 +100,8 @@ describe('Materiais', () => {
           provide: FabricanteService,
           useValue: fabricanteServiceMock,
         },
+        { provide: AuthService, useValue: authServiceMock },
+        provideRouter([]),
       ],
     }).compileComponents();
 
@@ -287,5 +298,45 @@ describe('Materiais', () => {
     expect(component.classeStatusEstoque(normal)).toBe('success');
     expect(component.classeStatusEstoque(noMinimo)).toBe('danger');
     expect(component.classeStatusEstoque(abaixoMinimo)).toBe('danger');
+  });
+  describe('perfil USUARIO (somente consulta)', () => {
+    beforeEach(() => {
+      perfilLogado = 'USUARIO';
+      fixture = TestBed.createComponent(Materiais);
+      component = fixture.componentInstance;
+      fixture.detectChanges();
+    });
+
+    it('não deve permitir editar nem cadastrar fabricante', () => {
+      expect(component.podeEditar).toBe(false);
+      expect(component.podeCadastrarFabricante).toBe(false);
+    });
+
+    it('deve abrir o material em modo leitura', () => {
+      component.abrirEdicao(materialTeste);
+
+      expect(component.painelAberto()).toBe(true);
+      expect(component.materialForm.disabled).toBe(true);
+    });
+
+    it('não deve chamar a API ao tentar salvar', () => {
+      component.abrirEdicao(materialTeste);
+      component.salvarMaterial();
+
+      expect(materialServiceMock.update).not.toHaveBeenCalled();
+      expect(materialServiceMock.create).not.toHaveBeenCalled();
+    });
+  });
+
+  it('LIDER pode editar material, mas não cadastrar fabricante', () => {
+    perfilLogado = 'LIDER';
+    fixture = TestBed.createComponent(Materiais);
+    component = fixture.componentInstance;
+
+    expect(component.podeEditar).toBe(true);
+    expect(component.podeCadastrarFabricante).toBe(false);
+
+    component.abrirEdicao(materialTeste);
+    expect(component.materialForm.enabled).toBe(true);
   });
 });
