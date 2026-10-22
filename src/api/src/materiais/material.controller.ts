@@ -18,8 +18,8 @@ import { MaterialRelatorioDto } from "./dto/material-relatorio.dto";
 
 @ApiTags('Materiais')
 @ApiBearerAuth()
+// Leitura liberada para todo usuário logado; criar, editar e inativar só ADMIN e LIDER.
 @UseGuards(JwtAuthGuard, RolesGuard)
-@Roles(PerfilUsuario.ADMIN, PerfilUsuario.LIDER)
 @Controller('materiais')
 export class MaterialController {
   constructor(private readonly materialService: MaterialService) {}
@@ -30,6 +30,7 @@ export class MaterialController {
     description: 'Material criado com sucesso.',
     type: Material,
   })
+  @Roles(PerfilUsuario.ADMIN, PerfilUsuario.LIDER)
   @Post()
   async create(
     @Body() createMaterialDto: CreateMaterialDto,
@@ -95,6 +96,7 @@ export class MaterialController {
     status: 404,
     description: 'Material não encontrado.',
   })
+  @Roles(PerfilUsuario.ADMIN, PerfilUsuario.LIDER)
   @Patch(':id')
   update(
     @Param('id') id: number,
@@ -124,6 +126,7 @@ export class MaterialController {
       },
     },
   })
+  @Roles(PerfilUsuario.ADMIN, PerfilUsuario.LIDER)
   @Delete(':id')
   remove(@Param('id') id: number) {
     return this.materialService.desativar(id);

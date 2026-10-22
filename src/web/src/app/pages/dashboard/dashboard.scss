@@ -1,4 +1,16 @@
+@use '@angular/material' as mat;
 @use '../../../assets/scss/shared-patterns' as *;
+
+// Opção selecionada do filtro com a mesma cor do cabeçalho das tabelas, em vez
+// do laranja claro padrão, que lembrava alerta.
+mat-button-toggle-group {
+  @include mat.button-toggle-overrides(
+    (
+      selected-state-background-color: var(--mat-sys-primary),
+      selected-state-text-color: var(--mat-sys-on-primary),
+    )
+  );
+}
 
 :host {
   display: block;
@@ -196,7 +208,6 @@
 }
 
 .estornado {
-  text-decoration: line-through;
   color: var(--mat-sys-on-surface-variant);
 }
 

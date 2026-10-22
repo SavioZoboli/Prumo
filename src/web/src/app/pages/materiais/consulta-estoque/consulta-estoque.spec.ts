@@ -139,6 +139,15 @@ describe('ConsultaEstoque', () => {
     expect(component.pageIndex()).toBe(0);
   });
 
+  it('deve filtrar juntos os materiais no mínimo e abaixo dele', () => {
+    component.onFiltroStatusChange('REPOSICAO');
+
+    const resultado = component.materiaisFiltrados();
+
+    expect(resultado.length).toBe(component.totalNoLimite() + component.totalAbaixoDoMinimo());
+    expect(resultado.every((m) => component.statusDe(m) !== 'NORMAL')).toBe(true);
+  });
+
   it('deve limpar os filtros aplicados', () => {
     component.busca.setValue('pastilha');
     component.onFiltroStatusChange('ABAIXO');

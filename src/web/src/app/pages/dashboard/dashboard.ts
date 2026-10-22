@@ -23,7 +23,8 @@ import {
 
 type FiltroStatus = StatusEstoque | 'TODOS';
 
-const SEMANAS = 6;
+const SEMANAS = 4;
+const ULTIMAS_MOVIMENTACOES = 4;
 const LIMITE_PAGINA = 6;
 
 @Component({
@@ -88,7 +89,14 @@ export class Dashboard {
   maiorSemana = computed(() =>
     Math.max(1, ...this.semanas().flatMap((s) => [s.entradas, s.saidas])),
   );
-  mesRotulo = computed(() => this.mesReferencia());
+  // "Out/2026": o app não registra o locale pt-BR, então o pipe date sairia em inglês.
+  mesRotulo = computed(() => {
+    const data = this.mesReferencia();
+    const mes = new Intl.DateTimeFormat('pt-BR', { month: 'short' })
+      .format(data)
+      .replace('.', '');
+    return `${mes.charAt(0).toUpperCase()}${mes.slice(1)}/${data.getFullYear()}`;
+  });
   ehMesAtual = computed(
     () => this.formatarMes(this.mesReferencia()) === this.formatarMes(new Date()),
   );
@@ -132,7 +140,7 @@ export class Dashboard {
   }
 
   carregarMovimentacoes(): void {
-    this.executar('movimentacoes', this.dashboardService.ultimasMovimentacoes(6), (r) =>
+    this.executar('movimentacoes', this.dashboardService.ultimasMovimentacoes(ULTIMAS_MOVIMENTACOES), (r) =>
       this.movimentacoes.set(r),
     );
   }

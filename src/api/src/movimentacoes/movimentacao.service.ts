@@ -171,6 +171,9 @@ export class MovimentacaoService {
   }
 
   async estornar(id: number, motivoEstorno: string): Promise<Movimentacao> {
+  // Preenchido dentro da transação; usado depois dela para disparar o alerta.
+  let materiaisAfetados: number[] = [];
+
   await this.movimentacaoRepository.manager.transaction(async (manager) => {
     // Lock sem relations: FOR UPDATE não funciona com LEFT JOIN no Postgres
     const movimentacao = await manager.findOne(Movimentacao, {
@@ -189,6 +192,7 @@ export class MovimentacaoService {
     const itens = await manager.find(ItemMovimento, {
       where: { movimento_id: id },
     });
+    materiaisAfetados = itens.map((i) => i.material_id);
 
     const materiais = await manager.find(Material, {
       where: { id: In(itens.map((i) => i.material_id)) },
@@ -227,9 +231,7 @@ export class MovimentacaoService {
     });
   });
 
-    void this.alertaEstoqueService.verificarMateriais(
-      movimentacao.itens.map((item) => item.material_id),
-    );
+    void this.alertaEstoqueService.verificarMateriais(materiaisAfetados);
 
     return (await this.findOne(id))!;
   }

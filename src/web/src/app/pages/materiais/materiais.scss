@@ -36,6 +36,11 @@
     overflow-x: auto;
   }
 
+  // A linha inteira abre a edição, além do lápis.
+  &__row {
+    cursor: pointer;
+  }
+
   &__table {
     @extend %custom-table;
 

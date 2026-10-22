@@ -247,8 +247,10 @@
   margin-bottom: 1.25rem;
 
   .btn-limpar {
+    flex-shrink: 0;
     height: 56px;
     padding: 0 var(--app-space-lg);
+    border-radius: var(--app-radius-md);
     white-space: nowrap;
     color: var(--mat-sys-on-surface-variant);
     border-color: var(--mat-sys-outline);

@@ -41,7 +41,8 @@ async create(
   type: [Usuario],
 })
 @Get()
-//@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, RolesGuard)
+@Roles(PerfilUsuario.ADMIN)
 findAll() {
   return this.usuarioService.findAll();
 }
@@ -83,7 +84,7 @@ findOne(@Param('id', ParseIntPipe) id: number) {
   description: 'Usuário não encontrado.',
 })
 @Patch(':id')
-//@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard)
 update(
   @Param('id', ParseIntPipe) id: number,
   @Body() updateUsuarioDto: UpdateUsuarioDto,
