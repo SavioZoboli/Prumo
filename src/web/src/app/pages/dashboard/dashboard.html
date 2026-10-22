@@ -166,12 +166,12 @@
     <!-- Mais consumidos -->
     <section class="bento__tile bento__tile--consumidos">
       <header class="bento__tile-header">
-        <h3>Mais consumidos</h3>
+        <h3>{{ gestor ? 'Mais consumidos' : 'Meus mais consumidos' }}</h3>
         <div class="bento__nav">
           <button mat-icon-button aria-label="Mês anterior" (click)="navegarMes(-1)">
             <mat-icon>chevron_left</mat-icon>
           </button>
-          <span class="bento__nav-label">{{ mesReferencia() | date: 'MMM/yyyy' }}</span>
+          <span class="bento__nav-label">{{ mesRotulo() }}</span>
           <button
             mat-icon-button
             aria-label="Próximo mês"
@@ -229,7 +229,7 @@
     <!-- Entradas x saídas por semana -->
     <section class="bento__tile bento__tile--semanas">
       <header class="bento__tile-header">
-        <h3>Entradas x saídas por semana</h3>
+        <h3>{{ gestor ? 'Entradas x saídas por semana' : 'Minhas entradas x saídas por semana' }}</h3>
         <div class="bento__nav">
           <button mat-icon-button aria-label="Semanas anteriores" (click)="navegarSemanas(-1)">
             <mat-icon>chevron_left</mat-icon>
@@ -286,7 +286,7 @@
     <!-- Últimas movimentações -->
     <section class="bento__tile bento__tile--movimentacoes">
       <header class="bento__tile-header">
-        <h3>Últimas movimentações</h3>
+        <h3>{{ gestor ? 'Últimas movimentações' : 'Minhas últimas movimentações' }}</h3>
       </header>
 
       @if (carregando().movimentacoes) {

@@ -84,6 +84,14 @@
   &__filtros {
     @extend %filtros-container;
 
+    // Em telas estreitas os filtros descem de linha em vez de espremer o botão.
+    flex-wrap: wrap;
+
+    app-input {
+      flex: 1 1 260px;
+      width: auto;
+    }
+
     mat-form-field {
       min-width: 220px;
     }

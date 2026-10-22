@@ -13,7 +13,6 @@
       <app-button
         label="EXPORTAR EXCEL"
         icon="download"
-        variant="secondary"
         [fullWidth]="false"
         (click)="exportarExcel()"
       ></app-button>
@@ -65,6 +64,7 @@
         (selectionChange)="onFiltroStatusChange($event.value)"
       >
         <mat-option value="TODOS">Todos</mat-option>
+        <mat-option value="REPOSICAO">No mínimo ou abaixo</mat-option>
         <mat-option value="NORMAL">Normal</mat-option>
         <mat-option value="LIMITE">No limite</mat-option>
         <mat-option value="ABAIXO">Abaixo do mínimo</mat-option>

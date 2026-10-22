@@ -3,14 +3,13 @@ import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { InputComponent } from '../../components/input-component/input-component';
 import { ButtonComponent } from '../../components/button-component/button-component';
-import { ThemeToggler } from "../../components/theme-toggler/theme-toggler";
 import { Router } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
 
 @Component({
   selector: 'app-login-page',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, InputComponent, ButtonComponent, ThemeToggler],
+  imports: [CommonModule, ReactiveFormsModule, InputComponent, ButtonComponent],
   templateUrl: './login.html',
   styleUrl: './login.scss',
 })
