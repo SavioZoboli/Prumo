@@ -75,7 +75,7 @@ export class MovimentacaoService {
 
         if (operacao === 'S' && item.quantidade > material.estoqueAtual) {
           throw new BadRequestException(
-            `Quantidade solicitada de ${item.material_id} é maior que o estoque disponível.`,
+            `Quantidade solicitada de ${item.quantidade} é maior que o estoque disponível (${material.estoqueAtual}).`,
           );
         }
 
