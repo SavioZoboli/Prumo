@@ -41,7 +41,8 @@ async create(
   type: [Usuario],
 })
 @Get()
-//@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, RolesGuard)
+@Roles(PerfilUsuario.ADMIN)
 findAll() {
   return this.usuarioService.findAll();
 }

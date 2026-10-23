@@ -10,7 +10,7 @@
     </div>
 
     <nav class="sidenav-menu">
-      @for (item of navItems; track item.label) {
+      @for (item of itensVisiveis; track item.label) {
 
         @if (item.children) {
           <button
@@ -50,7 +50,6 @@
     </nav>
 
     <div class="sidenav-footer">
-      <app-theme-toggler />
       <a class="logout-link" (click)="sair()">
         <mat-icon>logout</mat-icon>
         <span>Sair</span>

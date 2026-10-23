@@ -3,6 +3,11 @@ import { environment } from '../../environments/environment.development';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 
+export type Perfil = 'ADMIN' | 'LIDER' | 'USUARIO';
+
+// Quem pode alterar materiais (criar, editar, inativar).
+export const PERFIS_GESTAO: Perfil[] = ['ADMIN', 'LIDER'];
+
 interface LoginResponse {
   access_token: string;
 }
@@ -52,6 +57,12 @@ export class AuthService {
   public getUsuarioId(): number | null {
     const sub = this.decodePayload()?.sub;
     return sub === undefined || sub === null ? null : Number(sub);
+  }
+
+  // Sem lista de perfis = liberado para qualquer usuário logado.
+  public temPerfil(perfis?: readonly Perfil[]): boolean {
+    if (!perfis?.length) return true;
+    return perfis.includes(this.getPerfil() as Perfil);
   }
 
   private decodePayload(): TokenPayload | null {

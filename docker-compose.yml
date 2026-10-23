@@ -17,5 +17,15 @@ services:
       timeout: 5s
       retries: 5
 
+  # SMTP falso para desenvolvimento: captura todo e-mail enviado pela API.
+  # Caixa de entrada em http://localhost:${MAILPIT_UI_PORT:-8025}
+  mailpit:
+    image: axllent/mailpit:latest
+    container_name: prumo-mailpit
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:${MAILPIT_SMTP_PORT:-1025}:1025"
+      - "127.0.0.1:${MAILPIT_UI_PORT:-8025}:8025"
+
 volumes:
   prumo_postgres_data:

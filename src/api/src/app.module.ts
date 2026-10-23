@@ -11,6 +11,8 @@ import { MaterialModule } from './materiais/material.module';
 import { FabricanteModule } from './fabricantes/fabricante.module';
 import { MovimentacaoModule } from './movimentacoes/movimentacao.module';
 import { OrdemCompraModule } from './ordem-compra/ordem-compras.module';
+import { MailModule } from './mail/mail.module';
+import { DashboardModule } from './dashboard/dashboard.module';
 
 @Module({
   imports: [
@@ -26,7 +28,9 @@ import { OrdemCompraModule } from './ordem-compra/ordem-compras.module';
     MaterialModule,
     FabricanteModule,
     MovimentacaoModule,
-    OrdemCompraModule
+    OrdemCompraModule,
+    MailModule,
+    DashboardModule,
   ],
   controllers: [AppController],
   providers: [AppService],

@@ -15,13 +15,20 @@ describe('EstornoDialog', () => {
     await TestBed.configureTestingModule({
       imports: [EstornoDialog],
       providers: [
-        { provide: MAT_DIALOG_DATA, useValue: { movimentacaoId: 1 } },
-        { provide: MatDialogRef, useValue: { close: closeSpy } },
+        {
+          provide: MAT_DIALOG_DATA,
+          useValue: { movimentacaoId: 1 },
+        },
+        {
+          provide: MatDialogRef,
+          useValue: { close: closeSpy },
+        },
       ],
     }).compileComponents();
 
     fixture = TestBed.createComponent(EstornoDialog);
     component = fixture.componentInstance;
+
     await fixture.whenStable();
   });
 
@@ -36,12 +43,25 @@ describe('EstornoDialog', () => {
     expect(component.motivo.touched).toBe(true);
   });
 
-  it('deve fechar o dialog com o motivo informado', () => {
-    component.motivo.setValue('Lançamento feito por engano');
+  it('não deve fechar o dialog se o motivo tiver apenas espaços', () => {
+    component.motivo.setValue('   ');
 
     component.confirmar();
 
-    expect(closeSpy).toHaveBeenCalledWith('Lançamento feito por engano');
+    expect(closeSpy).not.toHaveBeenCalled();
+    expect(component.motivo.touched).toBe(true);
+  });
+
+  it('deve fechar o dialog com o motivo informado', () => {
+    component.motivo.setValue(
+      'Lançamento feito por engano',
+    );
+
+    component.confirmar();
+
+    expect(closeSpy).toHaveBeenCalledWith(
+      'Lançamento feito por engano',
+    );
   });
 
   it('deve fechar o dialog com null ao cancelar', () => {

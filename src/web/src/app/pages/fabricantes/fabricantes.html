@@ -1,0 +1,144 @@
+<div class="fabricantes-page">
+
+  <header class="fabricantes-page__header with-actions">
+    <div class="title-area">
+      <span class="breadcrumb">Administração</span>
+
+      <h2>Fabricantes</h2>
+
+      <p>
+        {{
+          podeEditar
+            ? 'Cadastre, edite e inative os fabricantes dos materiais.'
+            : 'Consulte os fabricantes cadastrados.'
+        }}
+      </p>
+    </div>
+
+    @if (podeEditar) {
+      <div class="action-area">
+        <app-button
+          label="+ NOVO FABRICANTE"
+          type="button"
+          [fullWidth]="false"
+          (click)="abrirCriacao()"
+        ></app-button>
+      </div>
+    }
+  </header>
+
+  @if (criando()) {
+    <section class="fabricantes-page__novo">
+      <app-input
+        label="Nome do novo fabricante"
+        placeholder="Ex: Mitsubishi"
+        [ngModel]="novoNome()"
+        (ngModelChange)="novoNome.set($event)"
+        [ngModelOptions]="{ standalone: true }"
+      ></app-input>
+
+      <div class="fabricantes-page__acoes-edicao">
+        <app-button
+          label="CANCELAR"
+          type="button"
+          variant="secondary"
+          [fullWidth]="false"
+          (click)="cancelarCriacao()"
+        ></app-button>
+
+        <app-button
+          label="SALVAR"
+          type="button"
+          [loading]="salvando()"
+          [fullWidth]="false"
+          (click)="salvarCriacao()"
+        ></app-button>
+      </div>
+    </section>
+  }
+
+  <section class="fabricantes-page__table-container">
+
+    @if (carregando()) {
+      <p class="fabricantes-page__aviso">Carregando...</p>
+    } @else if (erro()) {
+      <div class="fabricantes-page__aviso">
+        <p>Não foi possível carregar os fabricantes.</p>
+        <button mat-button type="button" (click)="listar()">Tentar novamente</button>
+      </div>
+    } @else if (fabricantes().length === 0) {
+      <p class="fabricantes-page__aviso">Nenhum fabricante cadastrado.</p>
+    } @else {
+      <table mat-table [dataSource]="fabricantes()" class="fabricantes-page__table">
+
+        <ng-container matColumnDef="nome">
+          <th mat-header-cell *matHeaderCellDef>Nome</th>
+
+          <td mat-cell *matCellDef="let item">
+            @if (editandoId() === item.id) {
+              <app-input
+                label="Nome"
+                [ngModel]="nomeEditado()"
+                (ngModelChange)="nomeEditado.set($event)"
+                [ngModelOptions]="{ standalone: true }"
+              ></app-input>
+            } @else {
+              {{ item.nome }}
+            }
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="acoes">
+          <th mat-header-cell *matHeaderCellDef>Ações</th>
+
+          <td mat-cell *matCellDef="let item">
+            @if (editandoId() === item.id) {
+              <div class="fabricantes-page__acoes-edicao">
+                <app-button
+                  label="CANCELAR"
+                  type="button"
+                  variant="secondary"
+                  [fullWidth]="false"
+                  (click)="cancelarEdicao()"
+                ></app-button>
+
+                <app-button
+                  label="SALVAR"
+                  type="button"
+                  [loading]="salvando()"
+                  [fullWidth]="false"
+                  (click)="salvarEdicao()"
+                ></app-button>
+              </div>
+            } @else {
+              <button
+                mat-icon-button
+                type="button"
+                [attr.aria-label]="'Editar fabricante ' + item.nome"
+                (click)="iniciarEdicao(item)"
+              >
+                <mat-icon>edit</mat-icon>
+              </button>
+
+              <button
+                mat-icon-button
+                type="button"
+                class="fabricantes-page__inativar"
+                [attr.aria-label]="'Inativar fabricante ' + item.nome"
+                (click)="inativar(item)"
+              >
+                <mat-icon>block</mat-icon>
+              </button>
+            }
+          </td>
+        </ng-container>
+
+        <tr mat-header-row *matHeaderRowDef="colunasExibidas"></tr>
+        <tr mat-row *matRowDef="let row; columns: colunasExibidas" class="custom-row"></tr>
+
+      </table>
+    }
+
+  </section>
+
+</div>
