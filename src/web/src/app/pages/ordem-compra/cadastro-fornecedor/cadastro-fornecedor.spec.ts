@@ -1,4 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { provideNgxMask } from 'ngx-mask';
 
 import { CadastroFornecedor } from './cadastro-fornecedor';
 
@@ -8,7 +9,8 @@ describe('CadastroFornecedor', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [CadastroFornecedor]
+      imports: [CadastroFornecedor],
+      providers: [provideNgxMask()],
     })
     .compileComponents();
 
