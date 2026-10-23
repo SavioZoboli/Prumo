@@ -105,6 +105,12 @@ update(
     );
   }
 
+  if (updateUsuarioDto.senha && solicitante?.id !== id) {
+    throw new ForbiddenException(
+      'Não é permitido alterar a senha de outro usuário.',
+    );
+  }
+
   return this.usuarioService.update(id, updateUsuarioDto, solicitante?.id);
 }
 

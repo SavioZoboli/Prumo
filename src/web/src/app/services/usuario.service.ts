@@ -35,15 +35,17 @@ export class UsuarioService {
     nome:string,
     sobrenome:string,
     email:string,
-    ativo:boolean,
-    perfil:string
+    ativo?:boolean,
+    perfil?:string,
+    senha?:string
   ):Observable<void>{
     return this.http.patch<void>(`${this.url}/${id}`,{
       nome,
       sobrenome,
       email,
-      ativo,
-      perfil
+      ...(ativo !== undefined && { ativo }),
+      ...(perfil !== undefined && { perfil }),
+      ...(senha ? { senha } : {})
     })
   }
 

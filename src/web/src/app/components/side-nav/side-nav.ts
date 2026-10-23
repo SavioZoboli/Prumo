@@ -1,7 +1,7 @@
 import { Component, inject, signal } from '@angular/core';
 import { Router, RouterLink, RouterLinkActive } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
-import { BreakpointObserver, Breakpoints } from '@angular/cdk/layout';
+import { BreakpointObserver } from '@angular/cdk/layout';
 import { map, Observable, shareReplay } from 'rxjs';
 import { MatSidenavModule } from '@angular/material/sidenav';
 import { MatToolbarModule } from '@angular/material/toolbar';
@@ -50,8 +50,11 @@ export class SideNav {
     this.router.navigate(['login']);
   }
 
+  // Abaixo de 900px o menu vira overlay (botão sanduíche). Não usamos
+  // Breakpoints.Handset porque ele depende da orientação do aparelho
+  // (599px em retrato, 959px em paisagem), gerando comportamento irregular.
   protected readonly isHandset$: Observable<boolean> = this.breakpointObserver
-    .observe(Breakpoints.Handset)
+    .observe('(max-width: 899.98px)')
     .pipe(
       map((result) => result.matches),
       shareReplay({ bufferSize: 1, refCount: true }),
