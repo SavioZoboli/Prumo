@@ -1,54 +1,53 @@
 import { Component, inject, signal } from '@angular/core';
-import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
+import { MatTableModule } from '@angular/material/table';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
-import {
-  MatDialog,
-  MatDialogContent,
-  MatDialogRef,
-  MatDialogTitle,
-} from '@angular/material/dialog';
+import { MatDialog } from '@angular/material/dialog';
 
-import { Dialog } from '../dialog/dialog';
-import { InputComponent } from '../input-component/input-component';
-import { ButtonComponent } from '../button-component/button-component';
-import {
-  Fabricante,
-  FabricanteService,
-} from '../../services/fabricante.service';
+import { Dialog } from '../../components/dialog/dialog';
+import { InputComponent } from '../../components/input-component/input-component';
+import { ButtonComponent } from '../../components/button-component/button-component';
+import { Fabricante, FabricanteService } from '../../services/fabricante.service';
+import { AuthService } from '../../services/auth.service';
 
 @Component({
-  selector: 'app-gerenciar-fabricantes',
+  selector: 'app-fabricantes',
   standalone: true,
   imports: [
-    CommonModule,
     FormsModule,
     MatIconModule,
     MatButtonModule,
+    MatTableModule,
     MatSnackBarModule,
-    MatDialogTitle,
-    MatDialogContent,
     InputComponent,
     ButtonComponent,
   ],
-  templateUrl: './gerenciar-fabricantes.html',
-  styleUrl: './gerenciar-fabricantes.scss',
+  templateUrl: './fabricantes.html',
+  styleUrl: './fabricantes.scss',
 })
-export class GerenciarFabricantes {
+export class Fabricantes {
   private dialog = inject(MatDialog);
-  private dialogRef = inject(MatDialogRef<GerenciarFabricantes>);
   private fabricanteService = inject(FabricanteService);
   private snackBar = inject(MatSnackBar);
 
+  // Só o ADMIN cria, edita e inativa; os demais perfis apenas consultam.
+  readonly podeEditar = inject(AuthService).temPerfil(['ADMIN']);
+
+  readonly colunasExibidas = this.podeEditar ? ['nome', 'acoes'] : ['nome'];
 
   fabricantes = signal<Fabricante[]>([]);
   carregando = signal(false);
+  erro = signal(false);
+
+  criando = signal(false);
+  novoNome = signal('');
 
   editandoId = signal<number | null>(null);
   nomeEditado = signal('');
+
   salvando = signal(false);
 
   constructor() {
@@ -57,20 +56,55 @@ export class GerenciarFabricantes {
 
   listar(): void {
     this.carregando.set(true);
+    this.erro.set(false);
 
     this.fabricanteService.listAll().subscribe({
       next: (fabricantes) => {
-        this.fabricantes.set(fabricantes);
+        this.fabricantes.set(
+          [...fabricantes].sort((a, b) => a.nome.localeCompare(b.nome)),
+        );
         this.carregando.set(false);
       },
       error: () => {
         this.carregando.set(false);
-        this.avisar('Erro ao carregar fabricantes.');
+        this.erro.set(true);
+      },
+    });
+  }
+
+  abrirCriacao(): void {
+    this.cancelarEdicao();
+    this.novoNome.set('');
+    this.criando.set(true);
+  }
+
+  cancelarCriacao(): void {
+    this.criando.set(false);
+    this.novoNome.set('');
+  }
+
+  salvarCriacao(): void {
+    const nome = this.novoNome().trim();
+    if (!nome) return;
+
+    this.salvando.set(true);
+
+    this.fabricanteService.create(nome).subscribe({
+      next: () => {
+        this.salvando.set(false);
+        this.cancelarCriacao();
+        this.listar();
+        this.avisar('Fabricante cadastrado com sucesso.');
+      },
+      error: (erro) => {
+        this.salvando.set(false);
+        this.avisar(erro.error?.message ?? 'Erro ao cadastrar fabricante.');
       },
     });
   }
 
   iniciarEdicao(fabricante: Fabricante): void {
+    this.cancelarCriacao();
     this.editandoId.set(fabricante.id);
     this.nomeEditado.set(fabricante.nome);
   }
@@ -78,21 +112,18 @@ export class GerenciarFabricantes {
   cancelarEdicao(): void {
     this.editandoId.set(null);
     this.nomeEditado.set('');
-    this.salvando.set(false);
   }
 
   salvarEdicao(): void {
     const nome = this.nomeEditado().trim();
     const id = this.editandoId();
-
-    if (!nome || id === null) {
-      return;
-    }
+    if (!nome || id === null) return;
 
     this.salvando.set(true);
 
     this.fabricanteService.update(id, nome).subscribe({
       next: () => {
+        this.salvando.set(false);
         this.cancelarEdicao();
         this.listar();
         this.avisar('Fabricante atualizado com sucesso.');
@@ -113,9 +144,7 @@ export class GerenciarFabricantes {
     });
 
     confirmacao.afterClosed().subscribe((confirmou) => {
-      if (!confirmou) {
-        return;
-      }
+      if (!confirmou) return;
 
       this.fabricanteService.desativar(fabricante.id).subscribe({
         next: () => {
@@ -127,10 +156,6 @@ export class GerenciarFabricantes {
         },
       });
     });
-  }
-
-  fechar(): void {
-    this.dialogRef.close();
   }
 
   private avisar(mensagem: string): void {

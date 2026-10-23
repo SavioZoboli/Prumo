@@ -7,20 +7,15 @@
       <p>Gerencie os materiais e seus níveis de estoque.</p>
     </div>
 
-    <div class="action-area">
-      <app-button
-        label="CONSULTA DE ESTOQUE"
-        variant="secondary"
-        [fullWidth]="false"
-        (click)="abrirConsultaEstoque()"
-      ></app-button>
-
-      <app-button
-        label="+ NOVO MATERIAL"
-        [fullWidth]="false"
-        (click)="abrirCadastro()"
-      ></app-button>
-    </div>
+    @if (podeEditar) {
+      <div class="action-area">
+        <app-button
+          label="+ NOVO MATERIAL"
+          [fullWidth]="false"
+          (click)="abrirCadastro()"
+        ></app-button>
+      </div>
+    }
   </header>
 
   <section class="materiais-page__table-container">
@@ -138,10 +133,10 @@
           <button
             mat-icon-button
             type="button"
-            aria-label="Editar material"
-            (click)="abrirEdicao(item)"
+            [attr.aria-label]="podeEditar ? 'Editar material' : 'Ver detalhes do material'"
+            (click)="$event.stopPropagation(); abrirEdicao(item)"
           >
-            <mat-icon>edit</mat-icon>
+            <mat-icon>{{ podeEditar ? 'edit' : 'visibility' }}</mat-icon>
           </button>
         </td>
       </ng-container>
@@ -155,7 +150,10 @@
       <tr
         mat-row
         *matRowDef="let row; columns: colunasExibidas"
-        class="custom-row"
+        class="custom-row materiais-page__row"
+        tabindex="0"
+        (click)="abrirEdicao(row)"
+        (keydown.enter)="abrirEdicao(row)"
       ></tr>
 
     </table>
@@ -173,17 +171,21 @@
       <div>
         <h2>
           {{
-            materialEmEdicao
-              ? 'Editar Material'
-              : 'Cadastro de Material'
+            !podeEditar
+              ? 'Detalhes do Material'
+              : materialEmEdicao
+                ? 'Editar Material'
+                : 'Cadastro de Material'
           }}
         </h2>
 
         <p>
           {{
-            materialEmEdicao
-              ? 'Altere os dados do material.'
-              : 'Preencha os dados do novo material.'
+            !podeEditar
+              ? 'Dados do material, somente para consulta.'
+              : materialEmEdicao
+                ? 'Altere os dados do material.'
+                : 'Preencha os dados do novo material.'
           }}
         </p>
       </div>
@@ -281,23 +283,22 @@
         </div>
       } @else {
         <div class="materiais-page__fabricante-acoes">
-          <button
-            mat-button
-            type="button"
-            (click)="abrirNovoFabricante()"
-          >
-            <mat-icon>add</mat-icon>
-            <span>Cadastrar novo</span>
-          </button>
+          @if (podeEditar && podeCadastrarFabricante) {
+            <button
+              mat-button
+              type="button"
+              (click)="abrirNovoFabricante()"
+            >
+              <mat-icon>add</mat-icon>
+              <span>Cadastrar novo</span>
+            </button>
+          }
 
-          <button
-            mat-button
-            type="button"
-            (click)="abrirGerenciarFabricantes()"
-          >
-            <mat-icon>settings</mat-icon>
-            <span>Gerenciar fabricantes</span>
-          </button>
+          <!-- Atalho para Administração › Fabricantes. -->
+          <a mat-button routerLink="/fabricantes">
+            <mat-icon>{{ podeCadastrarFabricante ? 'settings' : 'list' }}</mat-icon>
+            <span>{{ podeCadastrarFabricante ? 'Gerenciar fabricantes' : 'Ver fabricantes' }}</span>
+          </a>
         </div>
       }
 
@@ -348,19 +349,21 @@
       <div class="materiais-page__form-actions">
 
         <app-button
-          label="CANCELAR"
+          [label]="podeEditar ? 'CANCELAR' : 'FECHAR'"
           type="button"
           variant="secondary"
           [fullWidth]="false"
           (click)="fecharCadastro()"
         ></app-button>
 
-        <app-button
-          [label]="materialEmEdicao ? 'ATUALIZAR' : 'SALVAR'"
-          type="submit"
-          [loading]="salvando()"
-          [fullWidth]="false"
-        ></app-button>
+        @if (podeEditar) {
+          <app-button
+            [label]="materialEmEdicao ? 'ATUALIZAR' : 'SALVAR'"
+            type="submit"
+            [loading]="salvando()"
+            [fullWidth]="false"
+          ></app-button>
+        }
 
       </div>
 

@@ -3,13 +3,14 @@ import {
   BadRequestException,
   NotFoundException,
 } from '@nestjs/common';
-import { Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Movimentacao } from './movimentacao.entity';
 import { ItemMovimento } from './item-movimento.entity';
 import { CreateMovimentacaoDto } from './dto/create-movimentacao.dto';
 import { FiltrarMovimentacaoDto } from './dto/filtrar-movimentacao.dto';
 import { Material } from '../materiais/material.entity';
+import { AlertaEstoqueService } from '../alertas/alerta-estoque.service';
 
 @Injectable()
 export class MovimentacaoService {
@@ -19,6 +20,8 @@ export class MovimentacaoService {
 
     @InjectRepository(Material)
     private materialRepository: Repository<Material>,
+
+    private readonly alertaEstoqueService: AlertaEstoqueService,
   ) {}
 
   async create(
@@ -42,7 +45,7 @@ export class MovimentacaoService {
       }
     }
 
-    return this.movimentacaoRepository.manager.transaction(async (manager) => {
+    const movimentacaoSalva = await this.movimentacaoRepository.manager.transaction(async (manager) => {
       const materialRepository = manager.getRepository(Material);
       const materiaisPorId = new Map<number, Material>();
 
@@ -108,16 +111,14 @@ export class MovimentacaoService {
 
       movimentacaoSalva.itens = itensSalvos;
 
-      for (const material of materiaisEnvolvidos) {
-        if (material.estoqueAtual <= material.estoqueMinimo) {
-          // TODO: chamar o servico de envio de e-mail aos usuarios ADMIN/LIDER.
-          // Ainda nao existe um servico de e-mail no projeto (sem nodemailer/
-          // mailer module) — precisa ser criado antes de implementar isto.
-        }
-      }
-
       return movimentacaoSalva;
     });
+
+    void this.alertaEstoqueService.verificarMateriais(
+      itens.map((item) => item.material_id),
+    );
+
+    return movimentacaoSalva;
   }
 
   async findAll(filtros: FiltrarMovimentacaoDto = {}): Promise<Movimentacao[]> {
@@ -170,9 +171,14 @@ export class MovimentacaoService {
   }
 
   async estornar(id: number, motivoEstorno: string): Promise<Movimentacao> {
-    const movimentacao = await this.movimentacaoRepository.findOne({
+  // Preenchido dentro da transação; usado depois dela para disparar o alerta.
+  let materiaisAfetados: number[] = [];
+
+  await this.movimentacaoRepository.manager.transaction(async (manager) => {
+    // Lock sem relations: FOR UPDATE não funciona com LEFT JOIN no Postgres
+    const movimentacao = await manager.findOne(Movimentacao, {
       where: { id },
-      relations: { itens: true },
+      lock: { mode: 'pessimistic_write' },
     });
 
     if (!movimentacao) {
@@ -183,27 +189,49 @@ export class MovimentacaoService {
       throw new BadRequestException('Esta movimentação já foi estornada.');
     }
 
-    await this.movimentacaoRepository.manager.transaction(async (manager) => {
-      const materialRepository = manager.getRepository(Material);
+    const itens = await manager.find(ItemMovimento, {
+      where: { movimento_id: id },
+    });
+    materiaisAfetados = itens.map((i) => i.material_id);
 
+    const materiais = await manager.find(Material, {
+      where: { id: In(itens.map((i) => i.material_id)) },
+      order: { id: 'ASC' },
+      lock: { mode: 'pessimistic_write' },
+    });
+    const materiaisPorId = new Map(materiais.map((m) => [m.id, m]));
 
-      for (const item of movimentacao.itens) {
-        const material = await materialRepository.findOne({
-          where: { id: item.material_id },
-        });
+    for (const item of itens) {
+      const material = materiaisPorId.get(item.material_id);
 
-        if (material) {
-          material.estoqueAtual +=
-            movimentacao.operacao === 'E' ? -item.quantidade : item.quantidade;
-          await materialRepository.save(material);
-        }
+      if (!material) {
+        throw new NotFoundException(
+          `Material ${item.material_id} não encontrado.`,
+        );
       }
 
-      await manager.update(Movimentacao, id, {
-        is_estornado: true,
-        motivo_estorno: motivoEstorno,
-      });
+      // Estorno de Entrada tira do estoque; estorno de Saída devolve
+      const delta =
+        movimentacao.operacao === 'E' ? -item.quantidade : item.quantidade;
+
+      if (material.estoqueAtual + delta < 0) {
+        throw new BadRequestException(
+          `Estorno inviável: o material ${item.material_id} não tem estoque suficiente para reverter a entrada.`,
+        );
+      }
+
+      material.estoqueAtual += delta;
+    }
+
+    await manager.save(materiais);
+
+    await manager.update(Movimentacao, id, {
+      is_estornado: true,
+      motivo_estorno: motivoEstorno,
     });
+  });
+
+    void this.alertaEstoqueService.verificarMateriais(materiaisAfetados);
 
     return (await this.findOne(id))!;
   }

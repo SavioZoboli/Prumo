@@ -84,8 +84,11 @@
     cursor: pointer;
   }
 
+  // A seta avança sobre o padding direito para "Estoque de materiais"
+  // caber numa linha só nos 260px do menu.
   &__seta {
     margin-left: auto;
+    margin-right: calc(var(--app-space-sm) * -1);
   }
 
   &--filho {

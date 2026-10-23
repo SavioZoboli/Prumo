@@ -3,18 +3,19 @@ import { Router, RouterLink, RouterLinkActive } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
 import { BreakpointObserver } from '@angular/cdk/layout';
 import { map, Observable, shareReplay } from 'rxjs';
-import { ThemeToggler } from '../theme-toggler/theme-toggler';
 import { MatSidenavModule } from '@angular/material/sidenav';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { AsyncPipe } from '@angular/common';
 import { MatButtonModule } from '@angular/material/button';
-import { AuthService } from '../../services/auth.service';
+import { AuthService, Perfil } from '../../services/auth.service';
 
 interface NavItem {
   label: string;
   icon: string;
   route?: string;
   children?: NavItem[];
+  // Sem perfis = visível para todos. Deve bater com o `data.perfis` da rota.
+  perfis?: Perfil[];
 }
 
 @Component({
@@ -26,7 +27,6 @@ interface NavItem {
     MatToolbarModule,
     MatIconModule,
     MatButtonModule,
-    ThemeToggler,
     RouterLink,
     RouterLinkActive,
   ],
@@ -63,28 +63,45 @@ export class SideNav {
   protected readonly navItems: NavItem[] = [
     { label: 'Dashboard', icon: 'dashboard', route: '/dashboard' },
     {
-      label: 'Estoque',
+      label: 'Estoque de materiais',
       icon: 'inventory_2',
       children: [
+        { label: 'Consulta', icon: 'search', route: '/materiais/consulta-estoque' },
         { label: 'Materiais', icon: 'category', route: '/materiais' },
-        { label: 'Consulta de estoque', icon: 'search', route: '/materiais/consulta-estoque' },
-        { label: 'Abaixo do mínimo', icon: 'warning', route: '/relatorio-materiais-minimo' },
         { label: 'Movimentações', icon: 'swap_horiz', route: '/movimentacoes' },
+        { label: 'Compras', icon: 'shopping_cart', route: '/ordens-compra' },
       ],
     },
-    { label: 'Ordens de Compra', icon: 'shopping_cart', route: '/ordens-compra' },
-    { label: 'Usuários', icon: 'group', route: '/usuarios' },
+    {
+      label: 'Administração',
+      icon: 'admin_panel_settings',
+      children: [
+        { label: 'Fabricantes', icon: 'factory', route: '/fabricantes' },
+        { label: 'Usuários', icon: 'group', route: '/usuarios', perfis: ['ADMIN'] },
+      ],
+    },
   ];
 
-  private readonly gruposFechados = signal<ReadonlySet<string>>(new Set());
+  // Menu do usuário logado: tira o que o perfil não acessa e os grupos que ficaram vazios.
+  protected readonly itensVisiveis: NavItem[] = this.navItems
+    .filter((item) => this.authService.temPerfil(item.perfis))
+    .map((item) =>
+      item.children
+        ? { ...item, children: item.children.filter((f) => this.authService.temPerfil(f.perfis)) }
+        : item,
+    )
+    .filter((item) => !item.children || item.children.length > 0);
+
+  // Grupos começam fechados; só abrem quando o usuário clica.
+  private readonly gruposAbertos = signal<ReadonlySet<string>>(new Set());
 
   protected estaAberto(grupo: NavItem): boolean {
-    return !this.gruposFechados().has(grupo.label);
+    return this.gruposAbertos().has(grupo.label);
   }
 
   protected alternarGrupo(grupo: NavItem): void {
-    this.gruposFechados.update((fechados) => {
-      const novo = new Set(fechados);
+    this.gruposAbertos.update((abertos) => {
+      const novo = new Set(abertos);
       novo.has(grupo.label) ? novo.delete(grupo.label) : novo.add(grupo.label);
       return novo;
     });

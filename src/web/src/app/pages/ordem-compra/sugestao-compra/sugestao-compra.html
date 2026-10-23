@@ -1,0 +1,116 @@
+<section class="sugestao">
+  <header class="sugestao__header">
+    <button
+      type="button"
+      class="sugestao__titulo"
+      [attr.aria-expanded]="expandido()"
+      (click)="expandido.set(!expandido())"
+    >
+      <mat-icon>lightbulb</mat-icon>
+
+      <span class="sugestao__titulo-texto">
+        <strong>Sugestão de compra</strong>
+        @if (!carregando() && !erro()) {
+          <small>
+            {{ totalAbaixo() }} abaixo do mínimo · {{ totalAtencao() }} em atenção
+          </small>
+        }
+      </span>
+
+      <mat-icon class="sugestao__seta">{{ expandido() ? 'expand_less' : 'expand_more' }}</mat-icon>
+    </button>
+
+    @if (expandido() && sugestoes().length > 0) {
+      <app-button
+        [label]="'GERAR ORDEM (' + quantidadeSelecionada() + ')'"
+        icon="add_shopping_cart"
+        type="button"
+        [fullWidth]="false"
+        [disabled]="quantidadeSelecionada() === 0"
+        (click)="gerar()"
+      ></app-button>
+    }
+  </header>
+
+  @if (expandido()) {
+    @if (carregando()) {
+      <p class="sugestao__aviso">Carregando materiais...</p>
+    } @else if (erro()) {
+      <div class="sugestao__aviso">
+        <span>Não foi possível carregar as sugestões.</span>
+        <button mat-button type="button" (click)="carregar()">Tentar novamente</button>
+      </div>
+    } @else if (sugestoes().length === 0) {
+      <p class="sugestao__aviso">
+        <mat-icon>check_circle</mat-icon>
+        Nenhum material precisa de reposição agora.
+      </p>
+    } @else {
+      <p class="sugestao__dica">
+        Marque os materiais e gere a ordem. A quantidade sugerida repõe até o dobro do estoque
+        mínimo e pode ser ajustada no formulário. Materiais que já estão numa ordem ainda não
+        recebida não aparecem aqui.
+      </p>
+
+      <div class="sugestao__tabela">
+        <table mat-table [dataSource]="sugestoes()">
+          <ng-container matColumnDef="selecao">
+            <th mat-header-cell *matHeaderCellDef></th>
+            <td mat-cell *matCellDef="let s">
+              <mat-checkbox
+                [checked]="estaSelecionado(s)"
+                (click)="$event.stopPropagation()"
+                (change)="alternar(s)"
+                [attr.aria-label]="'Incluir ' + s.material.nome"
+              ></mat-checkbox>
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="material">
+            <th mat-header-cell *matHeaderCellDef>Material</th>
+            <td mat-cell *matCellDef="let s">
+              <span class="sugestao__codigo">{{ s.material.codigo }}</span>
+              {{ s.material.nome }}
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="estoque">
+            <th mat-header-cell *matHeaderCellDef>Atual / Mínimo</th>
+            <td mat-cell *matCellDef="let s">
+              {{ s.material.estoqueAtual }} / {{ s.material.estoqueMinimo }}
+              {{ s.material.unidadeMedida }}
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="status">
+            <th mat-header-cell *matHeaderCellDef>Situação</th>
+            <td mat-cell *matCellDef="let s">
+              <span
+                class="sugestao__status"
+                [class.danger]="s.status === 'ABAIXO_MINIMO'"
+                [class.warning]="s.status === 'EM_ATENCAO'"
+              >
+                {{ s.status === 'ABAIXO_MINIMO' ? 'Abaixo do mínimo' : 'Em atenção' }}
+              </span>
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="sugerida">
+            <th mat-header-cell *matHeaderCellDef>Qtd. sugerida</th>
+            <td mat-cell *matCellDef="let s">
+              {{ s.quantidadeSugerida }} {{ s.material.unidadeMedida }}
+            </td>
+          </ng-container>
+
+          <tr mat-header-row *matHeaderRowDef="colunas"></tr>
+          <tr
+            mat-row
+            *matRowDef="let row; columns: colunas"
+            class="custom-row sugestao__linha"
+            (click)="alternar(row)"
+          ></tr>
+        </table>
+      </div>
+    }
+  }
+</section>
