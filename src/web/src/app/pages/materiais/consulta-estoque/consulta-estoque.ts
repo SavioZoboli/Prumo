@@ -34,7 +34,8 @@ export interface MaterialEstoque {
 }
 
 export type StatusEstoque = 'NORMAL' | 'LIMITE' | 'ABAIXO';
-type FiltroStatus = 'TODOS' | StatusEstoque;
+// REPOSICAO junta LIMITE e ABAIXO: tudo que está no mínimo ou abaixo dele.
+type FiltroStatus = 'TODOS' | 'REPOSICAO' | StatusEstoque;
 
 @Component({
   selector: 'app-consulta-estoque',
@@ -166,7 +167,10 @@ export class ConsultaEstoque {
         material.codigo.toLowerCase().includes(termo) ||
         material.equipamento.toLowerCase().includes(termo);
 
-      const combinaStatus = status === 'TODOS' || this.statusDe(material) === status;
+      const statusMaterial = this.statusDe(material);
+      const combinaStatus =
+        status === 'TODOS' ||
+        (status === 'REPOSICAO' ? statusMaterial !== 'NORMAL' : statusMaterial === status);
 
       return combinaTermo && combinaStatus;
     });

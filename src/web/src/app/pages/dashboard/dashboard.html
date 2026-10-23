@@ -1,1 +1,354 @@
-<p>dashboard works!</p>
+<div class="dashboard-page">
+  <header class="dashboard-page__header">
+    <div class="title-area">
+      <span class="breadcrumb">Visão geral</span>
+      <h2>Dashboard</h2>
+    </div>
+  </header>
+
+  <div class="bento">
+    <!-- KPIs (somente ADMIN/LIDER) -->
+    @if (gestor) {
+      <button
+        type="button"
+        class="bento__tile bento__kpi bento__kpi--danger"
+        (click)="filtrarPeloCard('ABAIXO_MINIMO')"
+      >
+        <mat-icon>error</mat-icon>
+        <span class="bento__kpi-label">Abaixo do mínimo</span>
+        <strong class="bento__kpi-value">{{ erro().resumo ? '–' : (resumo()?.itensAbaixoMinimo ?? '…') }}</strong>
+      </button>
+
+      <button
+        type="button"
+        class="bento__tile bento__kpi bento__kpi--warning"
+        (click)="filtrarPeloCard('EM_ATENCAO')"
+      >
+        <mat-icon>warning</mat-icon>
+        <span class="bento__kpi-label">Em atenção</span>
+        <strong class="bento__kpi-value">{{ erro().resumo ? '–' : (resumo()?.itensEmAtencao ?? '…') }}</strong>
+      </button>
+
+      <div class="bento__tile bento__kpi bento__kpi--info">
+        <mat-icon>local_shipping</mat-icon>
+        <span class="bento__kpi-label">Ordens pendentes</span>
+        <strong class="bento__kpi-value">{{ erro().resumo ? '–' : (resumo()?.ordensCompraPendentes ?? '…') }}</strong>
+      </div>
+
+      <div class="bento__tile bento__kpi bento__kpi--danger">
+        <mat-icon>schedule</mat-icon>
+        <span class="bento__kpi-label">Ordens atrasadas</span>
+        <strong class="bento__kpi-value">{{ erro().resumo ? '–' : (resumo()?.ordensCompraAtrasadas ?? '…') }}</strong>
+      </div>
+    }
+
+    <!-- Itens críticos / em falta -->
+    <section class="bento__tile bento__tile--criticos">
+      <header class="bento__tile-header">
+        <h3>{{ gestor ? 'Itens críticos' : 'Materiais em falta' }}</h3>
+
+        @if (gestor) {
+          <mat-button-toggle-group
+            [value]="filtroStatus()"
+            (change)="filtrarStatus($event.value)"
+            aria-label="Filtrar por status"
+            hideSingleSelectionIndicator
+          >
+            <mat-button-toggle value="TODOS">Todos</mat-button-toggle>
+            <mat-button-toggle value="ABAIXO_MINIMO">Abaixo</mat-button-toggle>
+            <mat-button-toggle value="EM_ATENCAO">Atenção</mat-button-toggle>
+          </mat-button-toggle-group>
+        }
+      </header>
+
+      @if (carregando().tabela) {
+        <div class="bento__state"><mat-spinner diameter="28"></mat-spinner></div>
+      } @else if (erro().tabela) {
+        <div class="bento__state">
+          <mat-icon>error</mat-icon>
+          <span>Não foi possível carregar.</span>
+          <button mat-button (click)="carregarTabela()">Tentar novamente</button>
+        </div>
+      } @else if (gestor) {
+        @if (criticos(); as dados) {
+          @if (dados.itens.length === 0) {
+            <div class="bento__state">
+              <mat-icon>check_circle</mat-icon>
+              <span>Nenhum item crítico.</span>
+            </div>
+          } @else {
+            <div class="bento__table-wrapper">
+              <table mat-table [dataSource]="dados.itens" class="dashboard-page__table">
+                <ng-container matColumnDef="codigo">
+                  <th mat-header-cell *matHeaderCellDef>Código</th>
+                  <td mat-cell *matCellDef="let i">{{ i.codigo }}</td>
+                </ng-container>
+                <ng-container matColumnDef="nome">
+                  <th mat-header-cell *matHeaderCellDef>Material</th>
+                  <td mat-cell *matCellDef="let i">{{ i.nome }}</td>
+                </ng-container>
+                <ng-container matColumnDef="estoque">
+                  <th mat-header-cell *matHeaderCellDef>Atual / Mínimo</th>
+                  <td mat-cell *matCellDef="let i">
+                    {{ i.estoqueAtual | number }} / {{ i.estoqueMinimo | number }}
+                    {{ i.unidadeMedida }}
+                  </td>
+                </ng-container>
+                <ng-container matColumnDef="status">
+                  <th mat-header-cell *matHeaderCellDef>Status</th>
+                  <td mat-cell *matCellDef="let i">
+                    <span
+                      class="dashboard-page__status"
+                      [class.danger]="i.status === 'ABAIXO_MINIMO'"
+                      [class.warning]="i.status === 'EM_ATENCAO'"
+                    >
+                      {{ rotuloStatusEstoque(i.status) }}
+                    </span>
+                  </td>
+                </ng-container>
+                <tr mat-header-row *matHeaderRowDef="colunasCriticos"></tr>
+                <tr mat-row *matRowDef="let row; columns: colunasCriticos" class="custom-row"></tr>
+              </table>
+            </div>
+            <mat-paginator
+              class="dashboard-page__paginator"
+              [length]="dados.total"
+              [pageSize]="limitePagina"
+              [pageIndex]="paginaCriticos() - 1"
+              [hidePageSize]="true"
+              (page)="mudarPagina($event)"
+            ></mat-paginator>
+          }
+        }
+      } @else {
+        @if (emFalta(); as dados) {
+          @if (dados.itens.length === 0) {
+            <div class="bento__state">
+              <mat-icon>check_circle</mat-icon>
+              <span>Nenhum material em falta.</span>
+            </div>
+          } @else {
+            <div class="bento__table-wrapper">
+              <table mat-table [dataSource]="dados.itens" class="dashboard-page__table">
+                <ng-container matColumnDef="codigo">
+                  <th mat-header-cell *matHeaderCellDef>Código</th>
+                  <td mat-cell *matCellDef="let i">{{ i.codigo }}</td>
+                </ng-container>
+                <ng-container matColumnDef="nome">
+                  <th mat-header-cell *matHeaderCellDef>Material</th>
+                  <td mat-cell *matCellDef="let i">{{ i.nome }}</td>
+                </ng-container>
+                <ng-container matColumnDef="status">
+                  <th mat-header-cell *matHeaderCellDef>Status</th>
+                  <td mat-cell *matCellDef="let i">
+                    <span class="dashboard-page__status danger">
+                      {{ rotuloStatusFalta(i.status) }}
+                    </span>
+                  </td>
+                </ng-container>
+                <tr mat-header-row *matHeaderRowDef="colunasFalta"></tr>
+                <tr mat-row *matRowDef="let row; columns: colunasFalta" class="custom-row"></tr>
+              </table>
+            </div>
+            <mat-paginator
+              class="dashboard-page__paginator"
+              [length]="dados.total"
+              [pageSize]="limitePagina"
+              [pageIndex]="paginaFalta() - 1"
+              [hidePageSize]="true"
+              (page)="mudarPagina($event)"
+            ></mat-paginator>
+          }
+        }
+      }
+    </section>
+
+    <!-- Mais consumidos -->
+    <section class="bento__tile bento__tile--consumidos">
+      <header class="bento__tile-header">
+        <h3>{{ gestor ? 'Mais consumidos' : 'Meus mais consumidos' }}</h3>
+        <div class="bento__nav">
+          <button mat-icon-button aria-label="Mês anterior" (click)="navegarMes(-1)">
+            <mat-icon>chevron_left</mat-icon>
+          </button>
+          <span class="bento__nav-label">{{ mesRotulo() }}</span>
+          <button
+            mat-icon-button
+            aria-label="Próximo mês"
+            [disabled]="ehMesAtual()"
+            (click)="navegarMes(1)"
+          >
+            <mat-icon>chevron_right</mat-icon>
+          </button>
+        </div>
+      </header>
+
+      @if (carregando().consumidos) {
+        <div class="bento__state"><mat-spinner diameter="28"></mat-spinner></div>
+      } @else if (erro().consumidos) {
+        <div class="bento__state">
+          <mat-icon>error</mat-icon>
+          <span>Não foi possível carregar.</span>
+          <button mat-button (click)="carregarConsumidos()">Tentar novamente</button>
+        </div>
+      } @else if (consumidos().length === 0) {
+        <div class="bento__state">
+          <mat-icon>inbox</mat-icon>
+          <span>Sem saídas neste mês.</span>
+        </div>
+      } @else {
+        <table mat-table [dataSource]="consumidos()" class="dashboard-page__table">
+          <ng-container matColumnDef="posicao">
+            <th mat-header-cell *matHeaderCellDef>#</th>
+            <td mat-cell *matCellDef="let c; let idx = index">{{ idx + 1 }}</td>
+          </ng-container>
+          <ng-container matColumnDef="material">
+            <th mat-header-cell *matHeaderCellDef>Material</th>
+            <td mat-cell *matCellDef="let c">
+              <div class="bar-cell">
+                <span class="bar-cell__label" [matTooltip]="c.nome">{{ c.nome }}</span>
+                <div class="bar-cell__track">
+                  <div
+                    class="bar-cell__fill"
+                    [style.width.%]="percentual(c.quantidade, maiorConsumo())"
+                  ></div>
+                </div>
+              </div>
+            </td>
+          </ng-container>
+          <ng-container matColumnDef="quantidade">
+            <th mat-header-cell *matHeaderCellDef>Qtd.</th>
+            <td mat-cell *matCellDef="let c">{{ c.quantidade | number }} {{ c.unidadeMedida }}</td>
+          </ng-container>
+          <tr mat-header-row *matHeaderRowDef="colunasConsumidos"></tr>
+          <tr mat-row *matRowDef="let row; columns: colunasConsumidos" class="custom-row"></tr>
+        </table>
+      }
+    </section>
+
+    <!-- Entradas x saídas por semana -->
+    <section class="bento__tile bento__tile--semanas">
+      <header class="bento__tile-header">
+        <h3>{{ gestor ? 'Entradas x saídas por semana' : 'Minhas entradas x saídas por semana' }}</h3>
+        <div class="bento__nav">
+          <button mat-icon-button aria-label="Semanas anteriores" (click)="navegarSemanas(-1)">
+            <mat-icon>chevron_left</mat-icon>
+          </button>
+          <button mat-icon-button aria-label="Próximas semanas" (click)="navegarSemanas(1)">
+            <mat-icon>chevron_right</mat-icon>
+          </button>
+        </div>
+      </header>
+
+      @if (carregando().semanas) {
+        <div class="bento__state"><mat-spinner diameter="28"></mat-spinner></div>
+      } @else if (erro().semanas) {
+        <div class="bento__state">
+          <mat-icon>error</mat-icon>
+          <span>Não foi possível carregar.</span>
+          <button mat-button (click)="carregarSemanas()">Tentar novamente</button>
+        </div>
+      } @else {
+        <table mat-table [dataSource]="semanas()" class="dashboard-page__table">
+          <ng-container matColumnDef="semana">
+            <th mat-header-cell *matHeaderCellDef>Semana</th>
+            <td mat-cell *matCellDef="let s">
+              {{ semanaParaData(s.inicio) | date: 'dd/MM' }} –
+              {{ semanaParaData(s.fim) | date: 'dd/MM' }}
+            </td>
+          </ng-container>
+          <ng-container matColumnDef="entradas">
+            <th mat-header-cell *matHeaderCellDef>Entradas</th>
+            <td mat-cell *matCellDef="let s">{{ s.entradas | number }}</td>
+          </ng-container>
+          <ng-container matColumnDef="saidas">
+            <th mat-header-cell *matHeaderCellDef>Saídas</th>
+            <td mat-cell *matCellDef="let s">{{ s.saidas | number }}</td>
+          </ng-container>
+          <ng-container matColumnDef="saldo">
+            <th mat-header-cell *matHeaderCellDef>Saldo</th>
+            <td mat-cell *matCellDef="let s">
+              <span
+                class="dashboard-page__status"
+                [class.success]="s.entradas - s.saidas >= 0"
+                [class.warning]="s.entradas - s.saidas < 0"
+              >
+                {{ s.entradas - s.saidas | number }}
+              </span>
+            </td>
+          </ng-container>
+          <tr mat-header-row *matHeaderRowDef="colunasSemanas"></tr>
+          <tr mat-row *matRowDef="let row; columns: colunasSemanas" class="custom-row"></tr>
+        </table>
+      }
+    </section>
+
+    <!-- Últimas movimentações -->
+    <section class="bento__tile bento__tile--movimentacoes">
+      <header class="bento__tile-header">
+        <h3>{{ gestor ? 'Últimas movimentações' : 'Minhas últimas movimentações' }}</h3>
+      </header>
+
+      @if (carregando().movimentacoes) {
+        <div class="bento__state"><mat-spinner diameter="28"></mat-spinner></div>
+      } @else if (erro().movimentacoes) {
+        <div class="bento__state">
+          <mat-icon>error</mat-icon>
+          <span>Não foi possível carregar.</span>
+          <button mat-button (click)="carregarMovimentacoes()">Tentar novamente</button>
+        </div>
+      } @else if (movimentacoes().length === 0) {
+        <div class="bento__state">
+          <mat-icon>inbox</mat-icon>
+          <span>Nenhuma movimentação registrada.</span>
+        </div>
+      } @else {
+        <div class="bento__table-wrapper">
+          <table mat-table [dataSource]="movimentacoes()" class="dashboard-page__table">
+            <ng-container matColumnDef="data">
+              <th mat-header-cell *matHeaderCellDef>Data</th>
+              <td mat-cell *matCellDef="let m" [class.estornado]="m.estornado">
+                {{ m.data | date: 'dd/MM/yyyy HH:mm' }}
+              </td>
+            </ng-container>
+            <ng-container matColumnDef="operacao">
+              <th mat-header-cell *matHeaderCellDef>Tipo</th>
+              <td mat-cell *matCellDef="let m">
+                <span
+                  class="dashboard-page__status"
+                  [class.success]="m.operacao === 'E'"
+                  [class.warning]="m.operacao === 'S'"
+                >
+                  {{ rotuloOperacao(m.operacao) }}
+                </span>
+                @if (m.estornado) {
+                  <span class="dashboard-page__status danger">Estornada</span>
+                }
+              </td>
+            </ng-container>
+            <ng-container matColumnDef="material">
+              <th mat-header-cell *matHeaderCellDef>Material</th>
+              <td mat-cell *matCellDef="let m" [class.estornado]="m.estornado">{{ m.material }}</td>
+            </ng-container>
+            <ng-container matColumnDef="quantidade">
+              <th mat-header-cell *matHeaderCellDef>Qtd.</th>
+              <td mat-cell *matCellDef="let m" [class.estornado]="m.estornado">
+                {{ m.quantidade | number }}
+              </td>
+            </ng-container>
+            <ng-container matColumnDef="usuario">
+              <th mat-header-cell *matHeaderCellDef>Usuário</th>
+              <td mat-cell *matCellDef="let m">{{ m.usuario }}</td>
+            </ng-container>
+            <ng-container matColumnDef="op">
+              <th mat-header-cell *matHeaderCellDef>OP</th>
+              <td mat-cell *matCellDef="let m">{{ m.ordemProducao || '—' }}</td>
+            </ng-container>
+            <tr mat-header-row *matHeaderRowDef="colunasMovimentacoes"></tr>
+            <tr mat-row *matRowDef="let row; columns: colunasMovimentacoes" class="custom-row"></tr>
+          </table>
+        </div>
+      }
+    </section>
+  </div>
+</div>

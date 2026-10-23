@@ -1,12 +1,19 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { MatDialog } from '@angular/material/dialog';
+import { MatSnackBar } from '@angular/material/snack-bar';
 import { of, throwError, type Observable } from 'rxjs';
 import { vi } from 'vitest';
 
 import { ListaMovimentacoes } from './lista-movimentacoes';
 import { MovimentacaoPayload } from '../cadastro-movimentacao/cadastro-movimentacao';
-import { MaterialService, Material } from '../../../services/material.service';
-import { MovimentacaoService, MovimentacaoResponse } from '../../../services/movimentacao.service';
+import {
+  MaterialService,
+  Material,
+} from '../../../services/material.service';
+import {
+  MovimentacaoService,
+  MovimentacaoResponse,
+} from '../../../services/movimentacao.service';
 
 describe('ListaMovimentacoes', () => {
   let component: ListaMovimentacoes;
@@ -40,6 +47,7 @@ describe('ListaMovimentacoes', () => {
     },
   ];
 
+  // Mocks utilizados apenas nos testes para não acessar a API real.
   const materialServiceMock = {
     listAll: vi.fn(() => of(materiaisMock)),
   };
@@ -47,34 +55,79 @@ describe('ListaMovimentacoes', () => {
   const movimentacaoServiceMock = {
     listAll: vi.fn(() => of(movimentacoesMock)),
     create: vi.fn(() => of(movimentacoesMock[0])),
-    estornar: vi.fn(() => of({ ...movimentacoesMock[0], is_estornado: true })),
+    estornar: vi.fn(() =>
+      of({
+        ...movimentacoesMock[0],
+        is_estornado: true,
+        motivo_estorno: 'Motivo do estorno',
+      }),
+    ),
   };
 
   const dialogMock = {
     open: vi.fn(() => ({
-      afterClosed: (): Observable<string | null> => of('Motivo do estorno'),
+      afterClosed: (): Observable<string | null> =>
+        of('Motivo do estorno'),
     })),
   };
 
+  const snackBarMock = {
+    open: vi.fn(),
+  };
+
   beforeEach(async () => {
-    materialServiceMock.listAll.mockClear().mockReturnValue(of(materiaisMock));
-    movimentacaoServiceMock.listAll.mockClear().mockReturnValue(of(movimentacoesMock));
-    movimentacaoServiceMock.create.mockClear().mockReturnValue(of(movimentacoesMock[0]));
+    materialServiceMock.listAll
+      .mockClear()
+      .mockReturnValue(of(materiaisMock));
+
+    movimentacaoServiceMock.listAll
+      .mockClear()
+      .mockReturnValue(of(movimentacoesMock));
+
+    movimentacaoServiceMock.create
+      .mockClear()
+      .mockReturnValue(of(movimentacoesMock[0]));
+
     movimentacaoServiceMock.estornar
       .mockClear()
-      .mockReturnValue(of({ ...movimentacoesMock[0], is_estornado: true }));
+      .mockReturnValue(
+        of({
+          ...movimentacoesMock[0],
+          is_estornado: true,
+          motivo_estorno: 'Motivo do estorno',
+        }),
+      );
+
     dialogMock.open.mockClear().mockReturnValue({
-      afterClosed: (): Observable<string | null> => of('Motivo do estorno'),
+      afterClosed: (): Observable<string | null> =>
+        of('Motivo do estorno'),
     });
 
-    await TestBed.configureTestingModule({
+    snackBarMock.open.mockClear();
+
+    TestBed.configureTestingModule({
       imports: [ListaMovimentacoes],
       providers: [
-        { provide: MaterialService, useValue: materialServiceMock },
-        { provide: MovimentacaoService, useValue: movimentacaoServiceMock },
-        { provide: MatDialog, useValue: dialogMock },
+        {
+          provide: MaterialService,
+          useValue: materialServiceMock,
+        },
+        {
+          provide: MovimentacaoService,
+          useValue: movimentacaoServiceMock,
+        },
+        {
+          provide: MatDialog,
+          useValue: dialogMock,
+        },
       ],
-    }).compileComponents();
+    });
+
+    TestBed.overrideProvider(MatSnackBar, {
+      useValue: snackBarMock,
+    });
+
+    await TestBed.compileComponents();
 
     fixture = TestBed.createComponent(ListaMovimentacoes);
     component = fixture.componentInstance;
@@ -89,20 +142,31 @@ describe('ListaMovimentacoes', () => {
   it('deve carregar os materiais e as movimentações ao iniciar', () => {
     expect(materialServiceMock.listAll).toHaveBeenCalled();
     expect(movimentacaoServiceMock.listAll).toHaveBeenCalled();
-    expect(component.materiaisDisponiveis()).toEqual(materiaisMock);
-    expect(component.movimentacoes()).toEqual(movimentacoesMock);
+
+    expect(component.materiaisDisponiveis()).toEqual(
+      materiaisMock,
+    );
+
+    expect(component.movimentacoes()).toEqual(
+      movimentacoesMock,
+    );
   });
 
   it('deve resolver o material a partir do id', () => {
-    expect(component.resolverMaterial(1)).toEqual(materiaisMock[0]);
+    expect(component.resolverMaterial(1)).toEqual(
+      materiaisMock[0],
+    );
+
     expect(component.resolverMaterial(999)).toBeUndefined();
   });
 
   it('deve abrir e fechar o painel de cadastro', () => {
     component.abrirCadastro();
+
     expect(component.painelAberto()).toBe(true);
 
     component.fecharCadastro();
+
     expect(component.painelAberto()).toBe(false);
   });
 
@@ -110,55 +174,169 @@ describe('ListaMovimentacoes', () => {
     const payload: MovimentacaoPayload = {
       operacao: 'E',
       motivo: 'Compra emergencial',
-      itens: [{ materialId: 1, quantidade: 5 }],
+      itens: [
+        {
+          materialId: 1,
+          quantidade: 5,
+        },
+      ],
     };
 
     component.abrirCadastro();
     component.salvarMovimentacao(payload);
 
-    expect(movimentacaoServiceMock.create).toHaveBeenCalledWith({
+    expect(
+      movimentacaoServiceMock.create,
+    ).toHaveBeenCalledWith({
       operacao: 'E',
       motivo: 'Compra emergencial',
-      itens: [{ material_id: 1, quantidade: 5 }],
+      itens: [
+        {
+          material_id: 1,
+          quantidade: 5,
+        },
+      ],
     });
+
     expect(component.painelAberto()).toBe(false);
-    expect(movimentacaoServiceMock.listAll).toHaveBeenCalledTimes(2);
+
+    expect(
+      movimentacaoServiceMock.listAll,
+    ).toHaveBeenCalledTimes(2);
   });
 
   it('não deve fechar o painel se a API retornar erro ao cadastrar', () => {
     movimentacaoServiceMock.create.mockReturnValueOnce(
-      throwError(() => ({ error: { message: 'Estoque insuficiente' } })),
+      throwError(() => ({
+        error: {
+          message: 'Estoque insuficiente',
+        },
+      })),
     );
 
     component.abrirCadastro();
+
     component.salvarMovimentacao({
       operacao: 'S',
       motivo: 'Uso em produção',
-      itens: [{ materialId: 1, quantidade: 999 }],
+      itens: [
+        {
+          materialId: 1,
+          quantidade: 999,
+        },
+      ],
     });
 
     expect(component.painelAberto()).toBe(true);
+  });
+
+  it('deve disponibilizar a opção de estorno no histórico', () => {
+    fixture.detectChanges();
+
+    const botaoEstorno =
+      fixture.nativeElement.querySelector(
+        'button[aria-label="Estornar movimentação"]',
+      );
+
+    expect(botaoEstorno).toBeTruthy();
   });
 
   it('deve estornar uma movimentação confirmada no dialog', () => {
     component.abrirEstorno(movimentacoesMock[0]);
 
     expect(dialogMock.open).toHaveBeenCalled();
-    expect(movimentacaoServiceMock.estornar).toHaveBeenCalledWith(1, 'Motivo do estorno');
+
+    expect(
+      movimentacaoServiceMock.estornar,
+    ).toHaveBeenCalledWith(
+      1,
+      'Motivo do estorno',
+    );
   });
 
   it('não deve estornar se o dialog for cancelado', () => {
     dialogMock.open.mockReturnValueOnce({
-      afterClosed: (): Observable<string | null> => of(null),
+      afterClosed: (): Observable<string | null> =>
+        of(null),
     });
 
     component.abrirEstorno(movimentacoesMock[0]);
 
-    expect(movimentacaoServiceMock.estornar).not.toHaveBeenCalled();
+    expect(
+      movimentacaoServiceMock.estornar,
+    ).not.toHaveBeenCalled();
+  });
+
+  it('deve exibir mensagem de sucesso após o estorno', () => {
+    component.abrirEstorno(movimentacoesMock[0]);
+
+    expect(snackBarMock.open).toHaveBeenCalledWith(
+      'Movimentação estornada com sucesso.',
+      'Fechar',
+      expect.objectContaining({
+        panelClass: ['success-snackbar'],
+      }),
+    );
+  });
+
+  it('deve exibir mensagem de erro se o estorno falhar', () => {
+    movimentacaoServiceMock.estornar.mockReturnValueOnce(
+      throwError(() => ({
+        error: {
+          message: 'Não foi possível estornar a movimentação.',
+        },
+      })),
+    );
+
+    component.abrirEstorno(movimentacoesMock[0]);
+
+    expect(snackBarMock.open).toHaveBeenCalledWith(
+      'Não foi possível estornar a movimentação.',
+      'Fechar',
+      expect.objectContaining({
+        panelClass: ['error-snackbar'],
+      }),
+    );
+  });
+
+  it('deve atualizar a quantidade do estoque após o estorno', () => {
+    const materiaisAtualizados: Material[] = [
+      {
+        ...materiaisMock[0],
+        estoqueAtual: 170,
+      },
+    ];
+
+    materialServiceMock.listAll.mockReturnValueOnce(
+      of(materiaisAtualizados),
+    );
+
+    component.abrirEstorno(movimentacoesMock[0]);
+
+    expect(
+      materialServiceMock.listAll,
+    ).toHaveBeenCalledTimes(2);
+
+    expect(
+      component.materiaisDisponiveis()[0].estoqueAtual,
+    ).toBe(170);
+  });
+
+  it('deve recarregar o histórico após o estorno', () => {
+    component.abrirEstorno(movimentacoesMock[0]);
+
+    expect(
+      movimentacaoServiceMock.listAll,
+    ).toHaveBeenCalledTimes(2);
   });
 
   it('deve formatar o tipo de operação', () => {
-    expect(component.formatarOperacao('E')).toBe('Entrada');
-    expect(component.formatarOperacao('S')).toBe('Saída');
+    expect(component.formatarOperacao('E')).toBe(
+      'Entrada',
+    );
+
+    expect(component.formatarOperacao('S')).toBe(
+      'Saída',
+    );
   });
 });

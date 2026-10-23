@@ -14,11 +14,12 @@ import { JwtAuthGuard } from "../auth/jwt-auth.guard";
 import { RolesGuard } from "../auth/roles.guard";
 import { Roles } from "../auth/roles.decorator";
 import { PerfilUsuario } from "../usuarios/perfil.enum";
+import { MaterialRelatorioDto } from "./dto/material-relatorio.dto";
 
 @ApiTags('Materiais')
 @ApiBearerAuth()
+// Leitura liberada para todo usuário logado; criar, editar e inativar só ADMIN e LIDER.
 @UseGuards(JwtAuthGuard, RolesGuard)
-@Roles(PerfilUsuario.ADMIN, PerfilUsuario.LIDER)
 @Controller('materiais')
 export class MaterialController {
   constructor(private readonly materialService: MaterialService) {}
@@ -29,6 +30,7 @@ export class MaterialController {
     description: 'Material criado com sucesso.',
     type: Material,
   })
+  @Roles(PerfilUsuario.ADMIN, PerfilUsuario.LIDER)
   @Post()
   async create(
     @Body() createMaterialDto: CreateMaterialDto,
@@ -62,6 +64,18 @@ export class MaterialController {
     status: 404,
     description: 'Material não encontrado.',
   })
+
+    @ApiOperation({ summary: 'Relatório de materiais abaixo do estoque mínimo' })
+  @ApiResponse({
+    status: 200,
+    description: 'Lista de materiais ativos com estoque atual menor ou igual ao mínimo.',
+    type: [MaterialRelatorioDto],
+  })
+  @Get('relatorio-minimo')
+  getRelatorioMinimo() {
+    return this.materialService.getRelatorioMinimo();
+  }
+
   @Get(':id')
   findOne(@Param('id') id: number) {
     return this.materialService.findOne(id);
@@ -82,6 +96,7 @@ export class MaterialController {
     status: 404,
     description: 'Material não encontrado.',
   })
+  @Roles(PerfilUsuario.ADMIN, PerfilUsuario.LIDER)
   @Patch(':id')
   update(
     @Param('id') id: number,
@@ -111,6 +126,7 @@ export class MaterialController {
       },
     },
   })
+  @Roles(PerfilUsuario.ADMIN, PerfilUsuario.LIDER)
   @Delete(':id')
   remove(@Param('id') id: number) {
     return this.materialService.desativar(id);

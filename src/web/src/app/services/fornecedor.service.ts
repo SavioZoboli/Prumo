@@ -27,4 +27,21 @@ export class FornecedorService {
     return this.http.post<void>(this.url,{nome,cnpj})
   }
 
+  findOne(id: number): Observable<Fornecedor> {
+    return this.http.get<Fornecedor>(`${this.url}/${id}`);
+  }
+
+  update(
+    id: number,
+    fornecedor: Partial<Fornecedor>
+  ): Observable<Fornecedor> {
+    return this.http.patch<Fornecedor>(
+      `${this.url}/${id}`,
+      fornecedor
+    );
+  }
+
+  desativar(id: number): Observable<Fornecedor> {
+    return this.http.delete<Fornecedor>(`${this.url}/${id}`);
+  }
 }

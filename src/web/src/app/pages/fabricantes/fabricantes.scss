@@ -1,0 +1,78 @@
+@use '../../../assets/scss/shared-patterns' as *;
+
+:host {
+  display: block;
+  min-height: 100vh;
+  background-color: var(--mat-sys-surface);
+  color: var(--mat-sys-on-surface);
+}
+
+.fabricantes-page {
+  @extend %page-container;
+
+  min-height: 100vh;
+  box-sizing: border-box;
+
+  &__header {
+    @extend %page-header;
+
+    .title-area p {
+      margin: var(--app-space-xs) 0 0;
+      color: var(--mat-sys-on-surface-variant);
+    }
+
+    .action-area {
+      flex-shrink: 0;
+
+      app-button {
+        width: auto;
+      }
+    }
+  }
+
+  &__novo {
+    display: flex;
+    align-items: flex-start;
+    flex-wrap: wrap;
+    gap: var(--app-space-md);
+
+    margin-bottom: var(--app-space-lg);
+    padding: var(--app-space-lg);
+
+    background-color: var(--mat-sys-surface-container-low);
+    border: 1px solid var(--mat-sys-outline-variant);
+    border-radius: var(--app-radius-lg);
+
+    app-input {
+      flex: 1 1 260px;
+      width: auto;
+    }
+  }
+
+  &__acoes-edicao {
+    display: flex;
+    align-items: center;
+    gap: var(--app-space-sm);
+
+    app-button {
+      width: auto;
+    }
+  }
+
+  &__table-container {
+    @extend %table-container;
+  }
+
+  &__table {
+    @extend %custom-table;
+  }
+
+  &__aviso {
+    padding: var(--app-space-lg);
+    color: var(--mat-sys-on-surface-variant);
+  }
+
+  &__inativar {
+    color: var(--mat-sys-error);
+  }
+}

@@ -34,14 +34,53 @@
     @extend %table-container;
   }
 
+  &__scroll {
+    overflow-x: auto;
+  }
+
   &__table {
     @extend %custom-table;
+
+    // Cabeçalhos numa linha só; se faltar espaço, a tabela rola em vez de cortar.
+    th.mat-mdc-header-cell {
+      white-space: nowrap;
+    }
+  }
+
+  &__status {
+    @extend %status-chip;
+  }
+
+  &__paginator {
+    @extend %custom-paginator;
   }
 }
 
-.cell-with-buttons{
+// Botões de ação lado a lado, próximos um do outro.
+.cell-with-buttons {
   display: flex;
-  gap:12px;
+  align-items: center;
+  gap: var(--app-space-xs);
+}
+
+// Borda nos botões de ação desta tabela, no arredondamento padrão da plataforma.
+.ordens-compra-page__acao {
+  --mat-icon-button-container-shape: var(--app-radius-md);
+
+  border: 1px solid var(--mat-sys-outline-variant);
+  border-radius: var(--app-radius-md);
+}
+
+// Lista de itens da ordem; altura de linha fixa para código, produto e quantidade ficarem alinhados.
+.ordens-compra-page__itens {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+
+  li {
+    line-height: 1.5rem;
+    white-space: nowrap;
+  }
 }
 
 @media (max-width: 768px) {

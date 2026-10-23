@@ -1,0 +1,92 @@
+@use '../../../../assets/scss/shared-patterns' as *;
+
+.sugestao {
+  margin-bottom: var(--app-space-lg);
+  padding: var(--app-space-md) var(--app-space-lg);
+
+  background-color: var(--mat-sys-surface-container-low);
+  border: 1px solid var(--mat-sys-outline-variant);
+  border-radius: var(--app-radius-lg);
+
+  &__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: var(--app-space-md);
+
+    app-button {
+      width: auto;
+    }
+  }
+
+  // Cabeçalho clicável que recolhe/expande o bloco.
+  &__titulo {
+    display: flex;
+    align-items: center;
+    gap: var(--app-space-sm);
+    padding: 0;
+
+    background: none;
+    border: none;
+    color: inherit;
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+
+    > mat-icon:first-child {
+      color: var(--app-brand-secondary);
+    }
+  }
+
+  &__titulo-texto {
+    display: flex;
+    flex-direction: column;
+
+    small {
+      color: var(--mat-sys-on-surface-variant);
+    }
+  }
+
+  &__seta {
+    color: var(--mat-sys-on-surface-variant);
+  }
+
+  &__dica {
+    margin: var(--app-space-md) 0 var(--app-space-sm);
+    font-size: 0.85rem;
+    color: var(--mat-sys-on-surface-variant);
+  }
+
+  &__aviso {
+    display: flex;
+    align-items: center;
+    gap: var(--app-space-sm);
+    margin: var(--app-space-md) 0 0;
+    color: var(--mat-sys-on-surface-variant);
+  }
+
+  &__tabela {
+    @extend %table-container;
+
+    max-height: 320px;
+    overflow: auto;
+
+    table {
+      @extend %custom-table;
+    }
+  }
+
+  &__linha {
+    cursor: pointer;
+  }
+
+  &__codigo {
+    margin-right: var(--app-space-xs);
+    font-weight: 600;
+  }
+
+  &__status {
+    @extend %status-chip;
+  }
+}

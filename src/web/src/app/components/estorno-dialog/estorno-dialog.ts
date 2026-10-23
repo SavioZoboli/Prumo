@@ -33,7 +33,7 @@ export class EstornoDialog {
   data: EstornoDialogData = inject(MAT_DIALOG_DATA);
   private dialogRef = inject(MatDialogRef<EstornoDialog>);
 
-  motivo = new FormControl('', [Validators.required, Validators.maxLength(100)]);
+  motivo = new FormControl('', [Validators.required,  Validators.pattern(/\S/), Validators.maxLength(100)]);
 
   confirmar(): void {
     if (this.motivo.invalid) {
