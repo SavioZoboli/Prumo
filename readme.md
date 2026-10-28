@@ -2,124 +2,158 @@
 
 Sistema para controle de estoque de pastilhas industriais, desenvolvido no contexto do **SAGA SENAI de Inovação**, atendendo à demanda da indústria **DDA Usinagem Industrial Ltda.** (Santa Catarina).
 
-## Objetivo do projeto
+---
 
-O objetivo do projeto é substituir o processo manual de controle de estoque por uma solução tecnológica capaz de automatizar o gerenciamento do estoque, controlando entradas e saídas de materiais, monitorando níveis mínimos e fornecendo informações confiáveis para apoiar a tomada de decisão da empresa.
+## 🎯 Objetivo do Projeto
 
-### Funcionalidades previstas
+Substituir o processo manual de controle de estoque por uma solução tecnológica integrada capaz de automatizar o gerenciamento de estoque, controlando entradas e saídas de materiais, monitorando níveis mínimos e fornecendo indicadores confiáveis para apoiar a tomada de decisão da empresa.
 
-- Cadastro dos tipos de pastilhas.
-- Cadastro de fabricantes e fornecedores.
-- Identificação dos materiais por código ou descrição.
-- Registro de entradas e saídas de estoque.
-- Consulta da quantidade disponível em tempo real.
-- Definição de estoque mínimo por item.
-- Geração de alertas quando o estoque atingir níveis críticos.
-- Histórico completo das movimentações.
-- Painel de acompanhamento da situação do estoque.
-- Emissão de relatórios de consumo, movimentação e necessidade de reposição.
-- Possibilidade de integração futura com sistemas de compras/ERP (fora do escopo da primeira versão).
+### Funcionalidades
 
-## Stack
+- **Gestão de Materiais:** Cadastro de tipos de pastilhas industriais, identificação por código ou descrição, e vínculo com fabricantes e fornecedores.
+- **Movimentações de Estoque:** Registro de entradas e saídas (com estorno), motivos de movimentação e associação a ordens de produção.
+- **Controle de Níveis Críticos:** Definição de estoque mínimo por item e alertas visuais para materiais com estoque baixo ou zerado.
+- **Ordens de Compra:** Controle do fluxo de compras, previsão de entrega e monitoramento de ordens pendentes ou atrasadas.
+- **Dashboard & Indicadores:** Painel geral com KPIs em tempo real, visualização em bento grid, relatórios de consumo e histórico semanal.
+- **Controle de Acesso:** Autenticação via JWT com perfis de permissão (Administrador, Líder e Usuário operacional).
 
-| Camada  | Tecnologia |
-|---------|------------|
-| Backend | [NestJS](https://nestjs.com/) 11 (TypeScript) |
-| Frontend | [Angular](https://angular.dev/) 21 + Angular Material |
-| Banco de dados | 	PostgreSQL (via Docker) + TypeORM (migrations)|
-Documentação da API  | Swagger | 	
+---
 
-O projeto ainda está em estágio inicial.
+## 🛠️ Tecnologias Utilizadas
 
-## Estrutura do repositório
-Prumo/
-├── docker-compose.yml   # sobe o Postgres em container
-├── docs/
-│   ├── diagram/          # modelagem do banco (pgModeler)
-│   ├── logos/
-│   └── pdf/               # documentação do projeto
+| Camada | Tecnologia | Descrição |
+| :--- | :--- | :--- |
+| **Backend** | [NestJS](https://nestjs.com/) 11 + TypeScript | API REST modular com injeção de dependências |
+| **Frontend** | [Angular](https://angular.dev/) 21 + Angular Material | SPA responsiva com Signals e tema personalizado |
+| **Banco de Dados** | PostgreSQL 16 (Docker) + TypeORM | Banco relacional com versionamento via migrations |
+| **Documentação da API** | Swagger / OpenAPI | Documentação interativa das rotas e DTOs |
+| **Autenticação** | Passport JWT + Bcrypt | Tokens seguros com controle baseado em perfis (RBAC) |
+
+---
+
+## 📂 Estrutura do Repositório
+
+```text
+prumo/
+├── docker-compose.yml       # Configuração do PostgreSQL em container
+├── docs/                    # Documentação técnica, protótipos e diagramas
+│   ├── diagram/             # Modelagem relacional do banco (pgModeler)
+│   ├── logos/               # Identidade visual do projeto
+│   └── pdf/                 # Documentos de especificação do projeto
 └── src/
-    ├── api/                # backend NestJS
+    ├── api/                 # Backend (NestJS)
     │   └── src/
-    │       ├── database/    # config de conexão + migrations do TypeORM
-    │       └── usuarios/    # módulo de usuários (controller/service/entity/dto)
-    └── web/                 # frontend Angular
+    │       ├── auth/        # Autenticação e Guards JWT
+    │       ├── dashboard/   # Endpoints de métricas e relatórios
+    │       ├── database/    # Configuração de conexão e migrations TypeORM
+    │       ├── fabricantes/ # Módulo de fabricantes
+    │       ├── fornecedores/# Módulo de fornecedores
+    │       ├── materiais/   # Cadastro e controle de estoque de materiais
+    │       ├── movimentacoes# Registro de entradas, saídas e estornos
+    │       ├── ordem-compra/# Gestão de pedidos e ordens de compra
+    │       └── usuarios/    # Gestão de usuários e perfis de acesso
+    └── web/                 # Frontend (Angular 21)
+        └── src/
+            ├── app/         # Componentes, páginas, guards e services
+            └── assets/      # Imagens, temas e padrões visuais compartilhados (SCSS)
+```
 
-## Como rodar o projeto
+---
+
+## 🚀 Como Rodar o Projeto
 
 ### Pré-requisitos
 
-- Node.js 22.12+ (ou 24+)
-- npm 10+
-- Docker e Docker Compose
+- [Node.js](https://nodejs.org/) (versão 22.12+ ou 24+)
+- [npm](https://www.npmjs.com/) (versão 10+)
+- [Docker](https://www.docker.com/) e Docker Compose
 
-### Passo a passo:
+---
 
-1. Banco de dados (Postgres via Docker)
+### Passo a Passo
 
-Na raiz do projeto, crie um arquivo .env (não é versionado) com:
+#### 1. Banco de Dados (PostgreSQL via Docker)
 
+Na raiz do projeto, crie um arquivo `.env` para o Docker:
+
+```env
 DB_USER=prumo
 DB_PASSWORD=prumo
 DB_NAME=prumo_db
 DB_PORT=5432
+```
 
-Depois suba o container:
+Inicie o container do banco:
 
-bash
+```bash
 docker compose up -d
+```
 
-Confirme que subiu certo com docker ps — o container prumo-postgres deve aparecer como healthy.
+> **Verificação:** Execute `docker ps` e certifique-se de que o container `prumo-postgres` está com status `healthy`.
 
-2. Backend (API)
+---
 
-Crie o arquivo src/api/.env (não é versionado) com os mesmos valores usados no .env da raiz, trocando só o host:
+#### 2. Backend (API NestJS)
 
+Crie o arquivo `src/api/.env` com as configurações da aplicação e credenciais do banco:
+
+```env
 PORT=3000
-
 DB_HOST=localhost
 DB_PORT=5432
 DB_USER=prumo
 DB_PASSWORD=prumo
 DB_NAME=prumo_db
+JWT_SECRET=coloque_aqui_seu_secret_gerado
+```
 
-Depois:
+> **💡 Dica para gerar o `JWT_SECRET`:**
+> Gere um hash aleatório seguro no terminal com:
+> ```bash
+> node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+> ```
 
-bash
+Em seguida, instale as dependências e inicie o servidor:
+
+```bash
 cd src/api
 npm install
 npm run start:dev
+```
 
-A API sobe em http://localhost:3000. As migrations do banco (pasta src/api/src/database/migrations) são aplicadas automaticamente nesse momento — não é preciso rodar nenhum comando manual.
+- A API estará disponível em: `http://localhost:3000`
+- Documentação interativa (Swagger): `http://localhost:3000/api`
 
-A documentação interativa da API (Swagger) fica disponível em http://localhost:3000/api.
+> As migrations do banco de dados são executadas **automaticamente** ao iniciar a API em modo desenvolvimento (`npm run start:dev`).
 
-3. Frontend (Web)
-bash
+---
+
+#### 3. Frontend (Aplicação Web Angular)
+
+Em outro terminal, acesse o diretório do frontend:
+
+```bash
 cd src/web
 npm install
 npm start
+```
 
-A aplicação sobe em http://localhost:4200.
+- A aplicação estará disponível em: `http://localhost:4200`
 
-Migrations
+---
 
-Toda alteração de schema deve ser feita através de uma nova migration em src/api/src/database/migrations, nunca alterando o banco manualmente. Comandos disponíveis dentro de src/api:
+## 🗄️ Migrations do Banco de Dados
 
-bash
-npm run migration:generate -- src/database/migrations/NomeDaMudanca   # gera a migration a partir das entidades
-npm run migration:run                                                    # aplica as migrations pendentes
-npm run migration:revert                                                  # desfaz a última migration aplicada
+Toda alteração de schema deve ser realizada através de migrations do TypeORM, mantendo o histórico de alterações versionado.
 
-Ao rodar npm run start:dev, as migrations pendentes já são aplicadas.
+No diretório `src/api`, estão disponíveis os seguintes comandos:
 
-4. Variável do JWT (autenticação):
+```bash
+# Gera uma nova migration baseada na comparação das entidades com o banco
+npm run migration:generate -- src/database/migrations/NomeDaMudanca
 
-**Sobre o `JWT_SECRET`:** é a chave usada para assinar e validar o token de login. Cada
-desenvolvedor deve gerar o próprio valor localmente. Gere o seu com:
-
-bash
-node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+# Executa manualmente as migrations pendentes
+npm run migration:run
 
 Copie o resultado para `JWT_SECRET` no seu `src/api/.env`. Em ambientes compartilhados (HML/produção), o segredo é configurado direto no
 servidor, fora do repositório.

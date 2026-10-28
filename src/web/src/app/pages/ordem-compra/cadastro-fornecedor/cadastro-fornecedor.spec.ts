@@ -1,7 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { MatSnackBar } from '@angular/material/snack-bar';
 import { provideNgxMask } from 'ngx-mask';
-import { of, throwError } from 'rxjs';
 
 import { CadastroFornecedor } from './cadastro-fornecedor';
 import { FornecedorService } from '../../../services/fornecedor.service';
@@ -24,18 +22,9 @@ describe('CadastroFornecedor', () => {
 
     await TestBed.configureTestingModule({
       imports: [CadastroFornecedor],
-      providers: [
-        provideNgxMask(),
-        {
-          provide: FornecedorService,
-          useValue: fornecedorServiceMock,
-        },
-        {
-          provide: MatSnackBar,
-          useValue: snackBarMock,
-        },
-      ],
-    }).compileComponents();
+      providers: [provideNgxMask()],
+    })
+    .compileComponents();
 
     fixture = TestBed.createComponent(CadastroFornecedor);
     component = fixture.componentInstance;
