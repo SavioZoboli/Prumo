@@ -68,7 +68,7 @@ describe('MovimentacaoService — regras de estoque', () => {
   };
 
   const material = (id: number, estoqueAtual: number, ativo = true) =>
-    ({ id, estoqueAtual, estoqueMinimo: 0, ativo }) as Material;
+    ({ id, nome: `Pastilha ${id}`, estoqueAtual, estoqueMinimo: 0, ativo }) as Material;
 
   const estoqueDe = (id: number) => materiais.get(id)!.estoqueAtual;
 
@@ -138,6 +138,20 @@ describe('MovimentacaoService — regras de estoque', () => {
       ).rejects.toThrow(BadRequestException);
 
       expect(materialRepository.save).not.toHaveBeenCalled();
+    });
+
+    it('informa o nome do material que não tem estoque suficiente', async () => {
+      await expect(
+        service.create(
+          movimento('S', [
+            { material_id: 2, quantidade: 5 },
+            { material_id: 1, quantidade: 6 },
+          ]),
+          1,
+        ),
+      ).rejects.toThrow(
+        'Quantidade solicitada de Pastilha 1 é maior que a quantidade disponível em estoque.',
+      );
     });
 
     it('soma as saídas do mesmo material na mesma movimentação', async () => {
@@ -276,6 +290,14 @@ describe('MovimentacaoService — regras de estoque', () => {
       );
       expect(estoqueDe(2)).toBe(20);
       expect(movimentacoes.get(10)!.is_estornado).toBe(false);
+    });
+
+    it('informa o nome do material quando o estorno é inviável', async () => {
+      registrar(10, 'E', 30);
+
+      await expect(service.estornar(10, 'Motivo')).rejects.toThrow(
+        'Estorno inviável: o material Pastilha 2 não tem estoque suficiente para reverter a entrada.',
+      );
     });
 
     it('verifica o alerta de estoque dos materiais estornados', async () => {
