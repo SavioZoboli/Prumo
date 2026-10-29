@@ -30,6 +30,16 @@
     }
   }
 
+  &__filtros {
+    @extend %filtros-container;
+    flex-wrap: wrap;
+
+    mat-form-field {
+      flex: 1 1 160px;
+      min-width: 140px;
+    }
+  }
+
   &__table-container {
     @extend %table-container;
   }
