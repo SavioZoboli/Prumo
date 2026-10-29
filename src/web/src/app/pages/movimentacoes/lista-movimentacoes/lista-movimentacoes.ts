@@ -1,16 +1,23 @@
 import { Component, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTableModule } from '@angular/material/table';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatDialog } from '@angular/material/dialog';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
+import { MatSelectModule } from '@angular/material/select';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatDatepickerModule } from '@angular/material/datepicker';
+import { MatInputModule } from '@angular/material/input';
+import { MatButtonModule } from '@angular/material/button';
 
 import { ButtonComponent } from '../../../components/button-component/button-component';
 import { MaterialService, Material } from '../../../services/material.service';
 import {
   MovimentacaoService,
   MovimentacaoResponse,
+  FiltrosMovimentacao,
 } from '../../../services/movimentacao.service';
 import { EstornoDialog } from '../../../components/estorno-dialog/estorno-dialog';
 import { CadastroMovimentacao, MovimentacaoPayload } from '../cadastro-movimentacao/cadastro-movimentacao';
@@ -20,10 +27,16 @@ import { CadastroMovimentacao, MovimentacaoPayload } from '../cadastro-movimenta
   standalone: true,
   imports: [
     CommonModule,
+    ReactiveFormsModule,
     MatIconModule,
     MatTableModule,
     MatTooltipModule,
     MatSnackBarModule,
+    MatSelectModule,
+    MatFormFieldModule,
+    MatDatepickerModule,
+    MatInputModule,
+    MatButtonModule,
     ButtonComponent,
     CadastroMovimentacao,
   ],
@@ -37,6 +50,11 @@ export class ListaMovimentacoes {
 
   materiaisDisponiveis = signal<Material[]>([]);
   movimentacoes = signal<MovimentacaoResponse[]>([]);
+
+  filtroOperacao = new FormControl<'' | 'E' | 'S'>('', { nonNullable: true });
+  filtroMaterial = new FormControl<number | null>(null);
+  filtroDataInicio = new FormControl<Date | null>(null);
+  filtroDataFim = new FormControl<Date | null>(null);
 
   private dialog = inject(MatDialog);
   private snackBar = inject(MatSnackBar);
@@ -65,7 +83,24 @@ export class ListaMovimentacoes {
   }
 
   private listarMovimentacoes(): void {
-    this.movimentacaoService.listAll().subscribe({
+    const filtros: FiltrosMovimentacao = {};
+
+    if (this.filtroOperacao.value) {
+      filtros.operacao = this.filtroOperacao.value as 'E' | 'S';
+    }
+    if (this.filtroMaterial.value) {
+      filtros.material_id = this.filtroMaterial.value;
+    }
+    if (this.filtroDataInicio.value) {
+      filtros.dataInicio = this.filtroDataInicio.value.toISOString();
+    }
+    if (this.filtroDataFim.value) {
+      const fim = new Date(this.filtroDataFim.value);
+      fim.setHours(23, 59, 59, 999);
+      filtros.dataFim = fim.toISOString();
+    }
+
+    this.movimentacaoService.listAll(filtros).subscribe({
       next: (movimentacoes) => {
         this.movimentacoes.set(movimentacoes);
       },
@@ -78,6 +113,18 @@ export class ListaMovimentacoes {
         });
       },
     });
+  }
+
+  aplicarFiltros(): void {
+    this.listarMovimentacoes();
+  }
+
+  limparFiltros(): void {
+    this.filtroOperacao.setValue('');
+    this.filtroMaterial.setValue(null);
+    this.filtroDataInicio.setValue(null);
+    this.filtroDataFim.setValue(null);
+    this.listarMovimentacoes();
   }
 
   resolverMaterial(materialId: number): Material | undefined {

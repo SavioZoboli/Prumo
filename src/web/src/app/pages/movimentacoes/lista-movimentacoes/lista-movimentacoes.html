@@ -18,6 +18,65 @@
     </div>
   </header>
 
+  <section class="movimentacoes-page__filtros">
+
+    <mat-form-field appearance="outline">
+      <mat-label>Tipo</mat-label>
+      <mat-select [formControl]="filtroOperacao">
+        <mat-option value="">Todos</mat-option>
+        <mat-option value="E">Entrada</mat-option>
+        <mat-option value="S">Saída</mat-option>
+      </mat-select>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Material</mat-label>
+      <mat-select [formControl]="filtroMaterial">
+        <mat-option [value]="null">Todos</mat-option>
+        @for (mat of materiaisDisponiveis(); track mat.id) {
+          <mat-option [value]="mat.id">{{ mat.nome }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Data início</mat-label>
+      <input matInput [matDatepicker]="pickerInicio" [formControl]="filtroDataInicio">
+      <mat-datepicker-toggle matIconSuffix [for]="pickerInicio"></mat-datepicker-toggle>
+      <mat-datepicker #pickerInicio></mat-datepicker>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Data fim</mat-label>
+      <input matInput [matDatepicker]="pickerFim" [formControl]="filtroDataFim">
+      <mat-datepicker-toggle matIconSuffix [for]="pickerFim"></mat-datepicker-toggle>
+      <mat-datepicker #pickerFim></mat-datepicker>
+    </mat-form-field>
+
+    <button
+      mat-stroked-button
+      color="primary"
+      type="button"
+      class="btn-filtrar"
+      (click)="aplicarFiltros()"
+    >
+      <mat-icon>filter_alt</mat-icon>
+      Filtrar
+    </button>
+
+    <button
+      mat-stroked-button
+      color="primary"
+      type="button"
+      class="btn-limpar"
+      (click)="limparFiltros()"
+    >
+      <mat-icon>filter_alt_off</mat-icon>
+      Limpar
+    </button>
+
+  </section>
+
   <section class="movimentacoes-page__table-container">
 
     <table

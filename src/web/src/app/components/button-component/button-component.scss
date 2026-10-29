@@ -43,6 +43,34 @@ button[mat-flat-button].app-button {
   @extend %btn-discrete;
 }
 
+// Estado desabilitado (variável `disabled`). Fica abaixo das regras acima para
+// vencer em especificidade/ordem. Durante `loading` o botão também fica
+// desabilitado, mas mantém a aparência normal para o spinner continuar visível.
+.app-button:disabled:not(.app-button--loading) {
+  cursor: not-allowed;
+  opacity: 0.6;
+  filter: grayscale(0.4);
+  box-shadow: none;
+}
+
+button[mat-flat-button].app-button:disabled:not(.app-button--loading) {
+  background-color: color-mix(in srgb, var(--mat-sys-on-surface) 12%, transparent);
+  color: color-mix(in srgb, var(--mat-sys-on-surface) 38%, transparent);
+  opacity: 1;
+  filter: none;
+}
+
+.app-button--secondary:disabled:not(.app-button--loading) {
+  border-color: color-mix(in srgb, var(--mat-sys-on-surface) 12%, transparent);
+  color: color-mix(in srgb, var(--mat-sys-on-surface) 38%, transparent);
+  opacity: 1;
+  filter: none;
+
+  &:hover {
+    border-width: 1px;
+  }
+}
+
 .app-button__spinner {
   display: inline-flex;
   margin: 0 auto;

@@ -1,4 +1,6 @@
 import { Module } from '@nestjs/common';
+import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
+import { APP_GUARD } from '@nestjs/core';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { dataSourceOptions } from './database/data-source';
@@ -11,10 +13,16 @@ import { MaterialModule } from './materiais/material.module';
 import { FabricanteModule } from './fabricantes/fabricante.module';
 import { MovimentacaoModule } from './movimentacoes/movimentacao.module';
 import { OrdemCompraModule } from './ordem-compra/ordem-compras.module';
+import { MailModule } from './mail/mail.module';
+import { DashboardModule } from './dashboard/dashboard.module';
 
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
+
+    ThrottlerModule.forRoot({
+      throttlers: [{ ttl: 60_000, limit: 30 }],
+    }),
 
     TypeOrmModule.forRootAsync({
       useFactory: () => dataSourceOptions,
@@ -26,9 +34,14 @@ import { OrdemCompraModule } from './ordem-compra/ordem-compras.module';
     MaterialModule,
     FabricanteModule,
     MovimentacaoModule,
-    OrdemCompraModule
+    OrdemCompraModule,
+    MailModule,
+    DashboardModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [
+    AppService,
+    { provide: APP_GUARD, useClass: ThrottlerGuard },
+  ],
 })
 export class AppModule {}

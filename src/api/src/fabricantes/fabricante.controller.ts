@@ -27,8 +27,8 @@ import { PerfilUsuario } from '../usuarios/perfil.enum';
 
 @ApiTags('Fabricantes')
 @ApiBearerAuth()
+// Leitura liberada para todo usuário logado; criar, editar e inativar só ADMIN.
 @UseGuards(JwtAuthGuard, RolesGuard)
-@Roles(PerfilUsuario.ADMIN, PerfilUsuario.LIDER)
 @Controller('fabricantes')
 export class FabricanteController {
   constructor(private readonly fabricanteService: FabricanteService) {}
@@ -43,6 +43,7 @@ export class FabricanteController {
     status: 409,
     description: 'Já existe um fabricante com esse nome.',
   })
+  @Roles(PerfilUsuario.ADMIN)
   @Post()
   async create(
     @Body() createFabricanteDto: CreateFabricanteDto,

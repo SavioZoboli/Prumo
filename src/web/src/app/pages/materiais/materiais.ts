@@ -1,6 +1,5 @@
-import { Component, signal } from '@angular/core';
+import { Component, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Router } from '@angular/router';
 import {
   FormBuilder,
   FormGroup,
@@ -19,7 +18,7 @@ import {
   MatSnackBar,
   MatSnackBarModule,
 } from '@angular/material/snack-bar';
-import { MatDialog } from '@angular/material/dialog';
+import { RouterLink } from '@angular/router';
 
 import { InputComponent } from '../../components/input-component/input-component';
 import { ButtonComponent } from '../../components/button-component/button-component';
@@ -28,7 +27,7 @@ import {
   Fabricante,
   FabricanteService,
 } from '../../services/fabricante.service';
-import { GerenciarFabricantes } from '../../components/gerenciar-fabricantes/gerenciar-fabricantes';
+import { AuthService, PERFIS_GESTAO } from '../../services/auth.service';
 
 interface MaterialLista {
   id?: number;
@@ -61,11 +60,19 @@ interface MaterialLista {
     MatSnackBarModule,
     InputComponent,
     ButtonComponent,
+    RouterLink,
   ],
   templateUrl: './materiais.html',
   styleUrl: './materiais.scss',
 })
 export class Materiais {
+  private readonly authService = inject(AuthService);
+
+  // USUARIO só consulta: abre o material em modo leitura, sem salvar.
+  readonly podeEditar = this.authService.temPerfil(PERFIS_GESTAO);
+  // Criar fabricante é exclusivo do ADMIN (inclusive pelo atalho do formulário).
+  readonly podeCadastrarFabricante = this.authService.temPerfil(['ADMIN']);
+
   painelAberto = signal(false);
   salvando = signal(false);
 
@@ -97,8 +104,6 @@ export class Materiais {
   constructor(
     private fb: FormBuilder,
     private snackBar: MatSnackBar,
-    private router: Router,
-    private dialog: MatDialog,
     private materialService: MaterialService,
     private fabricanteService: FabricanteService
   ) {
@@ -191,10 +196,6 @@ export class Materiais {
     });
   }
 
-  abrirConsultaEstoque(): void {
-    this.router.navigate(['/materiais/consulta-estoque']);
-  }
-
   abrirCadastro(): void {
     this.materialEmEdicao = null;
     this.cancelarNovoFabricante();
@@ -206,6 +207,7 @@ export class Materiais {
       ativo: true,
     });
 
+    this.materialForm.enable();
     this.painelAberto.set(true);
   }
 
@@ -225,6 +227,12 @@ export class Materiais {
       ativo: material.ativo,
     });
 
+    if (this.podeEditar) {
+      this.materialForm.enable();
+    } else {
+      this.materialForm.disable();
+    }
+
     this.painelAberto.set(true);
   }
 
@@ -233,6 +241,10 @@ export class Materiais {
   }
 
   salvarMaterial(): void {
+    if (!this.podeEditar) {
+      return;
+    }
+
     if (this.materialForm.invalid) {
       this.materialForm.markAllAsTouched();
       return;
@@ -313,15 +325,6 @@ export class Materiais {
         );
       },
     });
-  }
-
-  abrirGerenciarFabricantes(): void {
-    const modal = this.dialog.open(GerenciarFabricantes, {
-      width: '480px',
-      maxWidth: '95vw',
-    });
-
-    modal.afterClosed().subscribe(() => this.listarFabricantes());
   }
 
   abrirNovoFabricante(): void {

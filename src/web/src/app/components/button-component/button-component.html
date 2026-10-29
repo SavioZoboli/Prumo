@@ -7,6 +7,7 @@
       [disabled]="disabled || loading"
       class="app-button app-button--secondary"
       [class.app-button--full]="fullWidth"
+      [class.app-button--loading]="loading"
     >
       <ng-container *ngTemplateOutlet="content"></ng-container>
     </button>
@@ -19,6 +20,7 @@
       [disabled]="disabled || loading"
       class="app-button"
       [class.app-button--full]="fullWidth"
+      [class.app-button--loading]="loading"
     >
       <ng-container *ngTemplateOutlet="content"></ng-container>
     </button>
@@ -31,6 +33,7 @@
       [disabled]="disabled || loading"
       class="app-button"
       [class.app-button--full]="fullWidth"
+      [class.app-button--loading]="loading"
     >
       <ng-container *ngTemplateOutlet="content"></ng-container>
     </button>
