@@ -75,7 +75,7 @@ export class MovimentacaoService {
 
         if (operacao === 'S' && item.quantidade > material.estoqueAtual) {
           throw new BadRequestException(
-            `Quantidade solicitada de ${item.material_id} é maior que o estoque disponível.`,
+            `Quantidade solicitada de ${material.nome} é maior que a quantidade disponível em estoque.`,
           );
         }
 
@@ -216,7 +216,7 @@ export class MovimentacaoService {
 
       if (material.estoqueAtual + delta < 0) {
         throw new BadRequestException(
-          `Estorno inviável: o material ${item.material_id} não tem estoque suficiente para reverter a entrada.`,
+          `Estorno inviável: o material ${material.nome} não tem estoque suficiente para reverter a entrada.`,
         );
       }
 
