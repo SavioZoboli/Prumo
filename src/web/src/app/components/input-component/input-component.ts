@@ -4,6 +4,7 @@ import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatIconModule } from '@angular/material/icon';
+import { MatButtonModule } from '@angular/material/button';
 import { MatAutocomplete, MatAutocompleteModule } from '@angular/material/autocomplete';
 
 export type InputIcon = 'user' | 'lock' | null;
@@ -12,7 +13,7 @@ export type InputType = 'text' | 'password' | 'email' | 'number';
 @Component({
   selector: 'app-input',
   standalone: true,
-  imports: [CommonModule, MatFormFieldModule, MatInputModule, MatIconModule, MatAutocompleteModule],
+  imports: [CommonModule, MatFormFieldModule, MatInputModule, MatIconModule, MatButtonModule, MatAutocompleteModule],
   templateUrl: './input-component.html',
   styleUrl: './input-component.scss',
   providers: [
@@ -42,6 +43,15 @@ export class InputComponent implements ControlValueAccessor {
 
   value = '';
   disabled = false;
+  passwordVisible = false;
+
+  get effectiveType(): InputType {
+    return this.type === 'password' && this.passwordVisible ? 'text' : this.type;
+  }
+
+  togglePasswordVisibility(): void {
+    this.passwordVisible = !this.passwordVisible;
+  }
 
   // Mapeia o ícone semântico do componente para o nome do Material Symbols/Icons
   get matIconName(): string {

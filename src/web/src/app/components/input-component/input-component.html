@@ -7,7 +7,7 @@
 @if(autocompletePanel){
 <input
     matInput
-    [type]="type"
+    [type]="effectiveType"
     [placeholder]="placeholder"
     [value]="value"
     [disabled]="disabled"
@@ -19,7 +19,7 @@
 }@else{
 <input
     matInput
-    [type]="type"
+    [type]="effectiveType"
     [placeholder]="placeholder"
     [value]="value"
     [disabled]="disabled"
@@ -29,7 +29,10 @@
   />
 }
 
-  
+  <button *ngIf="type === 'password'" mat-icon-button matSuffix type="button"
+    (click)="togglePasswordVisibility()" aria-label="Alternar visibilidade da senha">
+    <mat-icon>{{ passwordVisible ? 'visibility_off' : 'visibility' }}</mat-icon>
+  </button>
 
   <mat-error *ngIf="hasError && errorMessage">{{ errorMessage }}</mat-error>
 </mat-form-field>
