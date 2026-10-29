@@ -13,6 +13,7 @@ import {
   MovimentacaoResponse,
 } from '../../../services/movimentacao.service';
 import { EstornoDialog } from '../../../components/estorno-dialog/estorno-dialog';
+import { AuthService, PERFIS_GESTAO } from '../../../services/auth.service';
 import { CadastroMovimentacao, MovimentacaoPayload } from '../cadastro-movimentacao/cadastro-movimentacao';
 
 @Component({
@@ -31,9 +32,16 @@ import { CadastroMovimentacao, MovimentacaoPayload } from '../cadastro-movimenta
   styleUrl: './lista-movimentacoes.scss',
 })
 export class ListaMovimentacoes {
+  private authService = inject(AuthService);
+
   painelAberto = signal(false);
 
-  colunasExibidas = ['id', 'data', 'operacao', 'itens', 'motivo', 'acoes'];
+  // Estornar é exclusivo de ADMIN e LIDER; a coluna "Ações" só tem o botão de estorno.
+  readonly podeEstornar = this.authService.temPerfil(PERFIS_GESTAO);
+
+  colunasExibidas = this.podeEstornar
+    ? ['id', 'data', 'operacao', 'itens', 'motivo', 'acoes']
+    : ['id', 'data', 'operacao', 'itens', 'motivo'];
 
   materiaisDisponiveis = signal<Material[]>([]);
   movimentacoes = signal<MovimentacaoResponse[]>([]);

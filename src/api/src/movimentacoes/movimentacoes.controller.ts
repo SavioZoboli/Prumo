@@ -6,6 +6,9 @@ import {
   ApiParam,
 } from '@nestjs/swagger';
 import { JwtAuthGuard } from "../auth/jwt-auth.guard";
+import { RolesGuard } from "../auth/roles.guard";
+import { Roles } from "../auth/roles.decorator";
+import { PerfilUsuario } from "../usuarios/perfil.enum";
 import { MovimentacaoService } from "./movimentacao.service";
 import { Movimentacao } from "./movimentacao.entity";
 import { CreateMovimentacaoDto } from "./dto/create-movimentacao.dto";
@@ -98,11 +101,16 @@ async findOne(@Param('id', ParseIntPipe) id: number) {
   description: 'Movimentação já estornada ou estoque insuficiente para reverter.',
 })
 @ApiResponse({
+  status: 403,
+  description: 'Apenas usuários com perfil ADMIN ou LIDER podem estornar movimentações.',
+})
+@ApiResponse({
   status: 404,
   description: 'Movimentação não encontrada.',
 })
 @Patch(':id/estorno')
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, RolesGuard)
+@Roles(PerfilUsuario.ADMIN, PerfilUsuario.LIDER)
 estornar(
   @Param('id', ParseIntPipe) id: number,
   @Body() estornarDto: EstornarMovimentacaoDto,

@@ -14,6 +14,7 @@ import {
   MovimentacaoService,
   MovimentacaoResponse,
 } from '../../../services/movimentacao.service';
+import { AuthService } from '../../../services/auth.service';
 
 describe('ListaMovimentacoes', () => {
   let component: ListaMovimentacoes;
@@ -75,7 +76,14 @@ describe('ListaMovimentacoes', () => {
     open: vi.fn(),
   };
 
+  // Por padrão o usuário logado é gestor (ADMIN ou LIDER), que pode estornar.
+  const authServiceMock = {
+    temPerfil: vi.fn(() => true),
+  };
+
   beforeEach(async () => {
+    authServiceMock.temPerfil.mockClear().mockReturnValue(true);
+
     materialServiceMock.listAll
       .mockClear()
       .mockReturnValue(of(materiaisMock));
@@ -119,6 +127,10 @@ describe('ListaMovimentacoes', () => {
         {
           provide: MatDialog,
           useValue: dialogMock,
+        },
+        {
+          provide: AuthService,
+          useValue: authServiceMock,
         },
       ],
     });
@@ -239,6 +251,22 @@ describe('ListaMovimentacoes', () => {
       );
 
     expect(botaoEstorno).toBeTruthy();
+    expect(authServiceMock.temPerfil).toHaveBeenCalledWith(['ADMIN', 'LIDER']);
+  });
+
+  it('não deve exibir a coluna de ações nem o estorno para quem não é ADMIN nem LIDER', () => {
+    authServiceMock.temPerfil.mockReturnValue(false);
+
+    const fixtureSemPermissao = TestBed.createComponent(ListaMovimentacoes);
+    fixtureSemPermissao.detectChanges();
+    const elemento: HTMLElement = fixtureSemPermissao.nativeElement;
+
+    expect(fixtureSemPermissao.componentInstance.podeEstornar).toBe(false);
+    expect(fixtureSemPermissao.componentInstance.colunasExibidas).not.toContain('acoes');
+    expect(
+      elemento.querySelector('button[aria-label="Estornar movimentação"]'),
+    ).toBeNull();
+    expect(elemento.textContent).not.toContain('Ações');
   });
 
   it('deve estornar uma movimentação confirmada no dialog', () => {
