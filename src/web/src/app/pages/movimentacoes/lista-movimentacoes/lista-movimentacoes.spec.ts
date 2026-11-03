@@ -1,4 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { MAT_DATE_LOCALE, provideNativeDateAdapter } from '@angular/material/core';
 import { MatDialog } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { of, throwError, type Observable } from 'rxjs';
@@ -120,6 +121,11 @@ describe('ListaMovimentacoes', () => {
           provide: MatDialog,
           useValue: dialogMock,
         },
+        {
+          provide: MAT_DATE_LOCALE,
+          useValue: 'PT-BR',
+        },
+        provideNativeDateAdapter(),
       ],
     });
 
@@ -328,6 +334,72 @@ describe('ListaMovimentacoes', () => {
     expect(
       movimentacaoServiceMock.listAll,
     ).toHaveBeenCalledTimes(2);
+  });
+
+  it('deve identificar a movimentação como estornada após a operação', () => {
+    const movimentacoesAtualizadas: MovimentacaoResponse[] = [
+      {
+        ...movimentacoesMock[0],
+        is_estornado: true,
+        motivo_estorno: 'Motivo do estorno',
+      },
+    ];
+
+    movimentacaoServiceMock.listAll.mockReturnValueOnce(
+      of(movimentacoesAtualizadas),
+    );
+
+    component.abrirEstorno(movimentacoesMock[0]);
+
+    fixture.detectChanges();
+
+    expect(component.movimentacoes()[0].is_estornado).toBe(true);
+    expect(fixture.nativeElement.textContent).toContain('Estornada');
+  });
+
+  it('deve manter a movimentação original no histórico após o estorno', () => {
+    const movimentacoesAtualizadas: MovimentacaoResponse[] = [
+      {
+        ...movimentacoesMock[0],
+        is_estornado: true,
+        motivo_estorno: 'Motivo do estorno',
+      },
+    ];
+
+    movimentacaoServiceMock.listAll.mockReturnValueOnce(
+      of(movimentacoesAtualizadas),
+    );
+
+    component.abrirEstorno(movimentacoesMock[0]);
+
+    const movimentacaoNoHistorico = component
+      .movimentacoes()
+      .find(
+        (movimentacao) =>
+          movimentacao.id === movimentacoesMock[0].id,
+      );
+
+    expect(movimentacaoNoHistorico).toBeTruthy();
+    expect(movimentacaoNoHistorico?.is_estornado).toBe(true);
+  });
+
+  it('não deve permitir novo estorno de uma movimentação já estornada', () => {
+    component.movimentacoes.set([
+      {
+        ...movimentacoesMock[0],
+        is_estornado: true,
+        motivo_estorno: 'Motivo do estorno',
+      },
+    ]);
+
+    fixture.detectChanges();
+
+    const botaoEstorno =
+      fixture.nativeElement.querySelector(
+        'button[aria-label="Estornar movimentação"]',
+      );
+
+    expect(botaoEstorno.disabled).toBe(true);
   });
 
   it('deve formatar o tipo de operação', () => {
