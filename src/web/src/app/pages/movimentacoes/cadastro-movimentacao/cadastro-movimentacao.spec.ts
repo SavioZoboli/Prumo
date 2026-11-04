@@ -21,6 +21,20 @@ describe('CadastroMovimentacao', () => {
     localizacao: null,
   };
 
+  const outroMaterial: Material = {
+    id: 2,
+    nome: 'Pastilha B2',
+    codigo: 'PB2',
+    equipamento: 'Torno',
+    estoqueMinimo: 5,
+    estoqueAtual: 50,
+    fabricanteId: 1,
+    ativo: true,
+    ultimoValor: null,
+    unidadeMedida: 'un',
+    localizacao: null,
+  };
+
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [CadastroMovimentacao],
@@ -28,7 +42,7 @@ describe('CadastroMovimentacao', () => {
 
     fixture = TestBed.createComponent(CadastroMovimentacao);
     component = fixture.componentInstance;
-    component.materiaisDisponiveis = [material];
+    component.materiaisDisponiveis = [material, outroMaterial];
 
     await fixture.whenStable();
   });
@@ -107,5 +121,57 @@ describe('CadastroMovimentacao', () => {
       motivo: 'Recebimento de fornecedor',
       itens: [{ materialId: 1, quantidade: 10 }],
     });
+  });
+
+  it('deve identificar material já selecionado em outra linha', () => {
+    component.aberto = true;
+    component.ngOnChanges({
+      aberto: { currentValue: true, previousValue: false, firstChange: true, isFirstChange: () => true },
+    });
+
+    component.itens.at(0).patchValue({
+      material,
+    });
+
+    component.adicionarItem();
+
+    expect(
+      component.materialSelecionadoEmOutroItem(material.id, 1),
+    ).toBe(true);
+
+    expect(
+      component.materialSelecionadoEmOutroItem(outroMaterial.id, 1),
+    ).toBe(false);
+  });
+
+  it('não deve salvar movimentação com material repetido', () => {
+    component.aberto = true;
+    component.ngOnChanges({
+      aberto: { currentValue: true, previousValue: false, firstChange: true, isFirstChange: () => true },
+    });
+
+    component.adicionarItem();
+
+    component.movimentacaoForm.setValue({
+      operacao: 'E',
+      motivo: 'Recebimento de fornecedor',
+      itens: [
+        {
+          material,
+          quantidade: 2,
+        },
+        {
+          material,
+          quantidade: 3,
+        },
+      ],
+    });
+
+    let payloadEmitido = false;
+    component.salvar.subscribe(() => (payloadEmitido = true));
+
+    component.salvarMovimentacao();
+
+    expect(payloadEmitido).toBe(false);
   });
 });

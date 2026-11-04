@@ -45,6 +45,12 @@ export class MovimentacaoService {
       }
     }
 
+    const materiaisIds = itens.map((item) => item.material_id);
+
+    if (new Set(materiaisIds).size !== materiaisIds.length) {
+      throw new BadRequestException('Material repetido na movimentação');
+    }
+
     const movimentacaoSalva = await this.movimentacaoRepository.manager.transaction(async (manager) => {
       const materialRepository = manager.getRepository(Material);
       const materiaisPorId = new Map<number, Material>();
@@ -75,7 +81,7 @@ export class MovimentacaoService {
 
         if (operacao === 'S' && item.quantidade > material.estoqueAtual) {
           throw new BadRequestException(
-            `Quantidade solicitada de ${material.nome} é maior que a quantidade disponível em estoque.`,
+            `Quantidade solicitada (${item.quantidade}) é maior que o estoque disponível (${material.estoqueAtual}) do material ${material.nome}.`,
           );
         }
 
