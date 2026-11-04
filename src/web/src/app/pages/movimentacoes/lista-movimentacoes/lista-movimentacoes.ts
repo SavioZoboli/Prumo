@@ -10,6 +10,7 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatInputModule } from '@angular/material/input';
+import { finalize } from 'rxjs';
 import { MatButtonModule } from '@angular/material/button';
 
 import { ButtonComponent } from '../../../components/button-component/button-component';
@@ -45,6 +46,7 @@ import { CadastroMovimentacao, MovimentacaoPayload } from '../cadastro-movimenta
 })
 export class ListaMovimentacoes {
   painelAberto = signal(false);
+  salvando = signal(false);
 
   colunasExibidas = ['id', 'data', 'operacao', 'itens', 'motivo', 'acoes'];
 
@@ -140,6 +142,12 @@ export class ListaMovimentacoes {
   }
 
   salvarMovimentacao(payload: MovimentacaoPayload): void {
+    // Um segundo clique antes da resposta gravaria a movimentação em dobro.
+    if (this.salvando()) {
+      return;
+    }
+    this.salvando.set(true);
+
     this.movimentacaoService
       .create({
         operacao: payload.operacao,
@@ -149,6 +157,7 @@ export class ListaMovimentacoes {
           quantidade: item.quantidade,
         })),
       })
+      .pipe(finalize(() => this.salvando.set(false)))
       .subscribe({
         next: () => {
           this.fecharCadastro();

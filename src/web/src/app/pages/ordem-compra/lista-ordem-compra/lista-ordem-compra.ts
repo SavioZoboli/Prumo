@@ -41,6 +41,8 @@ import { SugestaoCompraComponent } from '../sugestao-compra/sugestao-compra';
 export class ListaOrdemCompra implements OnDestroy {
   painelAberto = false;
   salvando = false;
+  // Ordens com o recebimento em andamento: o botão daquela linha fica travado.
+  recebendo = signal<ReadonlySet<number>>(new Set());
   ordemEmEdicao: OrdemCompraLista | null = null;
   // Itens vindos da sugestão de compra para pré-preencher uma ordem nova.
   itensSugeridos: OrdemCompraItem[] | null = null;
@@ -199,19 +201,34 @@ export class ListaOrdemCompra implements OnDestroy {
 
   // Apenas marca a ordem como recebida (dt_entrega = agora); não movimenta estoque.
   finalizar(ordem: OrdemCompraLista): void {
+    if (this.recebendo().has(ordem.id)) {
+      return;
+    }
+    this.recebendo.update((ids) => new Set(ids).add(ordem.id));
+
     this.observableHandler.add(
-      this.ordemCompraService.receber(ordem.id).subscribe({
-        next: () => {
-          this.buscarOrdens();
-          // O recebimento muda o estoque, então as sugestões precisam ser recalculadas.
-          this.sugestao()?.carregar();
-          this.notificar('Ordem de compra finalizada com sucesso.', 'success');
-        },
-        error: (err) => {
-          console.log(err);
-          this.notificar('Erro ao finalizar ordem de compra', 'error');
-        },
-      }),
+      this.ordemCompraService
+        .receber(ordem.id)
+        .pipe(
+          finalize(() =>
+            this.recebendo.update((ids) => {
+              const restantes = new Set(ids);
+              restantes.delete(ordem.id);
+              return restantes;
+            }),
+          ),
+        )
+        .subscribe({
+          next: () => {
+            this.buscarOrdens();
+            // O recebimento muda o estoque, então as sugestões precisam ser recalculadas.
+            this.sugestao()?.carregar();
+            this.notificar('Ordem de compra finalizada com sucesso.', 'success');
+          },
+          error: (err) => {
+            this.notificar(err.error?.message ?? 'Erro ao finalizar ordem de compra', 'error');
+          },
+        }),
     );
   }
 

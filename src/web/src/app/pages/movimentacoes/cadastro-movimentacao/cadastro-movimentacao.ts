@@ -52,10 +52,11 @@ export class CadastroMovimentacao implements OnChanges {
   @Input() aberto = false;
   @Input() materiaisDisponiveis: Material[] = [];
 
+  // Controlado pelo componente pai, que é quem chama a API.
+  @Input() salvando = false;
+
   @Output() fechar = new EventEmitter<void>();
   @Output() salvar = new EventEmitter<MovimentacaoPayload>();
-
-  salvando = false;
 
   movimentacaoForm: FormGroup = new FormGroup({
     operacao: new FormControl<TipoOperacao | null>(null, Validators.required),
@@ -116,6 +117,11 @@ export class CadastroMovimentacao implements OnChanges {
   }
 
   salvarMovimentacao(): void {
+    // Não depende só do botão desabilitado: o envio também pode vir pelo Enter.
+    if (this.salvando) {
+      return;
+    }
+
     if (this.movimentacaoForm.invalid) {
       this.movimentacaoForm.markAllAsTouched();
       return;

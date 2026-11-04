@@ -1,4 +1,4 @@
-import { Component, EventEmitter, inject, Output } from '@angular/core';
+import { Component, EventEmitter, inject, Output, signal } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -7,6 +7,7 @@ import { NgxMaskDirective } from 'ngx-mask';
 import { cnpjValidator } from '../../../../utils/validators.utils';
 import { FornecedorService } from '../../../services/fornecedor.service';
 import { MatSnackBar } from '@angular/material/snack-bar';
+import { finalize } from 'rxjs';
 
 @Component({
   selector: 'app-cadastro-fornecedor',
@@ -25,6 +26,8 @@ export class CadastroFornecedor {
 
   private fornecedorService = inject(FornecedorService);
   private snackBar = inject(MatSnackBar);
+
+  salvando = signal(false);
 
   formFornecedor = new FormGroup({
     nome: new FormControl('', Validators.required),
@@ -45,10 +48,16 @@ export class CadastroFornecedor {
   }
 
   salvarFornecedor() {
+    // Um segundo clique antes da resposta enviaria o mesmo CNPJ e voltaria com erro.
+    if (this.salvando()) {
+      return;
+    }
+
     let nome = this.formNome.value;
     let cnpj = this.formCNPJ.value;
 
-    this.fornecedorService.save(nome, cnpj).subscribe({
+    this.salvando.set(true);
+    this.fornecedorService.save(nome, cnpj).pipe(finalize(() => this.salvando.set(false))).subscribe({
       next: (res) => {
         this.snackBar.open('Fornecedor salvo com sucesso', '', {
           duration: 5000,
@@ -59,8 +68,7 @@ export class CadastroFornecedor {
         this.cadastrado.emit()
       },
       error: (err) => {
-        console.error(err);
-        this.snackBar.open('Erro ao salvar fornecedor', '', {
+        this.snackBar.open(err.error?.message ?? 'Erro ao salvar fornecedor', '', {
           duration: 5000,
           horizontalPosition: 'right',
           verticalPosition: 'top',
