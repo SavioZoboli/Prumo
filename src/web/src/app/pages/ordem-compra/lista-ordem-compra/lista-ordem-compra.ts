@@ -141,7 +141,9 @@ export class ListaOrdemCompra implements OnDestroy {
 
   // API -> formato da tela: converte datas/numerics, calcula status e achata os itens.
   private mapearOrdem(o: OrdemCompraApi): OrdemCompraLista {
-    const agora = new Date();
+    const hoje = this.hojeNoFuso();
+    const dataPrevista = o.dt_entrega_prevista ? String(o.dt_entrega_prevista).slice(0, 10) : null;
+
     const dt_entrega = o.dt_entrega ? new Date(o.dt_entrega) : null;
     const dt_entrega_prevista = o.dt_entrega_prevista ? new Date(o.dt_entrega_prevista) : null;
 
@@ -154,7 +156,7 @@ export class ListaOrdemCompra implements OnDestroy {
       valor_total: Number(o.valor_total ?? 0),
       status: dt_entrega
         ? 'FECHADO'
-        : dt_entrega_prevista && dt_entrega_prevista < agora
+        : dataPrevista && dataPrevista < hoje
           ? 'EM ATRASO'
           : 'ABERTO',
       itens: o.itens.map(({ quantidade, valor, material }) => ({
@@ -164,6 +166,10 @@ export class ListaOrdemCompra implements OnDestroy {
         valor: Number(valor),
       })),
     };
+  }
+
+  private hojeNoFuso(): string {
+    return new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Sao_Paulo' }).format(new Date());
   }
 
   salvarOrdem(payload: OrdemCompraPayload): void {
