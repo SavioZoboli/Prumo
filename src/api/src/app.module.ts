@@ -21,7 +21,7 @@ import { DashboardModule } from './dashboard/dashboard.module';
     ConfigModule.forRoot({ isGlobal: true }),
 
     ThrottlerModule.forRoot({
-      throttlers: [{ ttl: 60_000, limit: 30 }],
+      throttlers: [{ ttl: 60_000, limit: 100_000 }],
     }),
 
     TypeOrmModule.forRootAsync({
