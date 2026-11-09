@@ -109,6 +109,7 @@ JWT_SECRET=coloque_aqui_seu_secret_gerado
 
 > **💡 Dica para gerar o `JWT_SECRET`:**
 > Gere um hash aleatório seguro no terminal com:
+>
 > ```bash
 > node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
 > ```
@@ -175,3 +176,71 @@ Se as portas 1025/8025 já estiverem em uso na sua máquina, defina `MAILPIT_SMT
 Os destinatários do alerta são os usuários ativos com perfil ADMIN ou LIDER.
 
 Passo a passo completo de teste — pelo Mailpit e com envio real pelo Gmail — em [docs/alerta-estoque-email.md](docs/alerta-estoque-email.md).
+
+---
+
+## ⚡ Testes de Desempenho (k6)
+
+O projeto conta com testes de carga e desempenho utilizando o [Grafana k6](https://k6.io/), cobrindo as principais rotas da API (`POST`, `GET`, `PUT`, `PATCH` e `DELETE`) com cenários de **50** e **100 usuários simultâneos (VUs)**, além de testes de carregamento e *Core Web Vitals* (`LCP`, `FCP`, `CLS` e `TTFB`) para o Front-end.
+
+### Pré-requisitos e Preparação
+
+1. **Instalar o k6** na máquina ([guia oficial](https://grafana.com/docs/k6/latest/set-up/install-k6/)) ou possuir o Docker instalado.
+2. **Subir o Banco de Dados e a API:**
+   - Certifique-se de que o container PostgreSQL (`docker compose up -d`) e a API (`cd src/api && npm run start:dev`) estão em execução.
+   - Os testes utilizam por padrão a credencial de administrador criada pelas migrations (`admin@prumo.com` / `123456`).
+3. **Ajustar o Rate Limit (`ThrottlerModule`) na API durante os testes:**
+   - Por segurança, a API limita o número de requisições por minuto por IP em `src/api/src/app.module.ts`.
+   - Como todas as 50 ou 100 VUs disparam milhares de requisições a partir do mesmo IP local (`127.0.0.1`), aumente temporariamente o `limit` em `src/api/src/app.module.ts` antes de rodar a bateria de carga para evitar respostas `429 Too Many Requests`:
+     ```ts
+     ThrottlerModule.forRoot({
+       throttlers: [{ ttl: 60_000, limit: 100_000 }],
+     }),
+     ```
+
+---
+
+### 1. Executando os Testes da API (Backend)
+
+A partir da raiz do projeto, execute um dos cenários abaixo:
+
+```bash
+# Cenário com 50 usuários simultâneos
+k6 run src/api/test/k6/load-50vus.js
+
+# Cenário com 100 usuários simultâneos
+k6 run src/api/test/k6/load-100vus.js
+
+# Bateria completa (50 VUs seguido de 100 VUs)
+k6 run src/api/test/k6/api-complete.k6.js
+```
+
+Caso queira informar outra URL ou credencial de administrador:
+
+```bash
+k6 run -e BASE_URL=http://localhost:3000 -e ADMIN_EMAIL=admin@prumo.com -e ADMIN_PASSWORD=sua_senha src/api/test/k6/load-50vus.js
+```
+
+---
+
+### 2. Executando os Testes do Front-end (Web)
+
+Com o servidor do Angular em execução (`cd src/web && npm start` em `http://localhost:4200`), utilize o script abaixo, que detecta automaticamente o navegador instalado (**Brave**, **Chromium**, **Edge** ou **Chrome**) para medir os *Core Web Vitals* e em seguida executa o teste de carga HTTP na SPA:
+
+```bash
+# A partir da raiz do projeto
+./src/web/perf/run-frontend-k6.sh
+
+# Ou, se já estiver dentro de src/web
+./perf/run-frontend-k6.sh
+```
+
+Outras opções de execução do front-end:
+
+```bash
+# Especificando manualmente o caminho do navegador (ex.: Brave)
+K6_BROWSER_EXECUTABLE_PATH=/usr/bin/brave-browser k6 run src/web/perf/frontend.k6.js
+
+# Executando apenas o teste de carga HTTP (sem abrir navegador)
+k6 run -e SKIP_BROWSER=true src/web/perf/frontend.k6.js
+```
