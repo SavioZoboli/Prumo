@@ -24,7 +24,7 @@ jobs:
       registry: ${{ steps.login-ecr.outputs.registry }}
     env:
       API_DIR: src/api
-      WEB_DIR: src/hmi # ajuste se o front estiver em src/web
+      WEB_DIR: src/web
       ECR_API_REPO: ${{ secrets.ECR_API_REPOSITORY || 'prumo-app-api' }}
       ECR_WEB_REPO: ${{ secrets.ECR_WEB_REPOSITORY || 'prumo-app-web' }}
       IMAGE_TAG: ${{ github.sha }}
@@ -102,8 +102,6 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ secrets.AWS_REGION || 'us-east-1' }}
 
-      # Equivalente ao "escrever .env + docker compose pull" do servidor on-premises:
-      # no Fargate não há disco do host, então o .env vira "environment" da task definition.
       - name: Registrar nova Task Definition (imagens + variáveis da API)
         id: taskdef
         env:
