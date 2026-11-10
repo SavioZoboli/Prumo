@@ -1,4 +1,4 @@
-name: Processo de CI/CD
+name: Deploy to AWS ECS
 
 on:
   push:
@@ -102,6 +102,8 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ secrets.AWS_REGION || 'us-east-1' }}
 
+      # Equivalente ao "escrever .env + docker compose pull" do servidor on-premises:
+      # no Fargate não há disco do host, então o .env vira "environment" da task definition.
       - name: Registrar nova Task Definition (imagens + variáveis da API)
         id: taskdef
         env:
@@ -152,7 +154,7 @@ jobs:
                 map(select(.name == $api))
                 | map(del(.portMappings, .healthCheck, .dependsOn)
                       | .essential = true
-                      | .command = ["npx", "sequelize-cli", "db:migrate"]))
+                      | .command = ["node", "./node_modules/typeorm/cli.js", "migration:run", "-d", "dist/data-source.js"]))
           ' td-new.json > td-migrate.json
 
           MIGRATE_TD=$(aws ecs register-task-definition --cli-input-json file://td-migrate.json \
