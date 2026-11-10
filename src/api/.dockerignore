@@ -1,0 +1,12 @@
+node_modules
+dist
+.git
+.gitignore
+.env
+.env.*
+npm-debug.log
+Dockerfile
+.dockerignore
+coverage
+test
+*.md

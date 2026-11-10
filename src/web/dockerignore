@@ -1,0 +1,10 @@
+node_modules
+dist
+.angular
+.git
+.gitignore
+npm-debug.log
+Dockerfile
+.dockerignore
+*.md
+# NÃO ignorar src/environments/*: o environment.ts é gerado pelo workflow antes do build
