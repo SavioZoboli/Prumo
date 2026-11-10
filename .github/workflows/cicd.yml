@@ -1,0 +1,198 @@
+name: Processo de CI/CD
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-ecs-production
+  cancel-in-progress: false
+
+jobs:
+  # ---------------------------------------------------------------------------
+  # 1) BUILD: gera environment.ts do Angular, builda e envia imagens ao ECR
+  # ---------------------------------------------------------------------------
+  build-and-push:
+    name: Build & Push Images (ECR)
+    runs-on: ubuntu-latest
+    outputs:
+      registry: ${{ steps.login-ecr.outputs.registry }}
+    env:
+      API_DIR: src/api
+      WEB_DIR: src/hmi # ajuste se o front estiver em src/web
+      ECR_API_REPO: ${{ secrets.ECR_API_REPOSITORY || 'prumo-app-api' }}
+      ECR_WEB_REPO: ${{ secrets.ECR_WEB_REPOSITORY || 'prumo-app-web' }}
+      IMAGE_TAG: ${{ github.sha }}
+
+    steps:
+      - name: Checkout do Código
+        uses: actions/checkout@v4
+
+      - name: Configurar Credenciais AWS
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION || 'us-east-1' }}
+
+      - name: Login no Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      # Angular lê o environment em build-time: precisa existir ANTES do docker build
+      - name: Gerar environment.ts do Angular
+        env:
+          ENV_HMI: ${{ secrets.ENV_HMI }}
+        run: |
+          set -euo pipefail
+          API_URL=$(printf '%s\n' "$ENV_HMI" | tr -d '\r' | grep -E '^API_URL=' | head -1 | cut -d= -f2- | tr -d ' "')
+
+          if [ -z "$API_URL" ]; then
+            echo "API_URL não encontrada no secret ENV_HMI"
+            exit 1
+          fi
+
+          TEMPLATE="$WEB_DIR/src/environments/environment.template.ts"
+          sed -e "s|API_URL|$API_URL|g" "$TEMPLATE" > "$WEB_DIR/src/environments/environment.ts"
+          sed -e "s|API_URL|$API_URL|g" "$TEMPLATE" > "$WEB_DIR/src/environments/environment.prod.ts"
+
+      - name: Build e Push da Imagem da API NestJS
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+        run: |
+          docker build -t $ECR_REGISTRY/$ECR_API_REPO:$IMAGE_TAG -t $ECR_REGISTRY/$ECR_API_REPO:latest $API_DIR
+          docker push $ECR_REGISTRY/$ECR_API_REPO:$IMAGE_TAG
+          docker push $ECR_REGISTRY/$ECR_API_REPO:latest
+
+      - name: Build e Push da Imagem do Frontend Angular
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+        run: |
+          docker build -t $ECR_REGISTRY/$ECR_WEB_REPO:$IMAGE_TAG -t $ECR_REGISTRY/$ECR_WEB_REPO:latest $WEB_DIR
+          docker push $ECR_REGISTRY/$ECR_WEB_REPO:$IMAGE_TAG
+          docker push $ECR_REGISTRY/$ECR_WEB_REPO:latest
+
+  # ---------------------------------------------------------------------------
+  # 2) DEPLOY: nova task definition (imagem + .env) -> migrations -> service
+  # ---------------------------------------------------------------------------
+  deploy:
+    name: Deploy to ECS Fargate (Manual Approval)
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    environment:
+      name: production # exige aprovação manual
+    env:
+      CLUSTER_NAME: ${{ secrets.ECS_CLUSTER_NAME || 'prumo-app-cluster' }}
+      SERVICE_NAME: ${{ secrets.ECS_SERVICE_NAME || 'prumo-app-service' }}
+      API_CONTAINER: ${{ secrets.ECS_API_CONTAINER || 'api' }} # nome do container na task definition
+      WEB_CONTAINER: ${{ secrets.ECS_WEB_CONTAINER || 'web' }} # nome do container na task definition
+      API_IMAGE: ${{ needs.build-and-push.outputs.registry }}/${{ secrets.ECR_API_REPOSITORY || 'prumo-app-api' }}:${{ github.sha }}
+      WEB_IMAGE: ${{ needs.build-and-push.outputs.registry }}/${{ secrets.ECR_WEB_REPOSITORY || 'prumo-app-web' }}:${{ github.sha }}
+
+    steps:
+      - name: Configurar Credenciais AWS
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION || 'us-east-1' }}
+
+      # Equivalente ao "escrever .env + docker compose pull" do servidor on-premises:
+      # no Fargate não há disco do host, então o .env vira "environment" da task definition.
+      - name: Registrar nova Task Definition (imagens + variáveis da API)
+        id: taskdef
+        env:
+          ENV_API_DADOS: ${{ secrets.ENV_API_DADOS }}
+        run: |
+          set -euo pipefail
+
+          CURRENT_TD=$(aws ecs describe-services \
+            --cluster "$CLUSTER_NAME" --services "$SERVICE_NAME" \
+            --query 'services[0].taskDefinition' --output text)
+
+          aws ecs describe-task-definition --task-definition "$CURRENT_TD" \
+            --query taskDefinition > td-current.json
+
+          # .env (KEY=VALUE) -> [{name, value}], ignora comentários/linhas vazias e aspas externas
+          printf '%s\n' "$ENV_API_DADOS" | tr -d '\r' | jq -R -s '
+            split("\n")
+            | map(select(test("^[A-Za-z_][A-Za-z0-9_]*=")))
+            | map(capture("^(?<name>[A-Za-z_][A-Za-z0-9_]*)=(?<value>.*)$"))
+            | map(.value |= sub("^\"(?<v>.*)\"$"; "\(.v)"))
+          ' > env.json
+
+          jq --arg api "$API_CONTAINER" --arg web "$WEB_CONTAINER" \
+             --arg api_img "$API_IMAGE" --arg web_img "$WEB_IMAGE" \
+             --slurpfile env env.json '
+            del(.taskDefinitionArn, .revision, .status, .requiresAttributes,
+                .compatibilities, .registeredAt, .registeredBy, .deregisteredAt)
+            | .containerDefinitions |= map(
+                if .name == $api then .image = $api_img | .environment = $env[0]
+                elif .name == $web then .image = $web_img
+                else . end)
+          ' td-current.json > td-new.json
+
+          NEW_TD=$(aws ecs register-task-definition --cli-input-json file://td-new.json \
+            --query 'taskDefinition.taskDefinitionArn' --output text)
+
+          echo "Nova task definition: $NEW_TD"
+          echo "arn=$NEW_TD" >> "$GITHUB_OUTPUT"
+
+      # Equivalente ao "docker exec ... db:migrate": task efêmera só com o container da API
+      - name: Executar Migrations (one-off task)
+        run: |
+          set -euo pipefail
+
+          jq --arg api "$API_CONTAINER" '
+            .family += "-migrate"
+            | .containerDefinitions |= (
+                map(select(.name == $api))
+                | map(del(.portMappings, .healthCheck, .dependsOn)
+                      | .essential = true
+                      | .command = ["npx", "sequelize-cli", "db:migrate"]))
+          ' td-new.json > td-migrate.json
+
+          MIGRATE_TD=$(aws ecs register-task-definition --cli-input-json file://td-migrate.json \
+            --query 'taskDefinition.taskDefinitionArn' --output text)
+
+          # Reaproveita subnets/security groups do service
+          NET=$(aws ecs describe-services --cluster "$CLUSTER_NAME" --services "$SERVICE_NAME" \
+            --query 'services[0].networkConfiguration' --output json)
+
+          TASK_ARN=$(aws ecs run-task --cluster "$CLUSTER_NAME" --launch-type FARGATE \
+            --task-definition "$MIGRATE_TD" --network-configuration "$NET" \
+            --query 'tasks[0].taskArn' --output text)
+
+          if [ -z "$TASK_ARN" ] || [ "$TASK_ARN" = "None" ]; then
+            echo "Falha ao iniciar a task de migration"
+            exit 1
+          fi
+
+          echo "Migration task: $TASK_ARN"
+          aws ecs wait tasks-stopped --cluster "$CLUSTER_NAME" --tasks "$TASK_ARN"
+
+          EXIT_CODE=$(aws ecs describe-tasks --cluster "$CLUSTER_NAME" --tasks "$TASK_ARN" \
+            --query 'tasks[0].containers[0].exitCode' --output text)
+
+          if [ "$EXIT_CODE" != "0" ]; then
+            echo "Migration falhou (exit code: $EXIT_CODE). Verifique os logs no CloudWatch."
+            exit 1
+          fi
+
+          echo "Migrations executadas com sucesso"
+
+      - name: Atualizar Service no ECS Fargate
+        run: |
+          set -euo pipefail
+          aws ecs update-service \
+            --cluster "$CLUSTER_NAME" --service "$SERVICE_NAME" \
+            --task-definition "${{ steps.taskdef.outputs.arn }}" \
+            --force-new-deployment > /dev/null
+
+          aws ecs wait services-stable --cluster "$CLUSTER_NAME" --services "$SERVICE_NAME"
+          echo "Deploy concluído"
