@@ -11,6 +11,7 @@ import { CreateMovimentacaoDto } from './dto/create-movimentacao.dto';
 import { FiltrarMovimentacaoDto } from './dto/filtrar-movimentacao.dto';
 import { Material } from '../materiais/material.entity';
 import { AlertaEstoqueService } from '../alertas/alerta-estoque.service';
+import { OrdemCompra } from '../ordem-compra/ordem-compra.entity';
 
 @Injectable()
 export class MovimentacaoService {
@@ -195,6 +196,19 @@ export class MovimentacaoService {
       throw new BadRequestException('Esta movimentação já foi estornada.');
     }
 
+    const ordemCompraId =
+      movimentacao.operacao === 'E' ? movimentacao.ordem_compra_id : null;
+
+    // Lock na ordem antes dos materiais (mesma ordem do "receber"): estornos
+    // simultâneos de entradas da mesma ordem esperam um pelo outro e o último
+    // enxerga a contagem certa para reabrir a ordem.
+    if (ordemCompraId) {
+      await manager.findOne(OrdemCompra, {
+        where: { id: ordemCompraId },
+        lock: { mode: 'pessimistic_write' },
+      });
+    }
+
     const itens = await manager.find(ItemMovimento, {
       where: { movimento_id: id },
     });
@@ -235,6 +249,25 @@ export class MovimentacaoService {
       is_estornado: true,
       motivo_estorno: motivoEstorno,
     });
+
+    // Estornar a entrada do recebimento devolve a ordem de compra para "Aberta",
+    // para poder ser editada ou recebida de novo. Só reabre se não restar outra
+    // entrada ativa ligada à ordem, senão o estoque entraria duas vezes.
+    if (ordemCompraId) {
+      const entradasAtivas = await manager.count(Movimentacao, {
+        where: {
+          ordem_compra_id: ordemCompraId,
+          operacao: 'E',
+          is_estornado: false,
+        },
+      });
+
+      if (entradasAtivas === 0) {
+        await manager.update(OrdemCompra, ordemCompraId, {
+          dt_entrega: null,
+        });
+      }
+    }
   });
 
     void this.alertaEstoqueService.verificarMateriais(materiaisAfetados);
