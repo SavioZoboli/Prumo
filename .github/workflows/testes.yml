@@ -56,6 +56,11 @@ jobs:
       - name: Instalar dependências
         run: npm ci
 
+      - name: Gerar arquivos de environment para teste
+        run: |
+          cp src/environments/environment.template.ts src/environments/environment.ts
+          cp src/environments/environment.template.ts src/environments/environment.development.ts
+
       - name: Executar testes unitários
         env:
           CI: true
