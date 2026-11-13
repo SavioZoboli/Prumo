@@ -69,6 +69,24 @@ describe('Usuarios', () => {
     expect(usuarioServiceMock.create).not.toHaveBeenCalled();
   });
 
+  it('deve marcar os campos inválidos ao tentar salvar usuário vazio', () => {
+    component.abrirCadastro();
+
+    component.salvarUsuario();
+
+    expect(component.usuarioForm.get('nome')?.touched).toBe(true);
+    expect(component.usuarioForm.get('sobrenome')?.touched).toBe(true);
+    expect(component.usuarioForm.get('email')?.touched).toBe(true);
+    expect(component.usuarioForm.get('senha')?.touched).toBe(true);
+
+    expect(component.usuarioForm.get('nome')?.invalid).toBe(true);
+    expect(component.usuarioForm.get('sobrenome')?.invalid).toBe(true);
+    expect(component.usuarioForm.get('email')?.invalid).toBe(true);
+    expect(component.usuarioForm.get('senha')?.invalid).toBe(true);
+
+    expect(usuarioServiceMock.create).not.toHaveBeenCalled();
+  });
+
   it('deve cadastrar um novo usuário', () => {
     component.abrirCadastro();
 
@@ -123,6 +141,8 @@ describe('Usuarios', () => {
   });
 
   it('deve atualizar um usuário existente', () => {
+    component.podeAdicionar = true;
+
     const usuario = {
       id: 1,
       nome: 'John',
@@ -150,6 +170,7 @@ describe('Usuarios', () => {
       'john.doe@email.com',
       true,
       'LIDER',
+      undefined,
     );
 
     expect(component.painelAberto).toBe(false);
@@ -177,6 +198,7 @@ describe('Usuarios', () => {
   describe('ao salvar', () => {
     const preencher = () => {
       component.abrirCadastro();
+
       component.usuarioForm.patchValue({
         nome: 'John',
         sobrenome: 'Doe',
@@ -189,7 +211,11 @@ describe('Usuarios', () => {
 
     it('envia uma única requisição mesmo com dois cliques antes da resposta', () => {
       const resposta = new Subject<number>();
-      usuarioServiceMock.create.mockReturnValueOnce(resposta.asObservable());
+
+      usuarioServiceMock.create.mockReturnValueOnce(
+        resposta.asObservable(),
+      );
+
       preencher();
 
       component.salvarUsuario();
@@ -200,34 +226,55 @@ describe('Usuarios', () => {
 
       resposta.next(1);
       resposta.complete();
+
       expect(component.salvando()).toBe(false);
     });
 
     it('só mostra sucesso depois da confirmação da API', () => {
       const resposta = new Subject<number>();
-      usuarioServiceMock.create.mockReturnValueOnce(resposta.asObservable());
-      const snackBar = vi.spyOn(component['snackBar'], 'open');
+
+      usuarioServiceMock.create.mockReturnValueOnce(
+        resposta.asObservable(),
+      );
+
+      const snackBar = vi.spyOn(
+        component['snackBar'],
+        'open',
+      );
+
       preencher();
 
       component.salvarUsuario();
+
       expect(snackBar).not.toHaveBeenCalled();
 
       resposta.next(1);
+
       expect(snackBar).toHaveBeenCalledWith(
         'Usuário cadastrado com sucesso.',
         'Fechar',
-        expect.objectContaining({ panelClass: ['success-snackbar'] }),
+        expect.objectContaining({
+          panelClass: ['success-snackbar'],
+        }),
       );
     });
 
     it('mostra a mensagem da API com estilo de erro quando o e-mail já existe', () => {
       usuarioServiceMock.create.mockReturnValueOnce(
         throwError(() => ({
-          message: 'Http failure response for http://localhost:3000/usuarios: 409 Conflict',
-          error: { message: 'Usuário ou e-mail já cadastrado.' },
+          message:
+            'Http failure response for http://localhost:3000/usuarios: 409 Conflict',
+          error: {
+            message: 'Usuário ou e-mail já cadastrado.',
+          },
         })),
       );
-      const snackBar = vi.spyOn(component['snackBar'], 'open');
+
+      const snackBar = vi.spyOn(
+        component['snackBar'],
+        'open',
+      );
+
       preencher();
 
       component.salvarUsuario();
@@ -235,8 +282,11 @@ describe('Usuarios', () => {
       expect(snackBar).toHaveBeenCalledWith(
         'Usuário ou e-mail já cadastrado.',
         'Ok',
-        expect.objectContaining({ panelClass: ['error-snackbar'] }),
+        expect.objectContaining({
+          panelClass: ['error-snackbar'],
+        }),
       );
+
       expect(component.salvando()).toBe(false);
       expect(component.painelAberto).toBe(true);
     });
