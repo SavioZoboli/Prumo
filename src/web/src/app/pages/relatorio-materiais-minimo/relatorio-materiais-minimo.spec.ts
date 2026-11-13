@@ -43,7 +43,12 @@ describe('RelatorioMateriaisMinimo', () => {
   async function criarComponente(): Promise<void> {
     await TestBed.configureTestingModule({
       imports: [RelatorioMateriaisMinimo],
-      providers: [{ provide: MaterialService, useValue: materialServiceMock }],
+      providers: [
+        {
+          provide: MaterialService,
+          useValue: materialServiceMock,
+        },
+      ],
     }).compileComponents();
 
     fixture = TestBed.createComponent(RelatorioMateriaisMinimo);
@@ -62,7 +67,9 @@ describe('RelatorioMateriaisMinimo', () => {
   });
 
   it('deve criar o componente', async () => {
-    materialServiceMock.getRelatorioMinimo.mockReturnValue(of(criticosMock));
+    materialServiceMock.getRelatorioMinimo.mockReturnValue(
+      of(criticosMock),
+    );
 
     await criarComponente();
 
@@ -70,18 +77,28 @@ describe('RelatorioMateriaisMinimo', () => {
   });
 
   it('deve carregar os materiais críticos a partir da API', async () => {
-    materialServiceMock.getRelatorioMinimo.mockReturnValue(of(criticosMock));
+    materialServiceMock.getRelatorioMinimo.mockReturnValue(
+      of(criticosMock),
+    );
 
     await criarComponente();
 
-    expect(materialServiceMock.getRelatorioMinimo).toHaveBeenCalledTimes(1);
-    expect(component.materiaisAbaixoDoMinimo()).toEqual(criticosMock);
+    expect(
+      materialServiceMock.getRelatorioMinimo,
+    ).toHaveBeenCalledTimes(1);
+
+    expect(
+      component.materiaisAbaixoDoMinimo(),
+    ).toEqual(criticosMock);
+
     expect(component.carregando()).toBe(false);
     expect(component.erro()).toBe(false);
   });
 
   it('deve retornar a quantidade correta de materiais críticos', async () => {
-    materialServiceMock.getRelatorioMinimo.mockReturnValue(of(criticosMock));
+    materialServiceMock.getRelatorioMinimo.mockReturnValue(
+      of(criticosMock),
+    );
 
     await criarComponente();
 
@@ -89,37 +106,57 @@ describe('RelatorioMateriaisMinimo', () => {
   });
 
   it('deve exibir os materiais retornados pela API na tabela', async () => {
-    materialServiceMock.getRelatorioMinimo.mockReturnValue(of(criticosMock));
+    materialServiceMock.getRelatorioMinimo.mockReturnValue(
+      of(criticosMock),
+    );
 
     await criarComponente();
 
     expect(textoDaTela()).toContain('CNMG120408');
     expect(textoDaTela()).toContain('Sandvik');
     expect(textoDaTela()).toContain('FRESA010');
-    expect(textoDaTela()).not.toContain('Nenhum material crítico');
+
+    expect(textoDaTela()).not.toContain(
+      'Nenhum material crítico',
+    );
   });
 
   it('deve exibir "Nenhum material crítico" quando a API responde com lista vazia', async () => {
-    materialServiceMock.getRelatorioMinimo.mockReturnValue(of([]));
+    materialServiceMock.getRelatorioMinimo.mockReturnValue(
+      of([]),
+    );
 
     await criarComponente();
 
     expect(component.erro()).toBe(false);
-    expect(textoDaTela()).toContain('Nenhum material crítico');
+
+    expect(textoDaTela()).toContain(
+      'Nenhum material crítico',
+    );
   });
 
   it('deve indicar carregamento enquanto a API não responde, sem afirmar que não há críticos', async () => {
     const resposta$ = new Subject<MaterialRelatorio[]>();
-    materialServiceMock.getRelatorioMinimo.mockReturnValue(resposta$);
+
+    materialServiceMock.getRelatorioMinimo.mockReturnValue(
+      resposta$,
+    );
 
     await criarComponente();
 
     expect(component.carregando()).toBe(true);
-    expect(textoDaTela()).toContain('Carregando relatório');
-    expect(textoDaTela()).not.toContain('Nenhum material crítico');
+
+    expect(textoDaTela()).toContain(
+      'Carregando relatório',
+    );
+
+    expect(textoDaTela()).not.toContain(
+      'Nenhum material crítico',
+    );
 
     resposta$.next(criticosMock);
     resposta$.complete();
+
     fixture.detectChanges();
 
     expect(component.carregando()).toBe(false);
@@ -135,14 +172,23 @@ describe('RelatorioMateriaisMinimo', () => {
 
     expect(component.erro()).toBe(true);
     expect(component.carregando()).toBe(false);
-    expect(component.materiaisAbaixoDoMinimo()).toEqual([]);
 
-    expect(textoDaTela()).toContain('Não foi possível carregar o relatório');
-    expect(textoDaTela()).not.toContain('Nenhum material crítico');
+    expect(
+      component.materiaisAbaixoDoMinimo(),
+    ).toEqual([]);
 
-    const contador = (fixture.nativeElement as HTMLElement).querySelector(
-      '.resumo-card strong',
+    expect(textoDaTela()).toContain(
+      'Não foi possível carregar o relatório',
     );
+
+    expect(textoDaTela()).not.toContain(
+      'Nenhum material crítico',
+    );
+
+    const contador = (
+      fixture.nativeElement as HTMLElement
+    ).querySelector('.resumo-card strong');
+
     expect(contador?.textContent?.trim()).toBe('–');
   });
 
@@ -152,15 +198,54 @@ describe('RelatorioMateriaisMinimo', () => {
     );
 
     await criarComponente();
+
     expect(component.erro()).toBe(true);
 
-    materialServiceMock.getRelatorioMinimo.mockReturnValue(of(criticosMock));
+    materialServiceMock.getRelatorioMinimo.mockReturnValue(
+      of(criticosMock),
+    );
+
     component.carregarRelatorio();
+
     fixture.detectChanges();
 
-    expect(materialServiceMock.getRelatorioMinimo).toHaveBeenCalledTimes(2);
+    expect(
+      materialServiceMock.getRelatorioMinimo,
+    ).toHaveBeenCalledTimes(2);
+
     expect(component.erro()).toBe(false);
-    expect(component.materiaisAbaixoDoMinimo()).toEqual(criticosMock);
+
+    expect(
+      component.materiaisAbaixoDoMinimo(),
+    ).toEqual(criticosMock);
+
     expect(textoDaTela()).toContain('CNMG120408');
+  });
+
+  it('deve apresentar no relatório de estoque os dados atualizados após o estorno', async () => {
+    const criticosAposEstorno: MaterialRelatorio[] = [
+      {
+        ...criticosMock[1],
+        estoqueAtual: 5,
+      },
+    ];
+
+    // Mock utilizado para simular a API retornando o relatório atualizado
+    // após o estorno da movimentação.
+    materialServiceMock.getRelatorioMinimo.mockReturnValue(
+      of(criticosAposEstorno),
+    );
+
+    await criarComponente();
+
+    expect(
+      component.materiaisAbaixoDoMinimo(),
+    ).toEqual(criticosAposEstorno);
+
+    expect(
+      component.materiaisAbaixoDoMinimo()[0].estoqueAtual,
+    ).toBe(5);
+
+    expect(textoDaTela()).toContain('FRESA010');
   });
 });

@@ -1,5 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideNgxMask } from 'ngx-mask';
+import { of, throwError } from 'rxjs';
 
 import { CadastroFornecedor } from './cadastro-fornecedor';
 import { FornecedorService } from '../../../services/fornecedor.service';
