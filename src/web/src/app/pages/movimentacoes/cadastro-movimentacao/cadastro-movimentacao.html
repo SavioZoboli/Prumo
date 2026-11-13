@@ -70,7 +70,10 @@
 
               <mat-select formControlName="material">
                 @for (material of materiaisDisponiveis; track material.id) {
-                  <mat-option [value]="material">
+                  <mat-option
+                    [value]="material"
+                    [disabled]="materialSelecionadoEmOutroItem(material.id, i)"
+                  >
                     {{ material.nome }} ({{ material.estoqueAtual }} un. em estoque)
                   </mat-option>
                 }

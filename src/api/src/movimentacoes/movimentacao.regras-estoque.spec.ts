@@ -140,32 +140,39 @@ describe('MovimentacaoService — regras de estoque', () => {
       expect(materialRepository.save).not.toHaveBeenCalled();
     });
 
-    it('informa o nome do material que não tem estoque suficiente', async () => {
+    it('informa quantidade solicitada, estoque disponível e material quando a saída excede o estoque', async () => {
       await expect(
         service.create(
-          movimento('S', [
-            { material_id: 2, quantidade: 5 },
-            { material_id: 1, quantidade: 6 },
-          ]),
+          movimento('S', [{ material_id: 1, quantidade: 999 }]),
           1,
         ),
       ).rejects.toThrow(
-        'Quantidade solicitada de Pastilha 1 é maior que a quantidade disponível em estoque.',
+        'Quantidade solicitada (999) é maior que o estoque disponível (5) do material Pastilha 1.',
       );
     });
 
-    it('soma as saídas do mesmo material na mesma movimentação', async () => {
-      // 3 + 3 passa de 5, mesmo que cada item sozinho caiba no estoque.
-      await expect(
-        service.create(
-          movimento('S', [
-            { material_id: 1, quantidade: 3 },
+    it('bloqueia material repetido na mesma movimentação', async () => {
+      let erro: unknown;
+
+      try {
+        await service.create(
+          movimento('E', [
+            { material_id: 1, quantidade: 2 },
             { material_id: 1, quantidade: 3 },
           ]),
           1,
-        ),
-      ).rejects.toThrow(BadRequestException);
+        );
+      } catch (error) {
+        erro = error;
+      }
 
+      expect(erro).toBeInstanceOf(BadRequestException);
+
+      const badRequest = erro as BadRequestException;
+
+      expect(badRequest.getStatus()).toBe(400);
+      expect(badRequest.message).toBe('Material repetido na movimentação');
+      expect(estoqueDe(1)).toBe(5);
       expect(materialRepository.save).not.toHaveBeenCalled();
     });
 

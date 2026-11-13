@@ -86,6 +86,17 @@ export class CadastroMovimentacao implements OnChanges {
     return !!controle?.invalid && !!controle?.touched;
   }
 
+  materialSelecionadoEmOutroItem(
+    materialId: number,
+    indexAtual: number,
+  ): boolean {
+    return this.itens.controls.some(
+      (grupo, index) =>
+        index !== indexAtual &&
+        grupo.get('material')?.value?.id === materialId,
+    );
+  }
+
   private inicializarForm(): void {
     this.itens.clear();
     this.movimentacaoForm.reset();
@@ -122,6 +133,14 @@ export class CadastroMovimentacao implements OnChanges {
     }
 
     const dados = this.movimentacaoForm.getRawValue();
+
+    const materiaisIds = dados.itens.map(
+      (item: { material: Material }) => item.material.id,
+    );
+
+    if (new Set(materiaisIds).size !== materiaisIds.length) {
+      return;
+    }
 
     const payload: MovimentacaoPayload = {
       operacao: dados.operacao,
