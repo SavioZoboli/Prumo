@@ -3,6 +3,7 @@ import { of, Subject, throwError } from 'rxjs';
 
 import { Usuarios } from './usuarios';
 import { UsuarioService } from '../../services/usuario.service';
+import { AuthService } from '../../services/auth.service';
 
 describe('Usuarios', () => {
   let component: Usuarios;
@@ -13,6 +14,11 @@ describe('Usuarios', () => {
     create: vi.fn(() => of(1)),
     update: vi.fn(() => of(void 0)),
     desativar: vi.fn(() => of(void 0)),
+  };
+
+  const authServiceMock = {
+    getPerfil: vi.fn(() => 'ADMIN'),
+    getUsuarioId: vi.fn(() => 99),
   };
 
   beforeEach(async () => {
@@ -27,6 +33,10 @@ describe('Usuarios', () => {
         {
           provide: UsuarioService,
           useValue: usuarioServiceMock,
+        },
+        {
+          provide: AuthService,
+          useValue: authServiceMock,
         },
       ],
     }).compileComponents();
@@ -150,6 +160,7 @@ describe('Usuarios', () => {
       'john.doe@email.com',
       true,
       'LIDER',
+      undefined,
     );
 
     expect(component.painelAberto).toBe(false);
