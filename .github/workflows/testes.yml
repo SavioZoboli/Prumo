@@ -1,0 +1,64 @@
+name: Testes Automatizados
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+  pull_request:
+    branches:
+      - main
+      - develop
+
+jobs:
+  test-api:
+    name: Backend (API - Jest)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: src/api
+
+    steps:
+      - name: Checkout do código
+        uses: actions/checkout@v4
+
+      - name: Configurar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: src/api/package-lock.json
+
+      - name: Instalar dependências
+        run: npm ci
+
+      - name: Executar testes unitários
+        run: npm test
+
+  test-web:
+    name: Frontend (Web - Angular/Vitest)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: src/web
+
+    steps:
+      - name: Checkout do código
+        uses: actions/checkout@v4
+
+      - name: Configurar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: src/web/package-lock.json
+
+      - name: Instalar dependências
+        run: npm ci
+
+      - name: Executar testes unitários
+        env:
+          CI: true
+          NG_CLI_ANALYTICS: false
+        run: npm test -- --watch=false
+
