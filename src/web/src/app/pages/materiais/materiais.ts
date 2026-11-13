@@ -183,7 +183,7 @@ export class Materiais {
           localizacao: material.localizacao ?? '',
           estoqueMinimo: material.estoqueMinimo,
           estoqueAtual: material.estoqueAtual,
-          ultimoValor: material.ultimoValor,
+          ultimoValor: material.ultimoValor != null ? Number(material.ultimoValor) : null,
           ativo: material.ativo,
         })));
       },
