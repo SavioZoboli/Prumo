@@ -1,4 +1,8 @@
-<mat-form-field appearance="outline" class="app-input">
+<mat-form-field
+  appearance="outline"
+  class="app-input"
+  [class.app-input--error]="hasError"
+>
   <mat-label *ngIf="label">
     {{ label }}<span *ngIf="required" class="app-input__required">&nbsp;*</span>
   </mat-label>
@@ -34,5 +38,7 @@
     <mat-icon>{{ passwordVisible ? 'visibility_off' : 'visibility' }}</mat-icon>
   </button>
 
-  <mat-error *ngIf="hasError && errorMessage">{{ errorMessage }}</mat-error>
+  <mat-hint *ngIf="hasError && errorMessage" class="app-input__error" role="alert">
+    {{ errorMessage }}
+  </mat-hint>
 </mat-form-field>

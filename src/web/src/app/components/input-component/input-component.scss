@@ -6,9 +6,8 @@
 .app-input {
   width: 100%;
 
-  // mat-form-field já resolve cor de borda/label/erro via tema M3
-  // (var(--mat-sys-outline), var(--mat-sys-error) etc). Só ajustamos
-  // o que o tema não cobre: densidade do prefixo de ícone.
+  // mat-form-field já resolve cor de borda/label via tema M3.
+  // Só ajustamos o que o tema não cobre: densidade do prefixo de ícone.
   .app-input__icon {
     margin-right: var(--app-space-xs);
     color: var(--mat-sys-on-surface-variant);
@@ -16,5 +15,21 @@
 
   .app-input__required {
     color: var(--app-danger);
+  }
+
+  .app-input__error {
+    color: var(--mat-sys-error);
+  }
+}
+
+.app-input--error {
+  --mdc-outlined-text-field-outline-color: var(--mat-sys-error);
+  --mdc-outlined-text-field-hover-outline-color: var(--mat-sys-error);
+  --mdc-outlined-text-field-focus-outline-color: var(--mat-sys-error);
+  --mdc-outlined-text-field-label-text-color: var(--mat-sys-error);
+  --mdc-outlined-text-field-focus-label-text-color: var(--mat-sys-error);
+
+  .app-input__icon {
+    color: var(--mat-sys-error);
   }
 }
