@@ -1,8 +1,11 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideNgxMask } from 'ngx-mask';
+import { of, throwError } from 'rxjs';
 
 import { CadastroFornecedor } from './cadastro-fornecedor';
 import { FornecedorService } from '../../../services/fornecedor.service';
+import { MatSnackBar } from '@angular/material/snack-bar';
+import { Subject } from 'rxjs';
 
 describe('CadastroFornecedor', () => {
   let component: CadastroFornecedor;
@@ -22,9 +25,13 @@ describe('CadastroFornecedor', () => {
 
     await TestBed.configureTestingModule({
       imports: [CadastroFornecedor],
-      providers: [provideNgxMask()],
-    })
-    .compileComponents();
+      providers: [
+        provideNgxMask(),
+        { provide: FornecedorService, useValue: fornecedorServiceMock },
+      ],
+    });
+    TestBed.overrideProvider(MatSnackBar, { useValue: snackBarMock });
+    await TestBed.compileComponents();
 
     fixture = TestBed.createComponent(CadastroFornecedor);
     component = fixture.componentInstance;
@@ -103,5 +110,49 @@ describe('CadastroFornecedor', () => {
         panelClass: ['error-snackbar'],
       }
     );
+  });
+
+  // Bug 07: duplo clique em Salvar e mensagem de erro do cadastro de fornecedor.
+  it('envia uma única requisição mesmo com dois cliques antes da resposta', () => {
+    const resposta = new Subject<unknown>();
+    fornecedorServiceMock.save.mockReturnValue(resposta.asObservable());
+    component.formFornecedor.patchValue({ nome: 'Fornecedor Teste', cnpj: '33000167000101' });
+
+    component.salvarFornecedor();
+    component.salvarFornecedor();
+
+    expect(fornecedorServiceMock.save).toHaveBeenCalledTimes(1);
+    expect(component.salvando()).toBe(true);
+
+    resposta.next({});
+    resposta.complete();
+    expect(component.salvando()).toBe(false);
+  });
+
+  it('desabilita o botão Salvar durante o envio', () => {
+    fornecedorServiceMock.save.mockReturnValue(new Subject<unknown>().asObservable());
+    component.formFornecedor.patchValue({ nome: 'Fornecedor Teste', cnpj: '33000167000101' });
+
+    component.salvarFornecedor();
+    fixture.detectChanges();
+
+    const botao: HTMLButtonElement = fixture.nativeElement.querySelector('button');
+    expect(botao.disabled).toBe(true);
+  });
+
+  it('mostra a mensagem da API quando o CNPJ já está cadastrado', () => {
+    fornecedorServiceMock.save.mockReturnValue(
+      throwError(() => ({ error: { message: 'Fornecedor já cadastrado.' } })),
+    );
+    component.formFornecedor.patchValue({ nome: 'Fornecedor Teste', cnpj: '33000167000101' });
+
+    component.salvarFornecedor();
+
+    expect(snackBarMock.open).toHaveBeenCalledWith(
+      'Fornecedor já cadastrado.',
+      '',
+      expect.objectContaining({ panelClass: ['error-snackbar'] }),
+    );
+    expect(component.salvando()).toBe(false);
   });
 });

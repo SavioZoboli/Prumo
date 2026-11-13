@@ -102,7 +102,7 @@
           <th mat-header-cell *matHeaderCellDef>Ações</th>
 
           <td mat-cell class="cell-with-buttons" *matCellDef="let item">
-            @if (item.status == 'ABERTO') {
+            @if (item.status == 'FECHADO') {
               <button
                 mat-icon-button
                 type="button"
@@ -119,6 +119,7 @@
                 class="ordens-compra-page__acao"
                 aria-label="Receber ordem de compra"
                 matTooltip="Marcar como recebida (dá entrada no estoque)"
+                [disabled]="recebendo().has(item.id)"
                 (click)="finalizar(item)"
               >
                 <mat-icon>check</mat-icon>

@@ -1,8 +1,9 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { of } from 'rxjs';
+import { of, Subject, throwError } from 'rxjs';
 
 import { Usuarios } from './usuarios';
 import { UsuarioService } from '../../services/usuario.service';
+import { AuthService } from '../../services/auth.service';
 
 describe('Usuarios', () => {
   let component: Usuarios;
@@ -13,6 +14,11 @@ describe('Usuarios', () => {
     create: vi.fn(() => of(1)),
     update: vi.fn(() => of(void 0)),
     desativar: vi.fn(() => of(void 0)),
+  };
+
+  const authServiceMock = {
+    getPerfil: vi.fn(() => 'ADMIN'),
+    getUsuarioId: vi.fn(() => 99),
   };
 
   beforeEach(async () => {
@@ -27,6 +33,10 @@ describe('Usuarios', () => {
         {
           provide: UsuarioService,
           useValue: usuarioServiceMock,
+        },
+        {
+          provide: AuthService,
+          useValue: authServiceMock,
         },
       ],
     }).compileComponents();
@@ -150,6 +160,7 @@ describe('Usuarios', () => {
       'john.doe@email.com',
       true,
       'LIDER',
+      undefined,
     );
 
     expect(component.painelAberto).toBe(false);
@@ -171,5 +182,74 @@ describe('Usuarios', () => {
     expect(component.formatarPerfil('ADMIN')).toBe('Administrador');
     expect(component.formatarPerfil('LIDER')).toBe('Líder');
     expect(component.formatarPerfil('USUARIO')).toBe('Usuário');
+  });
+
+  // Bug 07: duplo clique e mensagem de erro do cadastro de usuário.
+  describe('ao salvar', () => {
+    const preencher = () => {
+      component.abrirCadastro();
+      component.usuarioForm.patchValue({
+        nome: 'John',
+        sobrenome: 'Doe',
+        email: 'john.doe@email.com',
+        senha: 'senha123',
+        perfil: 'USUARIO',
+        ativo: true,
+      });
+    };
+
+    it('envia uma única requisição mesmo com dois cliques antes da resposta', () => {
+      const resposta = new Subject<number>();
+      usuarioServiceMock.create.mockReturnValueOnce(resposta.asObservable());
+      preencher();
+
+      component.salvarUsuario();
+      component.salvarUsuario();
+
+      expect(usuarioServiceMock.create).toHaveBeenCalledTimes(1);
+      expect(component.salvando()).toBe(true);
+
+      resposta.next(1);
+      resposta.complete();
+      expect(component.salvando()).toBe(false);
+    });
+
+    it('só mostra sucesso depois da confirmação da API', () => {
+      const resposta = new Subject<number>();
+      usuarioServiceMock.create.mockReturnValueOnce(resposta.asObservable());
+      const snackBar = vi.spyOn(component['snackBar'], 'open');
+      preencher();
+
+      component.salvarUsuario();
+      expect(snackBar).not.toHaveBeenCalled();
+
+      resposta.next(1);
+      expect(snackBar).toHaveBeenCalledWith(
+        'Usuário cadastrado com sucesso.',
+        'Fechar',
+        expect.objectContaining({ panelClass: ['success-snackbar'] }),
+      );
+    });
+
+    it('mostra a mensagem da API com estilo de erro quando o e-mail já existe', () => {
+      usuarioServiceMock.create.mockReturnValueOnce(
+        throwError(() => ({
+          message: 'Http failure response for http://localhost:3000/usuarios: 409 Conflict',
+          error: { message: 'Usuário ou e-mail já cadastrado.' },
+        })),
+      );
+      const snackBar = vi.spyOn(component['snackBar'], 'open');
+      preencher();
+
+      component.salvarUsuario();
+
+      expect(snackBar).toHaveBeenCalledWith(
+        'Usuário ou e-mail já cadastrado.',
+        'Ok',
+        expect.objectContaining({ panelClass: ['error-snackbar'] }),
+      );
+      expect(component.salvando()).toBe(false);
+      expect(component.painelAberto).toBe(true);
+    });
   });
 });
