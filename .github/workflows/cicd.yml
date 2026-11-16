@@ -146,10 +146,18 @@ jobs:
              --slurpfile env env.json '
             del(.taskDefinitionArn, .revision, .status, .requiresAttributes,
                 .compatibilities, .registeredAt, .registeredBy, .deregisteredAt)
-            | .containerDefinitions |= map(
-                if .name == $api then .image = $api_img | .environment = $env[0]
-                elif .name == $web then .image = $web_img
-                else . end)
+            | .containerDefinitions |= (
+                map(select(.name == $api or .name == $web))
+                | map(
+                    (if .dependsOn then
+                      .dependsOn |= map(select(.containerName == $api or .containerName == $web))
+                      | if (.dependsOn | length) == 0 then del(.dependsOn) else . end
+                    else . end)
+                    | if .name == $api then .image = $api_img | .environment = $env[0]
+                      elif .name == $web then .image = $web_img
+                      else . end
+                  )
+              )
           ' td-current.json > td-new.json
 
           NEW_TD=$(aws ecs register-task-definition --cli-input-json file://td-new.json \
@@ -161,25 +169,64 @@ jobs:
       - name: Atualizar Service no ECS Fargate
         run: |
           set -euo pipefail
+          TARGET_TD="${{ steps.taskdef.outputs.arn }}"
+
           aws ecs update-service \
             --cluster "$CLUSTER_NAME" --service "$SERVICE_NAME" \
-            --task-definition "${{ steps.taskdef.outputs.arn }}" \
+            --task-definition "$TARGET_TD" \
             --force-new-deployment > /dev/null
 
-          if ! aws ecs wait services-stable --cluster "$CLUSTER_NAME" --services "$SERVICE_NAME"; then
-            echo "::error::Service não estabilizou a tempo. Últimos eventos e falhas de tasks:"
+          MAX_ATTEMPTS=12
+          SLEEP_SECONDS=15
+          STABLE=false
+
+          for ((i=1; i<=MAX_ATTEMPTS; i++)); do
+            echo "Verificando estabilidade do deploy (tentativa $i/$MAX_ATTEMPTS)..."
+
+            # Se alguma task da nova Task Definition já caiu (STOPPED), falha na hora sem esperar o restante
+            STOPPED_ARNS=$(aws ecs list-tasks \
+              --cluster "$CLUSTER_NAME" --service-name "$SERVICE_NAME" \
+              --desired-status STOPPED --query 'taskArns[0:5]' --output text | tr '\t' ' ' || true)
+
+            if [ -n "$STOPPED_ARNS" ] && [ "$STOPPED_ARNS" != "None" ]; then
+              FAILED_NEW=$(aws ecs describe-tasks \
+                --cluster "$CLUSTER_NAME" --tasks $STOPPED_ARNS \
+                --query "tasks[?taskDefinitionArn=='$TARGET_TD'].taskArn" --output text || true)
+
+              if [ -n "$FAILED_NEW" ] && [ "$FAILED_NEW" != "None" ]; then
+                echo "::error::Uma task da nova versão ($TARGET_TD) parou inesperadamente! Abortando espera."
+                break
+              fi
+            fi
+
+            # Verifica se o deployment novo já estabilizou (1 único deployment ativo e runningCount == desiredCount)
+            IS_STABLE=$(aws ecs describe-services \
+              --cluster "$CLUSTER_NAME" --services "$SERVICE_NAME" \
+              --query "services[0].deployments | length(@) == \`1\` && @[0].taskDefinition == '$TARGET_TD' && @[0].runningCount == @[0].desiredCount" \
+              --output text)
+
+            if [ "$IS_STABLE" = "True" ]; then
+              STABLE=true
+              break
+            fi
+
+            sleep "$SLEEP_SECONDS"
+          done
+
+          if [ "$STABLE" != "true" ]; then
+            echo "::error::Service não estabilizou. Últimos eventos e detalhes das tasks que pararam:"
             aws ecs describe-services \
               --cluster "$CLUSTER_NAME" --services "$SERVICE_NAME" \
               --query 'services[0].events[:5].[createdAt,message]' --output table || true
 
             STOPPED_TASKS=$(aws ecs list-tasks \
               --cluster "$CLUSTER_NAME" --service-name "$SERVICE_NAME" \
-              --desired-status STOPPED --max-items 5 --query 'taskArns' --output text || true)
+              --desired-status STOPPED --query 'taskArns[0:5]' --output text | tr '\t' ' ' || true)
 
             if [ -n "$STOPPED_TASKS" ] && [ "$STOPPED_TASKS" != "None" ]; then
               aws ecs describe-tasks \
                 --cluster "$CLUSTER_NAME" --tasks $STOPPED_TASKS \
-                --query 'tasks[].{taskArn:taskArn,stoppedReason:stoppedReason,containers:containers[].{name:name,exitCode:exitCode,reason:reason}}' \
+                --query 'tasks[].{taskArn:taskArn,taskDefinitionArn:taskDefinitionArn,stoppedReason:stoppedReason,containers:containers[].{name:name,exitCode:exitCode,reason:reason}}' \
                 --output json || true
             fi
             exit 1
