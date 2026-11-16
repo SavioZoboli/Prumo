@@ -20,8 +20,6 @@ jobs:
   build-and-push:
     name: Build & Push Images (ECR)
     runs-on: ubuntu-latest
-    outputs:
-      registry: ${{ steps.login-ecr.outputs.registry }}
     env:
       API_DIR: src/api
       WEB_DIR: src/web
@@ -91,8 +89,9 @@ jobs:
       SERVICE_NAME: ${{ secrets.ECS_SERVICE_NAME || 'prumo-app-service' }}
       API_CONTAINER: ${{ secrets.ECS_API_CONTAINER || 'api' }} # nome do container na task definition
       WEB_CONTAINER: ${{ secrets.ECS_WEB_CONTAINER || 'web' }} # nome do container na task definition
-      API_IMAGE: ${{ needs.build-and-push.outputs.registry }}/${{ secrets.ECR_API_REPOSITORY || 'prumo-app-api' }}:${{ github.sha }}
-      WEB_IMAGE: ${{ needs.build-and-push.outputs.registry }}/${{ secrets.ECR_WEB_REPOSITORY || 'prumo-app-web' }}:${{ github.sha }}
+      ECR_API_REPO: ${{ secrets.ECR_API_REPOSITORY || 'prumo-app-api' }}
+      ECR_WEB_REPO: ${{ secrets.ECR_WEB_REPOSITORY || 'prumo-app-web' }}
+      IMAGE_TAG: ${{ github.sha }}
 
     steps:
       - name: Configurar Credenciais AWS
@@ -102,14 +101,20 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ secrets.AWS_REGION || 'us-east-1' }}
 
-      # Equivalente ao "escrever .env + docker compose pull" do servidor on-premises:
-      # no Fargate não há disco do host, então o .env vira "environment" da task definition.
+      - name: Obter Registry do Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
       - name: Registrar nova Task Definition (imagens + variáveis da API)
         id: taskdef
         env:
           ENV_API_DADOS: ${{ secrets.ENV_API_DADOS }}
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
         run: |
           set -euo pipefail
+
+          API_IMAGE="$ECR_REGISTRY/$ECR_API_REPO:$IMAGE_TAG"
+          WEB_IMAGE="$ECR_REGISTRY/$ECR_WEB_REPO:$IMAGE_TAG"
 
           CURRENT_TD=$(aws ecs describe-services \
             --cluster "$CLUSTER_NAME" --services "$SERVICE_NAME" \
@@ -117,6 +122,16 @@ jobs:
 
           aws ecs describe-task-definition --task-definition "$CURRENT_TD" \
             --query taskDefinition > td-current.json
+
+          CONTAINERS=$(jq -r '.containerDefinitions[].name' td-current.json | tr '\n' ' ')
+          echo "Containers encontrados na Task Definition: $CONTAINERS"
+
+          for esperado in "$API_CONTAINER" "$WEB_CONTAINER"; do
+            if ! jq -e --arg c "$esperado" '.containerDefinitions[] | select(.name == $c)' td-current.json > /dev/null; then
+              echo "Erro: container '$esperado' não encontrado na Task Definition (disponíveis: $CONTAINERS)"
+              exit 1
+            fi
+          done
 
           # .env (KEY=VALUE) -> [{name, value}], ignora comentários/linhas vazias e aspas externas
           printf '%s\n' "$ENV_API_DADOS" | tr -d '\r' | jq -R -s '
@@ -151,5 +166,22 @@ jobs:
             --task-definition "${{ steps.taskdef.outputs.arn }}" \
             --force-new-deployment > /dev/null
 
-          aws ecs wait services-stable --cluster "$CLUSTER_NAME" --services "$SERVICE_NAME"
+          if ! aws ecs wait services-stable --cluster "$CLUSTER_NAME" --services "$SERVICE_NAME"; then
+            echo "::error::Service não estabilizou a tempo. Últimos eventos e falhas de tasks:"
+            aws ecs describe-services \
+              --cluster "$CLUSTER_NAME" --services "$SERVICE_NAME" \
+              --query 'services[0].events[:5].[createdAt,message]' --output table || true
+
+            STOPPED_TASKS=$(aws ecs list-tasks \
+              --cluster "$CLUSTER_NAME" --service-name "$SERVICE_NAME" \
+              --desired-status STOPPED --max-items 5 --query 'taskArns' --output text || true)
+
+            if [ -n "$STOPPED_TASKS" ] && [ "$STOPPED_TASKS" != "None" ]; then
+              aws ecs describe-tasks \
+                --cluster "$CLUSTER_NAME" --tasks $STOPPED_TASKS \
+                --query 'tasks[].{taskArn:taskArn,stoppedReason:stoppedReason,containers:containers[].{name:name,exitCode:exitCode,reason:reason}}' \
+                --output json || true
+            fi
+            exit 1
+          fi
           echo "Deploy concluído"
