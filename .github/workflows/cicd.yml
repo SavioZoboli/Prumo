@@ -124,7 +124,19 @@ jobs:
             --query taskDefinition > td-current.json
 
           CONTAINERS=$(jq -r '.containerDefinitions[].name' td-current.json | tr '\n' ' ')
-          echo "Containers encontrados na Task Definition: $CONTAINERS"
+          echo "Containers encontrados na Task Definition atual ($CURRENT_TD): $CONTAINERS"
+
+          # Diagnóstico seguro do tipo de DB_HOST configurado em ENV_API_DADOS
+          DB_HOST_VAL=$(printf '%s\n' "$ENV_API_DADOS" | tr -d '\r' | grep -E '^DB_HOST=' | head -1 | cut -d= -f2- | tr -d ' "' || true)
+          if [ -z "$DB_HOST_VAL" ]; then
+            echo "Aviso: DB_HOST não definido em ENV_API_DADOS (usará default localhost)"
+          elif [[ "$DB_HOST_VAL" == *"rds.amazonaws.com"* ]]; then
+            echo "DB_HOST aponta para AWS RDS (*.rds.amazonaws.com)"
+          elif [ "$DB_HOST_VAL" = "localhost" ] || [ "$DB_HOST_VAL" = "127.0.0.1" ]; then
+            echo "Aviso: DB_HOST está como '$DB_HOST_VAL' (conexão local na própria task)"
+          else
+            echo "DB_HOST configurado (host customizado)"
+          fi
 
           for esperado in "$API_CONTAINER" "$WEB_CONTAINER"; do
             if ! jq -e --arg c "$esperado" '.containerDefinitions[] | select(.name == $c)' td-current.json > /dev/null; then
@@ -228,6 +240,27 @@ jobs:
                 --cluster "$CLUSTER_NAME" --tasks $STOPPED_TASKS \
                 --query 'tasks[].{taskArn:taskArn,taskDefinitionArn:taskDefinitionArn,stoppedReason:stoppedReason,containers:containers[].{name:name,exitCode:exitCode,reason:reason}}' \
                 --output json || true
+
+              LOG_GROUP=$(jq -r --arg api "$API_CONTAINER" '.containerDefinitions[] | select(.name == $api) | .logConfiguration.options["awslogs-group"] // empty' td-new.json)
+              LOG_PREFIX=$(jq -r --arg api "$API_CONTAINER" '.containerDefinitions[] | select(.name == $api) | .logConfiguration.options["awslogs-stream-prefix"] // empty' td-new.json)
+              LOG_REGION=$(jq -r --arg api "$API_CONTAINER" '.containerDefinitions[] | select(.name == $api) | .logConfiguration.options["awslogs-region"] // empty' td-new.json)
+
+              if [ -n "$LOG_GROUP" ] && [ -n "$LOG_PREFIX" ]; then
+                for TASK_ARN in $STOPPED_TASKS; do
+                  TASK_ID="${TASK_ARN##*/}"
+                  STREAM_NAME="${LOG_PREFIX}/${API_CONTAINER}/${TASK_ID}"
+                  echo "=== Logs do container '$API_CONTAINER' na task $TASK_ID (stream: $STREAM_NAME) ==="
+                  aws logs get-log-events \
+                    --region "${LOG_REGION:-${AWS_REGION:-us-east-1}}" \
+                    --log-group-name "$LOG_GROUP" \
+                    --log-stream-name "$STREAM_NAME" \
+                    --limit 100 \
+                    --query 'events[].message' \
+                    --output text || echo "Não foi possível ler os logs do CloudWatch (verifique se a stream existe ou se a IAM role tem permissão logs:GetLogEvents)."
+                done
+              else
+                echo "Container '$API_CONTAINER' não possui logConfiguration (awslogs) configurado na Task Definition."
+              fi
             fi
             exit 1
           fi
