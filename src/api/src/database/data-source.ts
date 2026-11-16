@@ -2,11 +2,10 @@ import 'dotenv/config';
 import { DataSource, DataSourceOptions } from 'typeorm';
 
 const dbHost = process.env.DB_HOST ?? 'localhost';
-const isLocalDb = dbHost === 'localhost' || dbHost === '127.0.0.1';
 const useSsl =
   process.env.DB_SSL !== undefined
     ? process.env.DB_SSL === 'true'
-    : !isLocalDb;
+    : dbHost.includes('.rds.amazonaws.com');
 
 export const dataSourceOptions: DataSourceOptions = {
   type: 'postgres',

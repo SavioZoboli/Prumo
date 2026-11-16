@@ -123,6 +123,18 @@ jobs:
           aws ecs describe-task-definition --task-definition "$CURRENT_TD" \
             --query taskDefinition > td-current.json
 
+          # Se a task definition atual perdeu o container 'database' nas tentativas :13/:14,
+          # recupera a revisão :10 (que possui web, api e database completos) como base
+          if ! jq -e '.containerDefinitions[] | select(.name == "database")' td-current.json > /dev/null; then
+            FAMILY=$(jq -r '.family' td-current.json)
+            if aws ecs describe-task-definition --task-definition "${FAMILY}:10" --query taskDefinition > td-rev10.json 2>/dev/null; then
+              if jq -e '.containerDefinitions[] | select(.name == "database")' td-rev10.json > /dev/null; then
+                echo "Restaurando definição base a partir de ${FAMILY}:10 (que contém o container 'database')"
+                mv td-rev10.json td-current.json
+              fi
+            fi
+          fi
+
           CONTAINERS=$(jq -r '.containerDefinitions[].name' td-current.json | tr '\n' ' ')
           echo "Containers encontrados na Task Definition atual ($CURRENT_TD): $CONTAINERS"
 
@@ -158,18 +170,10 @@ jobs:
              --slurpfile env env.json '
             del(.taskDefinitionArn, .revision, .status, .requiresAttributes,
                 .compatibilities, .registeredAt, .registeredBy, .deregisteredAt)
-            | .containerDefinitions |= (
-                map(select(.name == $api or .name == $web))
-                | map(
-                    (if .dependsOn then
-                      .dependsOn |= map(select(.containerName == $api or .containerName == $web))
-                      | if (.dependsOn | length) == 0 then del(.dependsOn) else . end
-                    else . end)
-                    | if .name == $api then .image = $api_img | .environment = $env[0]
-                      elif .name == $web then .image = $web_img
-                      else . end
-                  )
-              )
+            | .containerDefinitions |= map(
+                if .name == $api then .image = $api_img | .environment = $env[0]
+                elif .name == $web then .image = $web_img
+                else . end)
           ' td-current.json > td-new.json
 
           NEW_TD=$(aws ecs register-task-definition --cli-input-json file://td-new.json \
