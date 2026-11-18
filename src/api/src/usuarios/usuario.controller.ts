@@ -59,12 +59,25 @@ findAll() {
   type: Usuario,
 })
 @ApiResponse({
+  status: 403,
+  description: 'Só é possível consultar o próprio cadastro.',
+})
+@ApiResponse({
   status: 404,
   description: 'Usuário não encontrado.',
 })
 @Get(':id')
 @UseGuards(JwtAuthGuard)
-findOne(@Param('id', ParseIntPipe) id: number) {
+findOne(@Param('id', ParseIntPipe) id: number, @Req() req: Request) {
+  const solicitante = (req as any).user;
+  const ehAdmin = solicitante?.perfil === PerfilUsuario.ADMIN;
+
+  if (!ehAdmin && solicitante?.id !== id) {
+    throw new ForbiddenException(
+      'Você só pode consultar o seu próprio cadastro.',
+    );
+  }
+
   return this.usuarioService.findOne(id);
 }
 

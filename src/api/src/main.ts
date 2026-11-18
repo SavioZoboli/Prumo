@@ -31,6 +31,7 @@ async function bootstrap() {
     origin: [
       'http://localhost:4200',
       'http://localhost:4201',
+      'http://prumo-ind.duckdns.org'
     ],
   });
 
