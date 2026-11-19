@@ -1,4 +1,6 @@
+
 import { beforeEach, describe, expect, it, jest } from '@jest/globals';
+import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { MovimentacaoService } from './movimentacao.service';
@@ -12,14 +14,22 @@ describe('MovimentacaoService — alerta de estoque mínimo', () => {
   let eventos: string[];
   let materialMock: Material;
 
-  // Mock utilizado apenas nos testes para validar o acionamento do serviço de alerta.
   const alertaEstoqueService = {
     verificarMateriais: jest.fn<(ids: number[]) => Promise<void>>(),
   };
 
-  // Mock do repositório de materiais utilizado dentro da transação.
+  // Mock do QueryBuilder utilizado para simular o bloqueio dos materiais.
+  const materialQueryBuilder = {
+    where: jest.fn().mockReturnThis(),
+    orderBy: jest.fn().mockReturnThis(),
+    setLock: jest.fn().mockReturnThis(),
+    getMany: jest.fn<() => Promise<Material[]>>(),
+  };
+
+  // Mock do repositório de materiais.
   const materialRepository = {
-    findOne: jest.fn<() => Promise<Material | null>>(),
+    createQueryBuilder: jest.fn(() => materialQueryBuilder),
+
     save: jest.fn<(materiais: Material[]) => Promise<Material[]>>(),
   };
 
@@ -68,7 +78,8 @@ describe('MovimentacaoService — alerta de estoque mínimo', () => {
       estoqueMinimo: 10,
     } as Material;
 
-    materialRepository.findOne.mockResolvedValue(materialMock);
+    // Resultado padrão da consulta com bloqueio pessimista.
+    materialQueryBuilder.getMany.mockResolvedValue([materialMock]);
 
     materialRepository.save.mockImplementation((materiais) =>
       Promise.resolve(materiais),
@@ -120,7 +131,6 @@ describe('MovimentacaoService — alerta de estoque mínimo', () => {
   });
 
   it('conclui a movimentação sem esperar o envio do alerta', async () => {
-    // Um SMTP que nunca responde não pode segurar a resposta da movimentação.
     alertaEstoqueService.verificarMateriais.mockReturnValue(
       new Promise<void>(() => undefined),
     );
@@ -166,5 +176,123 @@ describe('MovimentacaoService — alerta de estoque mínimo', () => {
     );
 
     expect(alertaEstoqueService.verificarMateriais).toHaveBeenCalledWith([7]);
+  });
+
+  describe('trava do saldo (saídas simultâneas)', () => {
+    it('lê e trava os materiais dentro da transação, antes de gravar o saldo', async () => {
+      materialQueryBuilder.getMany.mockImplementation(() => {
+        eventos.push('trava');
+        return Promise.resolve([materialMock]);
+      });
+
+      materialRepository.save.mockImplementation((materiais) => {
+        eventos.push('grava');
+        return Promise.resolve(materiais);
+      });
+
+      await service.create(saida, 1);
+
+      expect(eventos).toEqual(['trava', 'grava', 'commit']);
+    });
+
+    it('trava os materiais em ordem crescente de id, qualquer que seja a ordem do pedido', async () => {
+      materialQueryBuilder.getMany.mockResolvedValue([
+        { ...materialMock, id: 7 } as Material,
+        { ...materialMock, id: 9 } as Material,
+      ]);
+
+      await service.create(
+        {
+          operacao: 'S',
+          motivo: 'Uso na produção',
+          itens: [
+            { material_id: 9, quantidade: 1 },
+            { material_id: 7, quantidade: 1 },
+          ],
+        },
+        1,
+      );
+
+      expect(materialRepository.createQueryBuilder).toHaveBeenCalledWith(
+        'material',
+      );
+
+      expect(materialQueryBuilder.where).toHaveBeenCalledWith(
+        'material.id IN (:...ids)',
+        { ids: [7, 9] },
+      );
+
+      expect(materialQueryBuilder.orderBy).toHaveBeenCalledWith(
+        'material.id',
+        'ASC',
+      );
+
+      expect(materialQueryBuilder.setLock).toHaveBeenCalledWith(
+        'pessimistic_write',
+      );
+    });
+
+    it('recusa a saída maior que o saldo lido sob a trava, sem gravar nada', async () => {
+      await expect(
+        service.create(
+          {
+            operacao: 'S',
+            motivo: 'Uso na produção',
+            itens: [{ material_id: 7, quantidade: 13 }],
+          },
+          1,
+        ),
+      ).rejects.toBeInstanceOf(BadRequestException);
+
+      expect(materialRepository.save).not.toHaveBeenCalled();
+      expect(alertaEstoqueService.verificarMateriais).not.toHaveBeenCalled();
+    });
+
+    it('desconta de forma acumulada itens repetidos do mesmo material', async () => {
+      // Estoque 12: o primeiro item de 8 passa (sobram 4),
+      // o segundo de 8 deve ser rejeitado.
+      await expect(
+        service.create(
+          {
+            operacao: 'S',
+            motivo: 'Uso na produção',
+            itens: [
+              { material_id: 7, quantidade: 8 },
+              { material_id: 7, quantidade: 8 },
+            ],
+          },
+          1,
+        ),
+      ).rejects.toBeInstanceOf(BadRequestException);
+
+      expect(materialQueryBuilder.where).toHaveBeenCalledWith(
+        'material.id IN (:...ids)',
+        { ids: [7] },
+      );
+
+      expect(materialRepository.save).not.toHaveBeenCalled();
+    });
+
+    it('recusa material inexistente', async () => {
+      materialQueryBuilder.getMany.mockResolvedValue([]);
+
+      await expect(service.create(saida, 1)).rejects.toBeInstanceOf(
+        NotFoundException,
+      );
+
+      expect(materialRepository.save).not.toHaveBeenCalled();
+    });
+
+    it('recusa material inativo', async () => {
+      materialQueryBuilder.getMany.mockResolvedValue([
+        { ...materialMock, ativo: false } as Material,
+      ]);
+
+      await expect(service.create(saida, 1)).rejects.toBeInstanceOf(
+        BadRequestException,
+      );
+
+      expect(materialRepository.save).not.toHaveBeenCalled();
+    });
   });
 });

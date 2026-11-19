@@ -3,7 +3,7 @@ import {
   BadRequestException,
   NotFoundException,
 } from '@nestjs/common';
-import { In, Repository } from 'typeorm';
+import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Movimentacao } from './movimentacao.entity';
 import { ItemMovimento } from './item-movimento.entity';
@@ -47,30 +47,35 @@ export class MovimentacaoService {
 
     const movimentacaoSalva = await this.movimentacaoRepository.manager.transaction(async (manager) => {
       const materialRepository = manager.getRepository(Material);
-      const materiaisPorId = new Map<number, Material>();
+
+      // Trava as linhas dos materiais até o fim da transação, para que ler o saldo,
+      // validar e gravar não possam ser intercalados por outra movimentação.
+      // Sempre em ordem crescente de id, senão duas movimentações com os mesmos
+      // materiais em ordens diferentes se travariam mutuamente (deadlock).
+      const idsOrdenados = [...new Set(itens.map((item) => item.material_id))]
+        .sort((a, b) => a - b);
+
+      const materiais = await materialRepository
+        .createQueryBuilder('material')
+        .where('material.id IN (:...ids)', { ids: idsOrdenados })
+        .orderBy('material.id', 'ASC')
+        .setLock('pessimistic_write')
+        .getMany();
+      const materiaisPorId = new Map(materiais.map((m) => [m.id, m]));
 
       for (const item of itens) {
-        let material = materiaisPorId.get(item.material_id);
+        const material = materiaisPorId.get(item.material_id);
 
         if (!material) {
-          const encontrado = await materialRepository.findOne({
-            where: { id: item.material_id },
-          });
+          throw new NotFoundException(
+            `Material ${item.material_id} não encontrado.`,
+          );
+        }
 
-          if (!encontrado) {
-            throw new NotFoundException(
-              `Material ${item.material_id} não encontrado.`,
-            );
-          }
-
-          if (!encontrado.ativo) {
-            throw new BadRequestException(
-              `Material ${item.material_id} está inativo.`, 
-            );
-          }
-
-          material = encontrado;
-          materiaisPorId.set(item.material_id, material);
+        if (!material.ativo) {
+          throw new BadRequestException(
+            `Material ${item.material_id} está inativo.`,
+          );
         }
 
         if (operacao === 'S' && item.quantidade > material.estoqueAtual) {
@@ -194,11 +199,17 @@ export class MovimentacaoService {
     });
     materiaisAfetados = itens.map((i) => i.material_id);
 
-    const materiais = await manager.find(Material, {
-      where: { id: In(itens.map((i) => i.material_id)) },
-      order: { id: 'ASC' },
-      lock: { mode: 'pessimistic_write' },
-    });
+    const materiais = await manager
+      .getRepository(Material)
+      .createQueryBuilder('material')
+      .where(
+        'material.id IN (:...ids)',
+        { ids: itens.map((i) => i.material_id) },
+      )
+      .orderBy('material.id', 'ASC')
+      .setLock('pessimistic_write')
+      .getMany();
+
     const materiaisPorId = new Map(materiais.map((m) => [m.id, m]));
 
     for (const item of itens) {

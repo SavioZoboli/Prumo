@@ -21,12 +21,40 @@ describe('MovimentacaoService — regras de estoque', () => {
     verificarMateriais: jest.fn<(ids: number[]) => Promise<void>>(),
   };
 
-  const materialRepository = {
-    findOne: jest.fn(({ where }: { where: { id: number } }) =>
-      Promise.resolve(materiais.get(where.id) ?? null),
-    ),
-    save: jest.fn((lista: Material[]) => Promise.resolve(lista)),
-  };
+  // Simula o QueryBuilder e o bloqueio pessimista dos materiais.
+class MaterialQueryBuilderMock {
+  ids: number[] = [];
+
+  where = jest.fn(
+    (_condicao: string, parametros: { ids: number[] }) => {
+      this.ids = parametros.ids;
+      return this;
+    },
+  );
+
+  orderBy = jest.fn((_campo: string, _ordem: string) => this);
+
+  setLock = jest.fn((_modo: string) => this);
+
+  getMany = jest.fn(async (): Promise<Material[]> => {
+    return this.ids
+      .map((id) => materiais.get(id))
+      .filter((material): material is Material => material !== undefined)
+      .sort((a, b) => a.id - b.id);
+  });
+}
+
+const materialQueryBuilder = new MaterialQueryBuilderMock();
+
+const materialRepository = {
+  createQueryBuilder: jest.fn(() => materialQueryBuilder),
+
+  findOne: jest.fn(({ where }: { where: { id: number } }) =>
+    Promise.resolve(materiais.get(where.id) ?? null),
+  ),
+
+  save: jest.fn((lista: Material[]) => Promise.resolve(lista)),
+};
 
   const manager = {
     getRepository: jest.fn(() => materialRepository),
@@ -59,8 +87,30 @@ describe('MovimentacaoService — regras de estoque', () => {
 
   const movimentacaoRepository = {
     manager: {
-      transaction: (callback: (m: typeof manager) => Promise<unknown>) =>
-        callback(manager),
+      transaction: async (
+      callback: (m: typeof manager) => Promise<unknown>,
+      ) => {
+      // Salva o estado anterior do estoque.
+    const snapshot = new Map<number, Material>(
+    [...materiais.entries()].map(([id, material]) => [
+      id,
+      { ...material } as Material,
+    ] as const),
+  );
+
+  try {
+    return await callback(manager);
+  } catch (error) {
+    // Simula o rollback da transação.
+    materiais.clear();
+
+    snapshot.forEach((material, id) => {
+      materiais.set(id, material);
+    });
+
+    throw error;
+  }
+},
     },
     findOne: jest.fn(({ where }: { where: { id: number } }) =>
       Promise.resolve(movimentacoes.get(where.id) ?? null),
@@ -74,6 +124,7 @@ describe('MovimentacaoService — regras de estoque', () => {
 
   beforeEach(async () => {
     jest.clearAllMocks();
+    materialQueryBuilder.ids = [];
     alertaEstoqueService.verificarMateriais.mockResolvedValue(undefined);
 
     materiais = new Map([
@@ -152,6 +203,9 @@ describe('MovimentacaoService — regras de estoque', () => {
       ).rejects.toThrow(
         'Quantidade solicitada de Pastilha 1 é maior que a quantidade disponível em estoque.',
       );
+
+      expect(estoqueDe(1)).toBe(5);
+      expect(estoqueDe(2)).toBe(20);
     });
 
     it('soma as saídas do mesmo material na mesma movimentação', async () => {
