@@ -16,6 +16,7 @@ import { UsuarioService } from '../../services/usuario.service';
 import { MatDialog } from '@angular/material/dialog';
 import { Dialog } from '../../components/dialog/dialog';
 import { AuthService } from '../../services/auth.service';
+import { Observable, finalize } from 'rxjs';
 
 interface UsuarioLista {
   id: number;
@@ -47,7 +48,7 @@ interface UsuarioLista {
 })
 export class Usuarios {
   painelAberto = false;
-  salvando = false;
+  salvando = signal(false);
 
   private authService = inject(AuthService)
 
@@ -160,6 +161,11 @@ export class Usuarios {
   }
 
   salvarUsuario(): void {
+    // Um segundo clique antes da resposta enviaria o cadastro de novo.
+    if (this.salvando()) {
+      return;
+    }
+
     if (this.usuarioForm.invalid) {
       this.usuarioForm.markAllAsTouched();
       return;
@@ -168,48 +174,34 @@ export class Usuarios {
     const du = this.usuarioForm.getRawValue();
     const editando = this.usuarioEmEdicao !== null;
 
+    let requisicao$: Observable<unknown>;
     if (this.usuarioEmEdicao) {
       const ativo = this.podeAdicionar ? du.ativo : undefined;
       const perfil = this.podeAdicionar ? du.perfil : undefined;
       const senha = this.ehProprioUsuario(this.usuarioEmEdicao) && du.senha?.trim() ? du.senha.trim() : undefined;
 
-      this.usuarioService
-        .update(du.id, du.nome, du.sobrenome, du.email, ativo, perfil, senha)
-        .subscribe({
-          next: () => {
-            this.msgSucesso(editando)
-            this.listarUsuarios();
-            this.resetAndCloseForm();
-          },
-          error: (err) => {
-            const mensagem = err.error?.message || err.message || 'Erro ao atualizar usuário.';
-            this.snackBar.open(mensagem, 'Ok', {
-              duration: 5000,
-              horizontalPosition: 'right',
-              verticalPosition: 'top',
-              panelClass: ['error-snackbar'],
-            });
-            return;
-          },
-        });
+      requisicao$ = this.usuarioService.update(du.id, du.nome, du.sobrenome, du.email, ativo, perfil, senha);
     } else {
-      this.usuarioService.create(du.nome, du.sobrenome, du.email, du.senha, du.perfil).subscribe({
-        next: () => {
-          this.msgSucesso(editando)
-          this.resetAndCloseForm();
-          this.listarUsuarios();
-        },
-        error: (err) => {
-          this.snackBar.open(err.message, 'Ok', {
-            duration: 5000,
-            horizontalPosition: 'right',
-            verticalPosition: 'top',
-            panelClass: ['success-snackbar'],
-          });
-          return;
-        },
-      });
+      requisicao$ = this.usuarioService.create(du.nome, du.sobrenome, du.email, du.senha, du.perfil);
     }
+
+    this.salvando.set(true);
+    requisicao$.pipe(finalize(() => this.salvando.set(false))).subscribe({
+      next: () => {
+        this.msgSucesso(editando);
+        this.resetAndCloseForm();
+        this.listarUsuarios();
+      },
+      error: (err) => {
+        const padrao = editando ? 'Erro ao atualizar usuário.' : 'Erro ao cadastrar usuário.';
+        this.snackBar.open(err.error?.message ?? padrao, 'Ok', {
+          duration: 5000,
+          horizontalPosition: 'right',
+          verticalPosition: 'top',
+          panelClass: ['error-snackbar'],
+        });
+      },
+    });
   }
 
   private msgSucesso(editando:boolean) {
@@ -265,7 +257,6 @@ export class Usuarios {
       ativo: true,
     });
 
-    this.salvando = false;
     this.fecharCadastro();
   }
 

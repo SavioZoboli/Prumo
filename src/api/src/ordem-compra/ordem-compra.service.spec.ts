@@ -118,7 +118,12 @@ describe('OrdemCompraService', () => {
       )?.dados;
       const itens = salvos.find((s) => s.entidade === ItemMovimento)?.dados;
 
-      expect(movimentacao).toMatchObject({ operacao: 'E', usuario_id: 42 });
+      // ordem_compra_id liga a entrada à ordem (Bug 09: o estorno usa esse vínculo).
+      expect(movimentacao).toMatchObject({
+        operacao: 'E',
+        usuario_id: 42,
+        ordem_compra_id: 5,
+      });
       expect(itens).toEqual([
         expect.objectContaining({
           movimento_id: 70,

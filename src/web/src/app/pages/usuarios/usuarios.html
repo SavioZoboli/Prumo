@@ -181,7 +181,7 @@
         <app-button
           [label]="usuarioEmEdicao ? 'ATUALIZAR' : 'SALVAR'"
           type="submit"
-          [loading]="salvando"
+          [loading]="salvando()"
           [fullWidth]="false"
           [disabled]="usuarioForm.invalid"
         ></app-button>

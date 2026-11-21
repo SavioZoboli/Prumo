@@ -1,4 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { MAT_DATE_LOCALE, provideNativeDateAdapter } from '@angular/material/core';
 import { MatDialog } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { of, throwError, type Observable } from 'rxjs';
@@ -14,6 +15,7 @@ import {
   MovimentacaoService,
   MovimentacaoResponse,
 } from '../../../services/movimentacao.service';
+import { AuthService } from '../../../services/auth.service';
 
 describe('ListaMovimentacoes', () => {
   let component: ListaMovimentacoes;
@@ -75,7 +77,14 @@ describe('ListaMovimentacoes', () => {
     open: vi.fn(),
   };
 
+  // Por padrão o usuário logado é gestor (ADMIN ou LIDER), que pode estornar.
+  const authServiceMock = {
+    temPerfil: vi.fn(() => true),
+  };
+
   beforeEach(async () => {
+    authServiceMock.temPerfil.mockClear().mockReturnValue(true);
+
     materialServiceMock.listAll
       .mockClear()
       .mockReturnValue(of(materiaisMock));
@@ -119,6 +128,15 @@ describe('ListaMovimentacoes', () => {
         {
           provide: MatDialog,
           useValue: dialogMock,
+        },
+        {
+          provide: MAT_DATE_LOCALE,
+          useValue: 'PT-BR',
+        },
+        provideNativeDateAdapter(),
+        {
+          provide: AuthService,
+          useValue: authServiceMock,
         },
       ],
     });
@@ -239,6 +257,22 @@ describe('ListaMovimentacoes', () => {
       );
 
     expect(botaoEstorno).toBeTruthy();
+    expect(authServiceMock.temPerfil).toHaveBeenCalledWith(['ADMIN', 'LIDER']);
+  });
+
+  it('não deve exibir a coluna de ações nem o estorno para quem não é ADMIN nem LIDER', () => {
+    authServiceMock.temPerfil.mockReturnValue(false);
+
+    const fixtureSemPermissao = TestBed.createComponent(ListaMovimentacoes);
+    fixtureSemPermissao.detectChanges();
+    const elemento: HTMLElement = fixtureSemPermissao.nativeElement;
+
+    expect(fixtureSemPermissao.componentInstance.podeEstornar).toBe(false);
+    expect(fixtureSemPermissao.componentInstance.colunasExibidas).not.toContain('acoes');
+    expect(
+      elemento.querySelector('button[aria-label="Estornar movimentação"]'),
+    ).toBeNull();
+    expect(elemento.textContent).not.toContain('Ações');
   });
 
   it('deve estornar uma movimentação confirmada no dialog', () => {
@@ -328,6 +362,72 @@ describe('ListaMovimentacoes', () => {
     expect(
       movimentacaoServiceMock.listAll,
     ).toHaveBeenCalledTimes(2);
+  });
+
+  it('deve identificar a movimentação como estornada após a operação', () => {
+    const movimentacoesAtualizadas: MovimentacaoResponse[] = [
+      {
+        ...movimentacoesMock[0],
+        is_estornado: true,
+        motivo_estorno: 'Motivo do estorno',
+      },
+    ];
+
+    movimentacaoServiceMock.listAll.mockReturnValueOnce(
+      of(movimentacoesAtualizadas),
+    );
+
+    component.abrirEstorno(movimentacoesMock[0]);
+
+    fixture.detectChanges();
+
+    expect(component.movimentacoes()[0].is_estornado).toBe(true);
+    expect(fixture.nativeElement.textContent).toContain('Estornada');
+  });
+
+  it('deve manter a movimentação original no histórico após o estorno', () => {
+    const movimentacoesAtualizadas: MovimentacaoResponse[] = [
+      {
+        ...movimentacoesMock[0],
+        is_estornado: true,
+        motivo_estorno: 'Motivo do estorno',
+      },
+    ];
+
+    movimentacaoServiceMock.listAll.mockReturnValueOnce(
+      of(movimentacoesAtualizadas),
+    );
+
+    component.abrirEstorno(movimentacoesMock[0]);
+
+    const movimentacaoNoHistorico = component
+      .movimentacoes()
+      .find(
+        (movimentacao) =>
+          movimentacao.id === movimentacoesMock[0].id,
+      );
+
+    expect(movimentacaoNoHistorico).toBeTruthy();
+    expect(movimentacaoNoHistorico?.is_estornado).toBe(true);
+  });
+
+  it('não deve permitir novo estorno de uma movimentação já estornada', () => {
+    component.movimentacoes.set([
+      {
+        ...movimentacoesMock[0],
+        is_estornado: true,
+        motivo_estorno: 'Motivo do estorno',
+      },
+    ]);
+
+    fixture.detectChanges();
+
+    const botaoEstorno =
+      fixture.nativeElement.querySelector(
+        'button[aria-label="Estornar movimentação"]',
+      );
+
+    expect(botaoEstorno.disabled).toBe(true);
   });
 
   it('deve formatar o tipo de operação', () => {

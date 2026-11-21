@@ -9,7 +9,7 @@ import {
   Fornecedor,
   FornecedorService,
 } from './fornecedor.service';
-import { environment } from '../../environments/environment.development';
+import { environment } from '../../environments/environment';
 
 describe('FornecedorService', () => {
   let service: FornecedorService;

@@ -263,7 +263,7 @@ export class OrdemCompraService {
           motivo: `Baixado da OC ${id}`,
           usuario_id: usuarioId,
           ordem_producao: null,
-          ordem_compra_id: null,
+          ordem_compra_id: id,
           is_estornado: false,
           motivo_estorno: null,
         }),

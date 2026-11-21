@@ -52,10 +52,11 @@ export class CadastroMovimentacao implements OnChanges {
   @Input() aberto = false;
   @Input() materiaisDisponiveis: Material[] = [];
 
+  // Controlado pelo componente pai, que é quem chama a API.
+  @Input() salvando = false;
+
   @Output() fechar = new EventEmitter<void>();
   @Output() salvar = new EventEmitter<MovimentacaoPayload>();
-
-  salvando = false;
 
   movimentacaoForm: FormGroup = new FormGroup({
     operacao: new FormControl<TipoOperacao | null>(null, Validators.required),
@@ -84,6 +85,17 @@ export class CadastroMovimentacao implements OnChanges {
   quantidadeInvalida(index: number): boolean {
     const controle = this.itens.at(index).get('quantidade');
     return !!controle?.invalid && !!controle?.touched;
+  }
+
+  materialSelecionadoEmOutroItem(
+    materialId: number,
+    indexAtual: number,
+  ): boolean {
+    return this.itens.controls.some(
+      (grupo, index) =>
+        index !== indexAtual &&
+        grupo.get('material')?.value?.id === materialId,
+    );
   }
 
   private inicializarForm(): void {
@@ -116,12 +128,25 @@ export class CadastroMovimentacao implements OnChanges {
   }
 
   salvarMovimentacao(): void {
+    // Não depende só do botão desabilitado: o envio também pode vir pelo Enter.
+    if (this.salvando) {
+      return;
+    }
+
     if (this.movimentacaoForm.invalid) {
       this.movimentacaoForm.markAllAsTouched();
       return;
     }
 
     const dados = this.movimentacaoForm.getRawValue();
+
+    const materiaisIds = dados.itens.map(
+      (item: { material: Material }) => item.material.id,
+    );
+
+    if (new Set(materiaisIds).size !== materiaisIds.length) {
+      return;
+    }
 
     const payload: MovimentacaoPayload = {
       operacao: dados.operacao,
