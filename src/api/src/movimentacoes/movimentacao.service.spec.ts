@@ -248,30 +248,30 @@ describe('MovimentacaoService — alerta de estoque mínimo', () => {
       expect(alertaEstoqueService.verificarMateriais).not.toHaveBeenCalled();
     });
 
-    it('desconta de forma acumulada itens repetidos do mesmo material', async () => {
-      // Estoque 12: o primeiro item de 8 passa (sobram 4),
-      // o segundo de 8 deve ser rejeitado.
-      await expect(
-        service.create(
-          {
-            operacao: 'S',
-            motivo: 'Uso na produção',
-            itens: [
-              { material_id: 7, quantidade: 8 },
-              { material_id: 7, quantidade: 8 },
-            ],
-          },
-          1,
-        ),
-      ).rejects.toBeInstanceOf(BadRequestException);
+   it('rejeita material repetido na mesma movimentação', async () => {
+  await expect(
+    service.create(
+      {
+        operacao: 'S',
+        motivo: 'Uso na produção',
+        itens: [
+          { material_id: 7, quantidade: 8 },
+          { material_id: 7, quantidade: 8 },
+        ],
+      },
+      1,
+    ),
+  ).rejects.toThrow('Material repetido na movimentação');
 
-      expect(materialQueryBuilder.where).toHaveBeenCalledWith(
-        'material.id IN (:...ids)',
-        { ids: [7] },
-      );
+  // A validação acontece antes de iniciar a transação.
+  expect(transaction).not.toHaveBeenCalled();
 
-      expect(materialRepository.save).not.toHaveBeenCalled();
-    });
+  // O QueryBuilder não deve ser executado.
+  expect(materialRepository.createQueryBuilder).not.toHaveBeenCalled();
+
+  // O estoque não deve ser alterado.
+  expect(materialRepository.save).not.toHaveBeenCalled();
+});
 
     it('recusa material inexistente', async () => {
       materialQueryBuilder.getMany.mockResolvedValue([]);
