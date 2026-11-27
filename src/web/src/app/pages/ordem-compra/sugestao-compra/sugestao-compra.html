@@ -7,21 +7,32 @@
       (click)="expandido.set(!expandido())"
     >
       <mat-icon>lightbulb</mat-icon>
-
-      <span class="sugestao__titulo-texto">
-        <strong>Sugestão de compra</strong>
-        @if (!carregando() && !erro()) {
-          <small>
-            {{ totalAbaixo() }} abaixo do mínimo · {{ totalAtencao() }} em atenção
-          </small>
-        }
-      </span>
-
+      <strong>Sugestão de compra</strong>
       <mat-icon class="sugestao__seta">{{ expandido() ? 'expand_less' : 'expand_more' }}</mat-icon>
     </button>
 
+    @if (!carregando() && !erro()) {
+      <div class="sugestao__contadores">
+        @if (totalAbaixo() > 0) {
+          <span class="sugestao__status danger">{{ totalAbaixo() }} abaixo do mínimo</span>
+        }
+        @if (totalAtencao() > 0) {
+          <span class="sugestao__status warning">{{ totalAtencao() }} em atenção</span>
+        }
+        @if (totalEmOrdem() > 0) {
+          <span class="sugestao__status info">
+            {{ totalEmOrdem() }} já {{ totalEmOrdem() === 1 ? 'coberto' : 'cobertos' }} por ordem
+          </span>
+        }
+        @if (sugestoes().length === 0 && totalEmOrdem() === 0) {
+          <span class="sugestao__status success">Estoque em dia</span>
+        }
+      </div>
+    }
+
     @if (expandido() && sugestoes().length > 0) {
       <app-button
+        class="sugestao__acao"
         [label]="'GERAR ORDEM (' + quantidadeSelecionada() + ')'"
         icon="add_shopping_cart"
         type="button"
@@ -40,77 +51,126 @@
         <span>Não foi possível carregar as sugestões.</span>
         <button mat-button type="button" (click)="carregar()">Tentar novamente</button>
       </div>
-    } @else if (sugestoes().length === 0) {
-      <p class="sugestao__aviso">
-        <mat-icon>check_circle</mat-icon>
-        Nenhum material precisa de reposição agora.
-      </p>
     } @else {
-      <p class="sugestao__dica">
-        Marque os materiais e gere a ordem. A quantidade sugerida repõe até o dobro do estoque
-        mínimo e pode ser ajustada no formulário. Materiais que já estão numa ordem ainda não
-        recebida não aparecem aqui.
-      </p>
+      <!-- Bloco 1: o que ainda precisa ser comprado -->
+      @if (sugestoes().length > 0) {
+        <h3 class="sugestao__secao">Precisam de compra</h3>
+        <p class="sugestao__dica">
+          A quantidade sugerida repõe até o dobro do mínimo, descontando o que já foi pedido.
+          Você pode ajustá-la no formulário da ordem.
+        </p>
 
-      <div class="sugestao__tabela">
-        <table mat-table [dataSource]="sugestoes()">
-          <ng-container matColumnDef="selecao">
-            <th mat-header-cell *matHeaderCellDef></th>
-            <td mat-cell *matCellDef="let s">
-              <mat-checkbox
-                [checked]="estaSelecionado(s)"
-                (click)="$event.stopPropagation()"
-                (change)="alternar(s)"
-                [attr.aria-label]="'Incluir ' + s.material.nome"
-              ></mat-checkbox>
-            </td>
-          </ng-container>
+        <div class="sugestao__tabela">
+          <table mat-table [dataSource]="sugestoes()">
+            <ng-container matColumnDef="selecao">
+              <th mat-header-cell *matHeaderCellDef></th>
+              <td mat-cell *matCellDef="let s">
+                <mat-checkbox
+                  [checked]="estaSelecionado(s)"
+                  (click)="$event.stopPropagation()"
+                  (change)="alternar(s)"
+                  [attr.aria-label]="'Incluir ' + s.material.nome"
+                ></mat-checkbox>
+              </td>
+            </ng-container>
 
-          <ng-container matColumnDef="material">
-            <th mat-header-cell *matHeaderCellDef>Material</th>
-            <td mat-cell *matCellDef="let s">
-              <span class="sugestao__codigo">{{ s.material.codigo }}</span>
-              {{ s.material.nome }}
-            </td>
-          </ng-container>
+            <ng-container matColumnDef="material">
+              <th mat-header-cell *matHeaderCellDef>Material</th>
+              <td mat-cell *matCellDef="let s">
+                <span class="sugestao__codigo">{{ s.material.codigo }}</span>
+                {{ s.material.nome }}
+              </td>
+            </ng-container>
 
-          <ng-container matColumnDef="estoque">
-            <th mat-header-cell *matHeaderCellDef>Atual / Mínimo</th>
-            <td mat-cell *matCellDef="let s">
-              {{ s.material.estoqueAtual }} / {{ s.material.estoqueMinimo }}
-              {{ s.material.unidadeMedida }}
-            </td>
-          </ng-container>
+            <ng-container matColumnDef="atual">
+              <th mat-header-cell *matHeaderCellDef>Em estoque</th>
+              <td mat-cell *matCellDef="let s">
+                {{ s.material.estoqueAtual }} {{ s.material.unidadeMedida }}
+              </td>
+            </ng-container>
 
-          <ng-container matColumnDef="status">
-            <th mat-header-cell *matHeaderCellDef>Situação</th>
-            <td mat-cell *matCellDef="let s">
-              <span
-                class="sugestao__status"
-                [class.danger]="s.status === 'ABAIXO_MINIMO'"
-                [class.warning]="s.status === 'EM_ATENCAO'"
-              >
-                {{ s.status === 'ABAIXO_MINIMO' ? 'Abaixo do mínimo' : 'Em atenção' }}
+            <ng-container matColumnDef="emOrdem">
+              <th mat-header-cell *matHeaderCellDef>Já pedido</th>
+              <td mat-cell *matCellDef="let s">
+                @if (s.quantidadeEmOrdem > 0) {
+                  {{ s.quantidadeEmOrdem }} {{ s.material.unidadeMedida }}
+                } @else {
+                  <span class="sugestao__vazio">—</span>
+                }
+              </td>
+            </ng-container>
+
+            <ng-container matColumnDef="minimo">
+              <th mat-header-cell *matHeaderCellDef>Mínimo</th>
+              <td mat-cell *matCellDef="let s">
+                {{ s.material.estoqueMinimo }} {{ s.material.unidadeMedida }}
+              </td>
+            </ng-container>
+
+            <ng-container matColumnDef="status">
+              <th mat-header-cell *matHeaderCellDef>Situação</th>
+              <td mat-cell *matCellDef="let s">
+                <span
+                  class="sugestao__status"
+                  [class.danger]="s.status === 'ABAIXO_MINIMO'"
+                  [class.warning]="s.status === 'EM_ATENCAO'"
+                >
+                  {{ s.status === 'ABAIXO_MINIMO' ? 'Abaixo do mínimo' : 'Em atenção' }}
+                </span>
+              </td>
+            </ng-container>
+
+            <ng-container matColumnDef="sugerida">
+              <th mat-header-cell *matHeaderCellDef>Comprar</th>
+              <td mat-cell *matCellDef="let s">
+                <strong>{{ s.quantidadeSugerida }} {{ s.material.unidadeMedida }}</strong>
+              </td>
+            </ng-container>
+
+            <tr mat-header-row *matHeaderRowDef="colunas"></tr>
+            <tr
+              mat-row
+              *matRowDef="let row; columns: colunas"
+              class="custom-row sugestao__linha"
+              (click)="alternar(row)"
+            ></tr>
+          </table>
+        </div>
+      } @else {
+        <p class="sugestao__aviso">
+          <mat-icon>check_circle</mat-icon>
+          Nenhum material precisa de nova compra agora.
+        </p>
+      }
+
+      <!-- Bloco 2: críticos que as ordens abertas já resolvem -->
+      @if (totalEmOrdem() > 0) {
+        <h3 class="sugestao__secao">
+          <mat-icon>local_shipping</mat-icon>
+          Já cobertos por ordens abertas
+        </h3>
+        <p class="sugestao__dica">
+          Estão abaixo do mínimo ou em atenção hoje, mas o que já foi pedido resolve quando a
+          ordem for recebida.
+        </p>
+
+        <ul class="sugestao__cobertos">
+          @for (c of cobertosPorOrdem(); track c.material.id) {
+            <li>
+              <span class="sugestao__cobertos-nome">
+                <span class="sugestao__codigo">{{ c.material.codigo }}</span>
+                {{ c.material.nome }}
               </span>
-            </td>
-          </ng-container>
-
-          <ng-container matColumnDef="sugerida">
-            <th mat-header-cell *matHeaderCellDef>Qtd. sugerida</th>
-            <td mat-cell *matCellDef="let s">
-              {{ s.quantidadeSugerida }} {{ s.material.unidadeMedida }}
-            </td>
-          </ng-container>
-
-          <tr mat-header-row *matHeaderRowDef="colunas"></tr>
-          <tr
-            mat-row
-            *matRowDef="let row; columns: colunas"
-            class="custom-row sugestao__linha"
-            (click)="alternar(row)"
-          ></tr>
-        </table>
-      </div>
+              <span class="sugestao__cobertos-conta">
+                {{ c.material.estoqueAtual }} em estoque + {{ c.quantidadeEmOrdem }} pedido =
+                <strong>{{ c.material.estoqueAtual + c.quantidadeEmOrdem }}
+                {{ c.material.unidadeMedida }}</strong>
+                <span class="sugestao__vazio">(mín. {{ c.material.estoqueMinimo }})</span>
+              </span>
+            </li>
+          }
+        </ul>
+      }
     }
   }
 </section>

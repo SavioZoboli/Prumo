@@ -3,7 +3,7 @@ import { of } from 'rxjs';
 
 import { SugestaoCompraComponent } from './sugestao-compra';
 import { Material, MaterialService } from '../../../services/material.service';
-import { OrdemCompraItem } from '../cadastro-ordem-compra/cadastro-ordem-compra';
+import { OrdemCompraItem, OrdemCompraLista } from '../cadastro-ordem-compra/cadastro-ordem-compra';
 
 describe('SugestaoCompraComponent', () => {
   const base = {
@@ -21,16 +21,31 @@ describe('SugestaoCompraComponent', () => {
     { ...base, id: 3, nome: 'Normal', codigo: 'C', estoqueAtual: 50, estoqueMinimo: 10 },
   ];
 
-  function criar(): SugestaoCompraComponent {
+  function criar(ordens: OrdemCompraLista[] = []): SugestaoCompraComponent {
     TestBed.configureTestingModule({
       imports: [SugestaoCompraComponent],
       providers: [{ provide: MaterialService, useValue: { listAll: () => of(materiais) } }],
     });
 
     const fixture = TestBed.createComponent(SugestaoCompraComponent);
+    fixture.componentRef.setInput('ordens', ordens);
     fixture.detectChanges();
     return fixture.componentInstance;
   }
+
+  it('deve contar à parte o material crítico que uma ordem aberta já repõe', () => {
+    const ordemAberta = {
+      id: 1,
+      status: 'ABERTO',
+      itens: [{ ...materiais[0], quantidade: 30, valor: 1 }],
+    } as OrdemCompraLista;
+
+    const component = criar([ordemAberta]);
+
+    expect(component.sugestoes().map((s) => s.material.id)).toEqual([2]);
+    expect(component.totalAbaixo()).toBe(0);
+    expect(component.totalEmOrdem()).toBe(1);
+  });
 
   it('deve listar só os materiais abaixo do mínimo e em atenção', () => {
     const component = criar();
