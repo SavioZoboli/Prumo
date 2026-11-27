@@ -1,7 +1,6 @@
 import { beforeEach, describe, expect, it, jest } from '@jest/globals';
 import { Test } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
-import { FindOperator } from 'typeorm';
 import { MovimentacaoService } from './movimentacao.service';
 import { Movimentacao } from './movimentacao.entity';
 import { ItemMovimento } from './item-movimento.entity';
@@ -17,7 +16,42 @@ describe('MovimentacaoService — estorno da entrada de ordem de compra', () => 
   let itensMovimento: ItemMovimento[];
   let ordens: Map<number, OrdemCompra>;
 
+  const materialQueryBuilder = {
+  ids: [] as number[],
+
+  where: jest.fn(
+    (_condicao: string, parametros: { ids: number[] }) => {
+      materialQueryBuilder.ids = parametros.ids;
+      return materialQueryBuilder;
+    },
+  ),
+
+  orderBy: jest.fn(() => materialQueryBuilder),
+
+  setLock: jest.fn(() => materialQueryBuilder),
+
+  getMany: jest.fn(async (): Promise<Material[]> => {
+    return materialQueryBuilder.ids
+      .map((id) => materiais.get(id))
+      .filter((material): material is Material => material !== undefined)
+      .sort((a, b) => a.id - b.id);
+  }),
+};
+
+const materialRepository = {
+  createQueryBuilder: jest.fn(() => materialQueryBuilder),
+};
+
   const manager = {
+
+    getRepository: jest.fn((entidade: unknown) => {
+  if (entidade === Material) {
+    return materialRepository;
+  }
+
+  throw new Error(`Repositório não configurado: ${String(entidade)}`);
+}),
+
     findOne: jest.fn(
       (
         entidade: unknown,
@@ -29,17 +63,19 @@ describe('MovimentacaoService — estorno da entrada de ordem de compra', () => 
             : movimentacoes.get(where.id)) ?? null,
         ),
     ),
-    find: jest.fn(
-      (entidade: unknown, { where }: { where: Record<string, unknown> }) => {
-        if (entidade === ItemMovimento) {
-          return Promise.resolve(
-            itensMovimento.filter((i) => i.movimento_id === where.movimento_id),
-          );
-        }
-        const ids = (where.id as FindOperator<number[]>).value;
-        return Promise.resolve(ids.flatMap((id) => materiais.get(id) ?? []));
-      },
-    ),
+   find: jest.fn(
+  (entidade: unknown, { where }: { where: Record<string, unknown> }) => {
+    if (entidade === ItemMovimento) {
+      return Promise.resolve(
+        itensMovimento.filter(
+          (i) => i.movimento_id === where.movimento_id,
+        ),
+      );
+    }
+
+    return Promise.resolve([]);
+  },
+),
     save: jest.fn((lista: unknown) => Promise.resolve(lista)),
     count: jest.fn(
       (_entidade: unknown, { where }: { where: Partial<Movimentacao> }) =>
@@ -94,6 +130,8 @@ describe('MovimentacaoService — estorno da entrada de ordem de compra', () => 
   beforeEach(async () => {
     jest.clearAllMocks();
 
+    materialQueryBuilder.ids = [];
+
     materiais = new Map([
       [1, { id: 1, nome: 'Pastilha 1', estoqueAtual: 50 } as Material],
     ]);
@@ -138,9 +176,8 @@ describe('MovimentacaoService — estorno da entrada de ordem de compra', () => 
     const travaOrdem = manager.findOne.mock.invocationCallOrder.find(
       (_ordem, i) => manager.findOne.mock.calls[i][0] === OrdemCompra,
     );
-    const travaMateriais = manager.find.mock.invocationCallOrder.find(
-      (_ordem, i) => manager.find.mock.calls[i][0] === Material,
-    );
+    const travaMateriais =
+  materialQueryBuilder.getMany.mock.invocationCallOrder[0];
 
     expect(manager.findOne).toHaveBeenCalledWith(OrdemCompra, {
       where: { id: 7 },

@@ -11,13 +11,8 @@
   &__header {
     display: flex;
     align-items: center;
-    justify-content: space-between;
     flex-wrap: wrap;
     gap: var(--app-space-md);
-
-    app-button {
-      width: auto;
-    }
   }
 
   // Cabeçalho clicável que recolhe/expande o bloco.
@@ -39,21 +34,39 @@
     }
   }
 
-  &__titulo-texto {
-    display: flex;
-    flex-direction: column;
-
-    small {
-      color: var(--mat-sys-on-surface-variant);
-    }
-  }
-
   &__seta {
     color: var(--mat-sys-on-surface-variant);
   }
 
+  // Contadores em chips, com a mesma cor da situação de cada grupo.
+  &__contadores {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--app-space-xs);
+  }
+
+  // Empurra o botão para a direita, independente de quantos chips houver.
+  &__acao {
+    width: auto;
+    margin-left: auto;
+  }
+
+  &__secao {
+    display: flex;
+    align-items: center;
+    gap: var(--app-space-xs);
+    margin: var(--app-space-lg) 0 0;
+
+    font-size: 0.95rem;
+    font-weight: 600;
+
+    mat-icon {
+      color: var(--app-info-soft-on);
+    }
+  }
+
   &__dica {
-    margin: var(--app-space-md) 0 var(--app-space-sm);
+    margin: var(--app-space-xs) 0 var(--app-space-sm);
     font-size: 0.85rem;
     color: var(--mat-sys-on-surface-variant);
   }
@@ -86,7 +99,37 @@
     font-weight: 600;
   }
 
+  &__vazio {
+    color: var(--mat-sys-on-surface-variant);
+  }
+
   &__status {
     @extend %status-chip;
+  }
+
+  &__cobertos {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+
+    border: 1px solid var(--mat-sys-outline-variant);
+    border-radius: var(--app-radius-md);
+
+    li {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: var(--app-space-sm);
+      padding: var(--app-space-sm) var(--app-space-md);
+
+      & + li {
+        border-top: 1px solid var(--mat-sys-outline-variant);
+      }
+    }
+  }
+
+  &__cobertos-conta {
+    font-size: 0.9rem;
   }
 }

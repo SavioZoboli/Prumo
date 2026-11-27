@@ -28,7 +28,7 @@ export class SugestaoCompraComponent {
 
   @Output() gerarOrdem = new EventEmitter<OrdemCompraItem[]>();
 
-  readonly colunas = ['selecao', 'material', 'estoque', 'status', 'sugerida'];
+  readonly colunas = ['selecao', 'material', 'atual', 'emOrdem', 'minimo', 'status', 'sugerida'];
 
   private materialService = inject(MaterialService);
 
@@ -37,7 +37,11 @@ export class SugestaoCompraComponent {
   erro = signal(false);
   expandido = signal(true);
 
-  sugestoes = computed(() => montarSugestoes(this.materiais(), this.ordens()));
+  private resultado = computed(() => montarSugestoes(this.materiais(), this.ordens()));
+  sugestoes = computed(() => this.resultado().sugestoes);
+  // Críticos pelo estoque atual que as ordens não recebidas já repõem.
+  cobertosPorOrdem = computed(() => this.resultado().cobertosPorOrdem);
+  totalEmOrdem = computed(() => this.cobertosPorOrdem().length);
 
   totalAbaixo = computed(() => this.sugestoes().filter((s) => s.status === 'ABAIXO_MINIMO').length);
   totalAtencao = computed(() => this.sugestoes().filter((s) => s.status === 'EM_ATENCAO').length);
